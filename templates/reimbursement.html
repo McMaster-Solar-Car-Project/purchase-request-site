@@ -3,25 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Reimbursement</title>
+    <title>{{ title }} - Purchase Request #{{ form_number }}</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Purchase Request - Step 2</h1>
+        <h1>Purchase Request #{{ form_number }} - Step 2</h1>
         <p class="subtitle">Enter the reimbursement details for your purchase request</p>
         
         <div class="form-section">
             <h2>Reimbursement Information</h2>
             
             <div class="info-summary">
+                <p><strong>Form:</strong> Purchase Request #{{ form_number }}</p>
                 <p><strong>Name:</strong> {{ name }}</p>
                 <p><strong>Team:</strong> {{ team }}</p>
                 <p><strong>McMaster Email:</strong> {{ email }}</p>
             </div>
             
-            <form method="POST" action="/submit-final-request" enctype="multipart/form-data">
+            <form method="POST" action="/submit-final-request/{{ form_number }}" enctype="multipart/form-data">
                 <!-- Hidden fields to carry forward the data from step 1 -->
+                <input type="hidden" name="form_number" value="{{ form_number }}">
                 <input type="hidden" name="name" value="{{ name }}">
                 <input type="hidden" name="email" value="{{ email }}">
                 <input type="hidden" name="e_transfer_email" value="{{ e_transfer_email }}">
@@ -127,11 +129,11 @@
                 </div>
                 
                 <div class="form-group">
-                    <button type="submit" class="btn">Submit Purchase Request</button>
+                    <button type="submit" class="btn">Submit Purchase Request #{{ form_number }}</button>
                 </div>
                 
                 <div class="form-group">
-                    <a href="/" class="btn-secondary">Back to Step 1</a>
+                    <a href="/dashboard?name={{ name }}&email={{ email }}&e_transfer_email={{ e_transfer_email }}&address={{ address }}&team={{ team }}" class="btn-secondary">Back to Dashboard</a>
                 </div>
             </form>
         </div>

@@ -55,7 +55,92 @@ h1 {
     margin: 0;
 }
 
-/* Info summary for step 2 */
+/* Dashboard styles */
+.user-info {
+    margin-bottom: 30px;
+}
+
+.dashboard-section {
+    background-color: #f8f9fa;
+    padding: 30px;
+    border-radius: 8px;
+    margin-top: 30px;
+    text-align: left;
+}
+
+.dashboard-section h2 {
+    color: #333;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.dashboard-help {
+    color: #666;
+    text-align: center;
+    margin-bottom: 30px;
+    font-style: italic;
+}
+
+/* Accordion forms */
+.forms-container {
+    margin-bottom: 30px;
+}
+
+.form-accordion {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.form-accordion-header {
+    background-color: #007bff;
+    color: white;
+    padding: 15px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+
+.form-accordion-header:hover {
+    background-color: #0056b3;
+}
+
+.form-accordion-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+}
+
+.form-toggle {
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.form-accordion-content {
+    display: none;
+    padding: 20px;
+    border-top: 1px solid #dee2e6;
+}
+
+.reimbursement-form {
+    max-width: 100%;
+}
+
+.dashboard-actions {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.btn-large {
+    font-size: 18px;
+    padding: 16px 32px;
+    font-weight: bold;
+}
+
+/* Info summary for step 2 and dashboard */
 .info-summary {
     background-color: #e9ecef;
     padding: 20px;
@@ -78,7 +163,8 @@ h1 {
     border: 1px solid #ddd;
 }
 
-.items-section h3 {
+.items-section h3,
+.items-section h4 {
     color: #333;
     margin-bottom: 15px;
     font-size: 1.2em;
@@ -145,7 +231,8 @@ h1 {
     border: 1px solid #bbdefb;
 }
 
-.total-section h3 {
+.total-section h3,
+.total-section h4 {
     color: #333;
     margin-bottom: 20px;
     font-size: 1.3em;
@@ -334,7 +421,7 @@ h1 {
     background-color: #c82333;
 }
 
-/* Responsive design for item rows */
+/* Responsive design */
 @media (max-width: 1024px) {
     .item-row {
         grid-template-columns: 1fr 1fr;
@@ -358,6 +445,11 @@ h1 {
 @media (max-width: 768px) {
     body {
         max-width: 800px;
+        padding: 20px 10px;
+    }
+    
+    .container {
+        padding: 20px;
     }
     
     .item-row {
@@ -368,5 +460,13 @@ h1 {
     .item-actions {
         justify-content: center;
         grid-column: span 1;
+    }
+    
+    .form-accordion-header {
+        padding: 12px 15px;
+    }
+    
+    .form-accordion-header h3 {
+        font-size: 1em;
     }
 } 

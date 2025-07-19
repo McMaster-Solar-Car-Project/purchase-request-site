@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <h1>Purchase Request Dashboard</h1>
-        <p class="subtitle">Manage up to 10 separate purchase requests</p>
+        <p class="subtitle">Fill out up to 10 separate purchase requests and submit them all together</p>
         
         <div class="user-info">
             <div class="info-summary">
@@ -25,31 +25,262 @@
         </div>
         {% endif %}
         
-        <div class="dashboard-section">
-            <h2>Your Purchase Request Forms</h2>
-            <p class="dashboard-help">Each form represents a separate purchase request. You can fill them out individually and submit them when ready.</p>
+        <form method="POST" action="/submit-all-requests" enctype="multipart/form-data">
+            <!-- Hidden fields for user data -->
+            <input type="hidden" name="name" value="{{ name }}">
+            <input type="hidden" name="email" value="{{ email }}">
+            <input type="hidden" name="e_transfer_email" value="{{ e_transfer_email }}">
+            <input type="hidden" name="address" value="{{ address }}">
+            <input type="hidden" name="team" value="{{ team }}">
             
-            <div class="forms-grid">
-                {% for i in range(1, 11) %}
-                <div class="form-card">
-                    <div class="form-card-header">
-                        <h3>Purchase Request #{{ i }}</h3>
-                        <span class="form-status">Ready to Fill</span>
-                    </div>
-                    <div class="form-card-body">
-                        <p>Create a detailed purchase request with items, vendor information, and financial breakdown.</p>
-                        <div class="form-actions">
-                            <a href="/reimbursement/{{ i }}?name={{ name }}&email={{ email }}&e_transfer_email={{ e_transfer_email }}&address={{ address }}&team={{ team }}" class="btn">Start Request #{{ i }}</a>
+            <div class="dashboard-section">
+                <h2>Your Purchase Request Forms</h2>
+                <p class="dashboard-help">Fill out any number of the forms below. Empty forms will be ignored when you submit.</p>
+                
+                <div class="forms-container">
+                    {% for form_num in range(1, 11) %}
+                    <div class="form-accordion">
+                        <div class="form-accordion-header" onclick="toggleForm({{ form_num }})">
+                            <h3>Purchase Request #{{ form_num }}</h3>
+                            <span class="form-toggle">▼</span>
+                        </div>
+                        <div class="form-accordion-content" id="form-{{ form_num }}">
+                            <div class="reimbursement-form">
+                                <div class="form-group">
+                                    <label for="vendor_name_{{ form_num }}">Vendor/Store Name</label>
+                                    <input type="text" id="vendor_name_{{ form_num }}" name="vendor_name_{{ form_num }}" placeholder="Enter the name of the vendor or store">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="invoice_file_{{ form_num }}">Upload Invoice/Receipt</label>
+                                    <input type="file" id="invoice_file_{{ form_num }}" name="invoice_file_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif">
+                                    <small class="file-help">Please upload your invoice or receipt (PDF, JPG, PNG, or GIF format)</small>
+                                </div>
+                                
+                                <div class="items-section">
+                                    <h4>Item Details</h4>
+                                    <small class="items-help">Add the items you purchased (up to 30 items)</small>
+                                    
+                                    <div id="items-container-{{ form_num }}">
+                                        <div class="item-row">
+                                            <div class="item-input-group">
+                                                <label>Item Name</label>
+                                                <input type="text" name="item_name_{{ form_num }}_1" placeholder="Enter item name">
+                                            </div>
+                                            <div class="item-input-group">
+                                                <label>Usage/Purpose</label>
+                                                <input type="text" name="item_usage_{{ form_num }}_1" placeholder="What is this item for?">
+                                            </div>
+                                            <div class="item-input-group">
+                                                <label>Quantity</label>
+                                                <input type="number" name="item_quantity_{{ form_num }}_1" min="1" value="1" onchange="calculateItemTotal({{ form_num }}, 1)">
+                                            </div>
+                                            <div class="item-input-group">
+                                                <label>Unit Price (CAD)</label>
+                                                <input type="number" name="item_price_{{ form_num }}_1" min="0" step="0.01" placeholder="0.00" onchange="calculateItemTotal({{ form_num }}, 1)">
+                                            </div>
+                                            <div class="item-input-group">
+                                                <label>Total (CAD)</label>
+                                                <input type="number" name="item_total_{{ form_num }}_1" readonly placeholder="0.00" class="total-field">
+                                            </div>
+                                            <div class="item-actions">
+                                                <button type="button" class="btn-remove" onclick="removeItem(this, {{ form_num }})" style="display: none;">Remove</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <button type="button" class="btn-secondary" onclick="addItem({{ form_num }})">Add Another Item</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="total-section">
+                                    <h4>Financial Summary</h4>
+                                    
+                                    <div class="financial-breakdown">
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="subtotal_amount_{{ form_num }}">Subtotal (CAD)</label>
+                                                <input type="number" id="subtotal_amount_{{ form_num }}" name="subtotal_amount_{{ form_num }}" readonly min="0" step="0.01" placeholder="0.00" class="total-field">
+                                                <small class="financial-help">Automatically calculated from item totals above</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="discount_amount_{{ form_num }}">Discount (CAD)</label>
+                                                <input type="number" id="discount_amount_{{ form_num }}" name="discount_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})">
+                                                <small class="financial-help">Coupons, promotional discounts, or rebates</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="hst_gst_amount_{{ form_num }}">HST/GST (CAD)</label>
+                                                <input type="number" id="hst_gst_amount_{{ form_num }}" name="hst_gst_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})">
+                                                <small class="financial-help">Harmonized Sales Tax / Goods and Services Tax</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="shipping_amount_{{ form_num }}">Shipping & Handling (CAD)</label>
+                                                <input type="number" id="shipping_amount_{{ form_num }}" name="shipping_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})">
+                                                <small class="financial-help">Shipping, delivery, and handling fees</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-row total-row">
+                                            <div class="form-group">
+                                                <label for="total_amount_{{ form_num }}">Total Reimbursement Amount (CAD)</label>
+                                                <input type="number" id="total_amount_{{ form_num }}" name="total_amount_{{ form_num }}" readonly min="0" step="0.01" placeholder="0.00" class="total-field">
+                                                <small class="financial-help">Automatically calculated (Subtotal - Discount + Tax + Shipping)</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
-        </div>
-        
-        <div class="dashboard-actions">
-            <a href="/" class="btn-secondary">Update Your Information</a>
-        </div>
+            
+            <div class="dashboard-actions">
+                <div class="form-group">
+                    <button type="submit" class="btn btn-large">Submit All Purchase Requests</button>
+                </div>
+                <div class="form-group">
+                    <a href="/" class="btn-secondary">Update Your Information</a>
+                </div>
+            </div>
+        </form>
     </div>
+
+    <script>
+        // Track item counts for each form
+        const itemCounts = {};
+        const maxItems = 30;
+        
+        // Initialize item counts
+        for (let i = 1; i <= 10; i++) {
+            itemCounts[i] = 1;
+        }
+
+        function toggleForm(formNumber) {
+            const content = document.getElementById(`form-${formNumber}`);
+            const toggle = content.previousElementSibling.querySelector('.form-toggle');
+            
+            if (content.style.display === 'none' || content.style.display === '') {
+                content.style.display = 'block';
+                toggle.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▼';
+            }
+        }
+
+        function addItem(formNumber) {
+            if (itemCounts[formNumber] >= maxItems) {
+                alert(`Maximum of ${maxItems} items allowed per form.`);
+                return;
+            }
+
+            itemCounts[formNumber]++;
+            const container = document.getElementById(`items-container-${formNumber}`);
+            const newRow = document.createElement('div');
+            newRow.className = 'item-row';
+            newRow.innerHTML = `
+                <div class="item-input-group">
+                    <label>Item Name</label>
+                    <input type="text" name="item_name_${formNumber}_${itemCounts[formNumber]}" placeholder="Enter item name">
+                </div>
+                <div class="item-input-group">
+                    <label>Usage/Purpose</label>
+                    <input type="text" name="item_usage_${formNumber}_${itemCounts[formNumber]}" placeholder="What is this item for?">
+                </div>
+                <div class="item-input-group">
+                    <label>Quantity</label>
+                    <input type="number" name="item_quantity_${formNumber}_${itemCounts[formNumber]}" min="1" value="1" onchange="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
+                </div>
+                <div class="item-input-group">
+                    <label>Unit Price (CAD)</label>
+                    <input type="number" name="item_price_${formNumber}_${itemCounts[formNumber]}" min="0" step="0.01" placeholder="0.00" onchange="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
+                </div>
+                <div class="item-input-group">
+                    <label>Total (CAD)</label>
+                    <input type="number" name="item_total_${formNumber}_${itemCounts[formNumber]}" readonly placeholder="0.00" class="total-field">
+                </div>
+                <div class="item-actions">
+                    <button type="button" class="btn-remove" onclick="removeItem(this, ${formNumber})">Remove</button>
+                </div>
+            `;
+            container.appendChild(newRow);
+            updateRemoveButtons(formNumber);
+        }
+
+        function removeItem(button, formNumber) {
+            const row = button.closest('.item-row');
+            row.remove();
+            itemCounts[formNumber]--;
+            updateRemoveButtons(formNumber);
+            calculateSubtotal(formNumber);
+        }
+
+        function updateRemoveButtons(formNumber) {
+            const container = document.getElementById(`items-container-${formNumber}`);
+            const removeButtons = container.querySelectorAll('.btn-remove');
+            removeButtons.forEach(btn => {
+                btn.style.display = itemCounts[formNumber] > 1 ? 'block' : 'none';
+            });
+        }
+
+        function calculateItemTotal(formNumber, itemNumber) {
+            const quantityInput = document.querySelector(`input[name="item_quantity_${formNumber}_${itemNumber}"]`);
+            const priceInput = document.querySelector(`input[name="item_price_${formNumber}_${itemNumber}"]`);
+            const totalInput = document.querySelector(`input[name="item_total_${formNumber}_${itemNumber}"]`);
+            
+            if (quantityInput && priceInput && totalInput) {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const total = quantity * price;
+                
+                totalInput.value = total.toFixed(2);
+                calculateSubtotal(formNumber);
+            }
+        }
+
+        function calculateSubtotal(formNumber) {
+            const container = document.getElementById(`items-container-${formNumber}`);
+            const totalInputs = container.querySelectorAll('input[name^="item_total_"]');
+            let subtotal = 0;
+            
+            totalInputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                subtotal += value;
+            });
+            
+            document.getElementById(`subtotal_amount_${formNumber}`).value = subtotal.toFixed(2);
+            calculateFinalTotal(formNumber);
+        }
+
+        function calculateFinalTotal(formNumber) {
+            const subtotal = parseFloat(document.getElementById(`subtotal_amount_${formNumber}`).value) || 0;
+            const discount = parseFloat(document.getElementById(`discount_amount_${formNumber}`).value) || 0;
+            const hstGst = parseFloat(document.getElementById(`hst_gst_amount_${formNumber}`).value) || 0;
+            const shipping = parseFloat(document.getElementById(`shipping_amount_${formNumber}`).value) || 0;
+            
+            const total = subtotal - discount + hstGst + shipping;
+            document.getElementById(`total_amount_${formNumber}`).value = Math.max(0, total).toFixed(2);
+        }
+
+        // Initialize all forms as collapsed
+        document.addEventListener('DOMContentLoaded', function() {
+            for (let i = 1; i <= 10; i++) {
+                const content = document.getElementById(`form-${i}`);
+                content.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html> 
