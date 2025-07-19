@@ -18,7 +18,7 @@
                 <p><strong>McMaster Email:</strong> {{ email }}</p>
                 <div class="signature-display">
                     <p><strong>Digital Signature:</strong></p>
-                    <img src="/uploads/{{ signature }}" alt="Digital Signature" class="signature-image">
+                    <img src="/{{ session_folder }}/{{ signature }}" alt="Digital Signature" class="signature-image">
                 </div>
             </div>
         </div>
@@ -36,6 +36,7 @@
             <input type="hidden" name="e_transfer_email" value="{{ e_transfer_email }}">
             <input type="hidden" name="address" value="{{ address }}">
             <input type="hidden" name="team" value="{{ team }}">
+            <input type="hidden" name="session_folder" value="{{ session_folder }}">
             <input type="hidden" name="signature" value="{{ signature }}">
             
             <div class="dashboard-section">
@@ -57,9 +58,32 @@
                                 </div>
                                 
                                 <div class="form-group">
+                                    <label for="currency_{{ form_num }}">Currency</label>
+                                    <select id="currency_{{ form_num }}" name="currency_{{ form_num }}" onchange="updateCurrencyLabels({{ form_num }})">
+                                        <option value="CAD">CAD - Canadian Dollar</option>
+                                        <option value="USD">USD - US Dollar</option>
+                                    </select>
+                                    <small class="file-help">Select the currency used for this purchase</small>
+                                </div>
+                                
+                                <div class="form-group">
                                     <label for="invoice_file_{{ form_num }}">Upload Invoice/Receipt</label>
-                                    <input type="file" id="invoice_file_{{ form_num }}" name="invoice_file_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif">
+                                    <div class="custom-file-upload">
+                                        <input type="file" id="invoice_file_{{ form_num }}" name="invoice_file_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif" onchange="updateFileName(this, 'invoice-filename-{{ form_num }}')">
+                                        <span class="file-upload-btn">Choose File</span>
+                                        <span class="file-name" id="invoice-filename-{{ form_num }}">No file chosen</span>
+                                    </div>
                                     <small class="file-help">Please upload your invoice or receipt (PDF, JPG, PNG, or GIF format)</small>
+                                </div>
+                                
+                                <div class="form-group proof-of-payment-section proof-of-payment-section-{{ form_num }}" style="display: none;">
+                                    <label for="proof_of_payment_{{ form_num }}">Proof of Payment (Required for USD purchases)</label>
+                                    <div class="custom-file-upload">
+                                        <input type="file" id="proof_of_payment_{{ form_num }}" name="proof_of_payment_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif" onchange="updateFileName(this, 'payment-filename-{{ form_num }}')">
+                                        <span class="file-upload-btn">Choose File</span>
+                                        <span class="file-name" id="payment-filename-{{ form_num }}">No file chosen</span>
+                                    </div>
+                                    <small class="file-help">Upload a screenshot of your bank transaction or payment confirmation (PDF, JPG, PNG, or GIF format)</small>
                                 </div>
                                 
                                 <div class="items-section">
@@ -81,11 +105,11 @@
                                                 <input type="number" name="item_quantity_{{ form_num }}_1" min="1" value="1" onchange="calculateItemTotal({{ form_num }}, 1)">
                                             </div>
                                             <div class="item-input-group">
-                                                <label>Unit Price (CAD)</label>
+                                                <label>Unit Price</label>
                                                 <input type="number" name="item_price_{{ form_num }}_1" min="0" step="0.01" placeholder="0.00" onchange="calculateItemTotal({{ form_num }}, 1)">
                                             </div>
                                             <div class="item-input-group">
-                                                <label>Total (CAD)</label>
+                                                <label>Total</label>
                                                 <input type="number" name="item_total_{{ form_num }}_1" readonly placeholder="0.00" class="total-field">
                                             </div>
                                             <div class="item-actions">
@@ -105,7 +129,7 @@
                                     <div class="financial-breakdown">
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="subtotal_amount_{{ form_num }}">Subtotal (CAD)</label>
+                                                <label for="subtotal_amount_{{ form_num }}">Subtotal (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="subtotal_amount_{{ form_num }}" name="subtotal_amount_{{ form_num }}" readonly min="0" step="0.01" placeholder="0.00" class="total-field">
                                                 <small class="financial-help">Automatically calculated from item totals above</small>
                                             </div>
@@ -113,7 +137,7 @@
                                         
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="discount_amount_{{ form_num }}">Discount (CAD)</label>
+                                                <label for="discount_amount_{{ form_num }}">Discount (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="discount_amount_{{ form_num }}" name="discount_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})">
                                                 <small class="financial-help">Coupons, promotional discounts, or rebates</small>
                                             </div>
@@ -121,7 +145,7 @@
                                         
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="hst_gst_amount_{{ form_num }}">HST/GST (CAD)</label>
+                                                <label for="hst_gst_amount_{{ form_num }}">HST/GST (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="hst_gst_amount_{{ form_num }}" name="hst_gst_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})">
                                                 <small class="financial-help">Harmonized Sales Tax / Goods and Services Tax</small>
                                             </div>
@@ -129,7 +153,7 @@
                                         
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="shipping_amount_{{ form_num }}">Shipping & Handling (CAD)</label>
+                                                <label for="shipping_amount_{{ form_num }}">Shipping & Handling (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="shipping_amount_{{ form_num }}" name="shipping_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})">
                                                 <small class="financial-help">Shipping, delivery, and handling fees</small>
                                             </div>
@@ -137,7 +161,7 @@
                                         
                                         <div class="form-row total-row">
                                             <div class="form-group">
-                                                <label for="total_amount_{{ form_num }}">Total Reimbursement Amount (CAD)</label>
+                                                <label for="total_amount_{{ form_num }}">Total Reimbursement Amount (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="total_amount_{{ form_num }}" name="total_amount_{{ form_num }}" readonly min="0" step="0.01" placeholder="0.00" class="total-field">
                                                 <small class="financial-help">Automatically calculated (Subtotal - Discount + Tax + Shipping)</small>
                                             </div>
@@ -209,11 +233,11 @@
                     <input type="number" name="item_quantity_${formNumber}_${itemCounts[formNumber]}" min="1" value="1" onchange="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
                 </div>
                 <div class="item-input-group">
-                    <label>Unit Price (CAD)</label>
+                    <label>Unit Price</label>
                     <input type="number" name="item_price_${formNumber}_${itemCounts[formNumber]}" min="0" step="0.01" placeholder="0.00" onchange="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
                 </div>
                 <div class="item-input-group">
-                    <label>Total (CAD)</label>
+                    <label>Total</label>
                     <input type="number" name="item_total_${formNumber}_${itemCounts[formNumber]}" readonly placeholder="0.00" class="total-field">
                 </div>
                 <div class="item-actions">
@@ -279,11 +303,68 @@
             document.getElementById(`total_amount_${formNumber}`).value = Math.max(0, total).toFixed(2);
         }
 
+        function updateCurrencyLabels(formNumber) {
+            const currencySelect = document.getElementById(`currency_${formNumber}`);
+            const selectedCurrency = currencySelect.value;
+            const currencyLabels = document.querySelectorAll(`.currency-label-${formNumber}`);
+            const proofOfPaymentSection = document.querySelector(`.proof-of-payment-section-${formNumber}`);
+            
+            currencyLabels.forEach(label => {
+                label.textContent = selectedCurrency;
+            });
+            
+            // Show/hide proof of payment section based on currency
+            if (selectedCurrency === 'USD') {
+                proofOfPaymentSection.style.display = 'block';
+                // Make proof of payment required for USD
+                const proofOfPaymentInput = document.getElementById(`proof_of_payment_${formNumber}`);
+                if (proofOfPaymentInput) {
+                    proofOfPaymentInput.required = true;
+                }
+            } else {
+                proofOfPaymentSection.style.display = 'none';
+                // Remove required attribute for non-USD currencies
+                const proofOfPaymentInput = document.getElementById(`proof_of_payment_${formNumber}`);
+                if (proofOfPaymentInput) {
+                    proofOfPaymentInput.required = false;
+                    proofOfPaymentInput.value = ''; // Clear the field
+                    // Reset filename display
+                    const filenameSpan = document.getElementById(`payment-filename-${formNumber}`);
+                    if (filenameSpan) {
+                        filenameSpan.textContent = 'No file chosen';
+                    }
+                }
+            }
+        }
+
+        function updateFileName(input, spanId) {
+            const filenameSpan = document.getElementById(spanId);
+            if (input.files && input.files[0]) {
+                filenameSpan.textContent = input.files[0].name;
+            } else {
+                filenameSpan.textContent = 'No file chosen';
+            }
+        }
+
         // Initialize all forms as collapsed
         document.addEventListener('DOMContentLoaded', function() {
             for (let i = 1; i <= 10; i++) {
                 const content = document.getElementById(`form-${i}`);
                 content.style.display = 'none';
+
+                // Initialize currency labels
+                updateCurrencyLabels(i);
+
+                // Initialize proof of payment section visibility
+                const proofOfPaymentSection = document.getElementById(`proof_of_payment_${i}`);
+                if (proofOfPaymentSection) {
+                    const currencySelect = document.getElementById(`currency_${i}`);
+                    if (currencySelect && currencySelect.value === 'USD') {
+                        proofOfPaymentSection.style.display = 'block';
+                    } else {
+                        proofOfPaymentSection.style.display = 'none';
+                    }
+                }
             }
         });
     </script>

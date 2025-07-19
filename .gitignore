@@ -45,5 +45,4 @@ Thumbs.db
 *.log
 
 # Generated files
-uploads/
-exports/
+sessions/

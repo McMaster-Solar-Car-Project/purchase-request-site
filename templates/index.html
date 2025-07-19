@@ -66,7 +66,11 @@
                 
                 <div class="form-group">
                     <label for="signature">Digital Signature</label>
-                    <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg,.gif,.pdf" required>
+                    <div class="custom-file-upload">
+                        <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg,.gif,.pdf" required onchange="updateFileName(this, 'signature-filename')">
+                        <span class="file-upload-btn">Choose File</span>
+                        <span class="file-name" id="signature-filename">No file chosen</span>
+                    </div>
                     <small class="file-help">Upload an image of your signature (PNG, JPG, GIF, or PDF format). This signature will apply to all your purchase requests.</small>
                 </div>
                 
@@ -95,5 +99,16 @@
         });
     </script>
     {% endif %}
+
+    <script>
+        function updateFileName(input, spanId) {
+            const filenameSpan = document.getElementById(spanId);
+            if (input.files && input.files[0]) {
+                filenameSpan.textContent = input.files[0].name;
+            } else {
+                filenameSpan.textContent = 'No file chosen';
+            }
+        }
+    </script>
 </body>
 </html> 

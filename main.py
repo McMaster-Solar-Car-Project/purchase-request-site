@@ -18,6 +18,7 @@ app = FastAPI(title="Purchase Request Site")
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Set up templates
@@ -40,6 +41,17 @@ async def home(request: Request, success: str = None):
         },
     )
 
+def create_session_folder(name):
+    """Create a unique session folder name with timestamp and user name"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_name = name.replace(' ', '_').lower()
+    session_folder = f"sessions/{timestamp}_{safe_name}"
+    
+    # Create the session directory if it doesn't exist
+    os.makedirs(session_folder, exist_ok=True)
+    
+    return session_folder
+
 @app.post("/submit-request")
 async def submit_request(
     request: Request,
@@ -50,22 +62,22 @@ async def submit_request(
     team: str = Form(...),
     signature: UploadFile = File(...),
 ):
-    # Save signature file
-    signature_extension = signature.filename.split('.')[-1] if '.' in signature.filename else 'png'
-    safe_signature_filename = f"signature_{name.replace(' ', '_').lower()}_{int(time.time())}.{signature_extension}"
-    signature_location = f"uploads/{safe_signature_filename}"
+    # Create session folder for this user
+    session_folder = create_session_folder(name)
     
-    # Create uploads directory if it doesn't exist
-    os.makedirs("uploads", exist_ok=True)
+    # Save signature file in session folder
+    signature_extension = signature.filename.split('.')[-1] if '.' in signature.filename else 'png'
+    signature_filename = f"signature.{signature_extension}"
+    signature_location = f"{session_folder}/{signature_filename}"
     
     # Save the signature file
     with open(signature_location, "wb") as file_object:
         content = await signature.read()
         file_object.write(content)
     
-    # Redirect to dashboard with user information including signature
+    # Redirect to dashboard with user information including session folder
     return RedirectResponse(
-        url=f"/dashboard?name={name}&email={email}&e_transfer_email={e_transfer_email}&address={address}&team={team}&signature={safe_signature_filename}",
+        url=f"/dashboard?name={name}&email={email}&e_transfer_email={e_transfer_email}&address={address}&team={team}&session_folder={session_folder}&signature={signature_filename}",
         status_code=303
     )
 
@@ -77,6 +89,7 @@ async def dashboard(
     e_transfer_email: str,
     address: str,
     team: str,
+    session_folder: str,
     signature: str,
 ):
     return templates.TemplateResponse(
@@ -89,12 +102,13 @@ async def dashboard(
             "e_transfer_email": e_transfer_email,
             "address": address,
             "team": team,
+            "session_folder": session_folder,
             "signature": signature,
         },
     )
 
-def create_excel_export(user_info, submitted_forms):
-    """Create an Excel file with all submitted form data"""
+def create_excel_export(user_info, submitted_forms, session_folder):
+    """Create an Excel file with all submitted form data in the session folder"""
     
     # Create a new workbook and select the active worksheet
     wb = Workbook()
@@ -139,7 +153,7 @@ def create_excel_export(user_info, submitted_forms):
     ws_summary['A11'].font = Font(bold=True, size=14)
     
     # Summary headers
-    summary_headers = ["Form #", "Vendor", "Total Amount (CAD)", "# of Items", "Invoice File"]
+    summary_headers = ["Form #", "Vendor", "Currency", "Total Amount", "# of Items", "Invoice File", "Proof of Payment"]
     for col, header in enumerate(summary_headers, 1):
         cell = ws_summary.cell(row=13, column=col, value=header)
         cell.font = header_font
@@ -151,9 +165,11 @@ def create_excel_export(user_info, submitted_forms):
     for i, form in enumerate(submitted_forms, 14):
         ws_summary.cell(row=i, column=1, value=form['form_number'])
         ws_summary.cell(row=i, column=2, value=form['vendor_name'])
-        ws_summary.cell(row=i, column=3, value=f"${form['total_amount']:.2f}")
-        ws_summary.cell(row=i, column=4, value=len(form['items']))
-        ws_summary.cell(row=i, column=5, value=form['invoice_filename'])
+        ws_summary.cell(row=i, column=3, value=form['currency'])
+        ws_summary.cell(row=i, column=4, value=f"${form['total_amount']:.2f} {form['currency']}")
+        ws_summary.cell(row=i, column=5, value=len(form['items']))
+        ws_summary.cell(row=i, column=6, value=form['invoice_filename'])
+        ws_summary.cell(row=i, column=7, value=form['proof_of_payment_filename'] or "N/A")
         total_overall += form['total_amount']
     
     # Total row
@@ -174,45 +190,55 @@ def create_excel_export(user_info, submitted_forms):
         ws_detail['A3'] = "Vendor/Store:"
         ws_detail['B3'] = form['vendor_name']
         
-        ws_detail['A4'] = "Invoice File:"
-        ws_detail['B4'] = form['invoice_filename']
+        ws_detail['A4'] = "Currency:"
+        ws_detail['B4'] = form['currency']
         
-        # Financial breakdown
-        ws_detail['A6'] = "FINANCIAL BREAKDOWN"
-        ws_detail['A6'].font = Font(bold=True, size=14)
+        ws_detail['A5'] = "Invoice File:"
+        ws_detail['B5'] = form['invoice_filename']
         
-        ws_detail['A7'] = "Subtotal:"
-        ws_detail['B7'] = f"${form['subtotal_amount']:.2f}"
+        # Add proof of payment info if exists
+        row_offset = 0
+        if form['proof_of_payment_filename']:
+            ws_detail['A6'] = "Proof of Payment:"
+            ws_detail['B6'] = form['proof_of_payment_filename']
+            row_offset = 1
         
-        ws_detail['A8'] = "Discount:"
-        ws_detail['B8'] = f"-${form['discount_amount']:.2f}"
+        # Financial breakdown (adjust row numbers based on proof of payment)
+        ws_detail[f'A{7 + row_offset}'] = "FINANCIAL BREAKDOWN"
+        ws_detail[f'A{7 + row_offset}'].font = Font(bold=True, size=14)
         
-        ws_detail['A9'] = "HST/GST:"
-        ws_detail['B9'] = f"${form['hst_gst_amount']:.2f}"
+        ws_detail[f'A{8 + row_offset}'] = "Subtotal:"
+        ws_detail[f'B{8 + row_offset}'] = f"${form['subtotal_amount']:.2f} {form['currency']}"
         
-        ws_detail['A10'] = "Shipping:"
-        ws_detail['B10'] = f"${form['shipping_amount']:.2f}"
+        ws_detail[f'A{9 + row_offset}'] = "Discount:"
+        ws_detail[f'B{9 + row_offset}'] = f"-${form['discount_amount']:.2f} {form['currency']}"
         
-        ws_detail['A11'] = "TOTAL:"
-        ws_detail['A11'].font = Font(bold=True)
-        ws_detail['B11'] = f"${form['total_amount']:.2f}"
-        ws_detail['B11'].font = Font(bold=True)
+        ws_detail[f'A{10 + row_offset}'] = "HST/GST:"
+        ws_detail[f'B{10 + row_offset}'] = f"${form['hst_gst_amount']:.2f} {form['currency']}"
+        
+        ws_detail[f'A{11 + row_offset}'] = "Shipping:"
+        ws_detail[f'B{11 + row_offset}'] = f"${form['shipping_amount']:.2f} {form['currency']}"
+        
+        ws_detail[f'A{12 + row_offset}'] = "TOTAL:"
+        ws_detail[f'A{12 + row_offset}'].font = Font(bold=True)
+        ws_detail[f'B{12 + row_offset}'] = f"${form['total_amount']:.2f} {form['currency']}"
+        ws_detail[f'B{12 + row_offset}'].font = Font(bold=True)
         
         # Items section
-        ws_detail['A13'] = "ITEMS PURCHASED"
-        ws_detail['A13'].font = Font(bold=True, size=14)
+        ws_detail[f'A{14 + row_offset}'] = "ITEMS PURCHASED"
+        ws_detail[f'A{14 + row_offset}'].font = Font(bold=True, size=14)
         
         # Item headers
-        item_headers = ["Item #", "Item Name", "Usage/Purpose", "Quantity", "Unit Price (CAD)", "Total (CAD)"]
+        item_headers = ["Item #", "Item Name", "Usage/Purpose", "Quantity", f"Unit Price ({form['currency']})", f"Total ({form['currency']})"]
         for col, header in enumerate(item_headers, 1):
-            cell = ws_detail.cell(row=15, column=col, value=header)
+            cell = ws_detail.cell(row=16 + row_offset, column=col, value=header)
             cell.font = header_font
             cell.fill = header_fill
             cell.alignment = header_alignment
         
         # Item data
-        for i, item in enumerate(form['items'], 16):
-            ws_detail.cell(row=i, column=1, value=i-15)
+        for i, item in enumerate(form['items'], 17 + row_offset):
+            ws_detail.cell(row=i, column=1, value=i - (16 + row_offset))
             ws_detail.cell(row=i, column=2, value=item['name'])
             ws_detail.cell(row=i, column=3, value=item['usage'])
             ws_detail.cell(row=i, column=4, value=item['quantity'])
@@ -229,14 +255,9 @@ def create_excel_export(user_info, submitted_forms):
         column_letter = get_column_letter(col)
         ws_summary.column_dimensions[column_letter].width = 20
     
-    # Generate filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    safe_name = user_info['name'].replace(' ', '_').lower()
-    filename = f"purchase_requests_{safe_name}_{timestamp}.xlsx"
-    filepath = f"exports/{filename}"
-    
-    # Create exports directory if it doesn't exist
-    os.makedirs("exports", exist_ok=True)
+    # Save Excel file in session folder
+    filename = "purchase_requests.xlsx"
+    filepath = f"{session_folder}/{filename}"
     
     # Save the workbook
     wb.save(filepath)
@@ -254,6 +275,7 @@ async def submit_all_requests(request: Request):
     e_transfer_email = form_data.get("e_transfer_email")
     address = form_data.get("address")
     team = form_data.get("team")
+    session_folder = form_data.get("session_folder")
     signature_filename = form_data.get("signature")
     
     submitted_forms = []
@@ -262,9 +284,16 @@ async def submit_all_requests(request: Request):
     for form_num in range(1, 11):
         vendor_name = form_data.get(f"vendor_name_{form_num}")
         invoice_file = form_data.get(f"invoice_file_{form_num}")
+        proof_of_payment_file = form_data.get(f"proof_of_payment_{form_num}")
+        currency = form_data.get(f"currency_{form_num}", "CAD")  # Default to CAD if not specified
         
         # Skip empty forms (no vendor name or invoice)
         if not vendor_name or not invoice_file or not hasattr(invoice_file, 'filename'):
+            continue
+        
+        # For USD purchases, proof of payment is required
+        if currency == "USD" and (not proof_of_payment_file or not hasattr(proof_of_payment_file, 'filename')):
+            print(f"Warning: Form {form_num} in USD currency missing proof of payment - skipping")
             continue
             
         # Extract financial data
@@ -302,24 +331,38 @@ async def submit_all_requests(request: Request):
         if not items:
             continue
             
-        # Save uploaded file with form number in filename
-        safe_filename = f"form_{form_num}_{invoice_file.filename.replace(' ', '_')}"
-        file_location = f"uploads/{safe_filename}"
+        # Save uploaded invoice file in session folder
+        invoice_extension = invoice_file.filename.split('.')[-1] if '.' in invoice_file.filename else 'pdf'
+        invoice_filename = f"form_{form_num}_invoice.{invoice_extension}"
+        invoice_file_location = f"{session_folder}/{invoice_filename}"
         
-        # Create uploads directory if it doesn't exist
-        os.makedirs("uploads", exist_ok=True)
-        
-        # Save the file
-        with open(file_location, "wb") as file_object:
+        # Save the invoice file
+        with open(invoice_file_location, "wb") as file_object:
             content = await invoice_file.read()
             file_object.write(content)
+        
+        # Save proof of payment file if provided (required for USD)
+        proof_of_payment_filename = None
+        proof_of_payment_location = None
+        if proof_of_payment_file and hasattr(proof_of_payment_file, 'filename'):
+            payment_extension = proof_of_payment_file.filename.split('.')[-1] if '.' in proof_of_payment_file.filename else 'pdf'
+            proof_of_payment_filename = f"form_{form_num}_proof_of_payment.{payment_extension}"
+            proof_of_payment_location = f"{session_folder}/{proof_of_payment_filename}"
+            
+            # Save the proof of payment file
+            with open(proof_of_payment_location, "wb") as file_object:
+                content = await proof_of_payment_file.read()
+                file_object.write(content)
         
         # Store form data
         form_submission = {
             "form_number": form_num,
             "vendor_name": vendor_name,
-            "invoice_filename": safe_filename,
-            "file_location": file_location,
+            "currency": currency,
+            "invoice_filename": invoice_filename,
+            "invoice_file_location": invoice_file_location,
+            "proof_of_payment_filename": proof_of_payment_filename,
+            "proof_of_payment_location": proof_of_payment_location,
             "subtotal_amount": subtotal_amount,
             "discount_amount": discount_amount,
             "hst_gst_amount": hst_gst_amount,
@@ -332,7 +375,7 @@ async def submit_all_requests(request: Request):
     
     # Print all submitted forms
     if submitted_forms:
-        # Create Excel export
+        # Create Excel export in session folder
         user_info = {
             'name': name,
             'email': email,
@@ -342,7 +385,7 @@ async def submit_all_requests(request: Request):
             'signature': signature_filename
         }
         
-        excel_filename, excel_filepath = create_excel_export(user_info, submitted_forms)
+        excel_filename, excel_filepath = create_excel_export(user_info, submitted_forms, session_folder)
         
         print(f"Bulk submission received from:")
         print(f"Name: {name}")
@@ -350,7 +393,8 @@ async def submit_all_requests(request: Request):
         print(f"E-Transfer Email: {e_transfer_email}")
         print(f"Address: {address}")
         print(f"Team: {team}")
-        print(f"Digital Signature: {signature_filename} (saved to uploads/{signature_filename})")
+        print(f"Session Folder: {session_folder}")
+        print(f"Digital Signature: {signature_filename} (saved to {session_folder}/{signature_filename})")
         print(f"Excel Export: {excel_filename} (saved to {excel_filepath})")
         print(f"")
         print(f"Number of forms submitted: {len(submitted_forms)}")
@@ -359,20 +403,23 @@ async def submit_all_requests(request: Request):
         for form in submitted_forms:
             print(f"Purchase Request #{form['form_number']}:")
             print(f"  Vendor: {form['vendor_name']}")
-            print(f"  Invoice File: {form['invoice_filename']} (saved to {form['file_location']})")
+            print(f"  Currency: {form['currency']}")
+            print(f"  Invoice File: {form['invoice_filename']} (saved to {form['invoice_file_location']})")
+            if form['proof_of_payment_filename']:
+                print(f"  Proof of Payment: {form['proof_of_payment_filename']} (saved to {form['proof_of_payment_location']})")
             print(f"  Financial Breakdown:")
-            print(f"    Subtotal: ${form['subtotal_amount']:.2f} CAD")
-            print(f"    Discount: -${form['discount_amount']:.2f} CAD")
-            print(f"    HST/GST: ${form['hst_gst_amount']:.2f} CAD")
-            print(f"    Shipping: ${form['shipping_amount']:.2f} CAD")
-            print(f"    Total Amount: ${form['total_amount']:.2f} CAD")
+            print(f"    Subtotal: ${form['subtotal_amount']:.2f} {form['currency']}")
+            print(f"    Discount: -${form['discount_amount']:.2f} {form['currency']}")
+            print(f"    HST/GST: ${form['hst_gst_amount']:.2f} {form['currency']}")
+            print(f"    Shipping: ${form['shipping_amount']:.2f} {form['currency']}")
+            print(f"    Total Amount: ${form['total_amount']:.2f} {form['currency']}")
             print(f"  Items:")
             for i, item in enumerate(form['items'], 1):
                 print(f"    {i}. {item['name']}")
                 print(f"       Usage: {item['usage']}")
                 print(f"       Quantity: {item['quantity']}")
-                print(f"       Unit Price: ${item['unit_price']:.2f}")
-                print(f"       Total: ${item['total']:.2f}")
+                print(f"       Unit Price: ${item['unit_price']:.2f} {form['currency']}")
+                print(f"       Total: ${item['total']:.2f} {form['currency']}")
             print("-" * 40)
         
         print("=" * 60)
