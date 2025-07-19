@@ -1,6 +1,7 @@
 import os
 import time
 from datetime import datetime
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -14,12 +15,28 @@ from openpyxl.utils import get_column_letter
 # Load environment variables
 load_dotenv()
 
-app = FastAPI(title="Purchase Request Site")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager - runs on startup and shutdown"""
+    # Startup: Create required directories
+    required_dirs = ["sessions", "static", "templates"]
+    
+    for directory in required_dirs:
+        os.makedirs(directory, exist_ok=True)
+        print(f"✓ Ensured directory exists: {directory}/")
+    
+    print("🚀 Application startup complete - all directories ready!")
+    
+    yield  # Application runs here
+    
+    # Shutdown: Cleanup code would go here if needed
+    print("👋 Application shutting down...")
+
+app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Set up templates
 templates = Jinja2Templates(directory="templates")
