@@ -146,9 +146,9 @@
                                         
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="hst_gst_amount_{{ form_num }}"><span class="tax-label-{{ form_num }}">HST/GST</span> (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="hst_gst_amount_{{ form_num }}" name="hst_gst_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})">
-                                                <small class="financial-help tax-help-{{ form_num }}">Harmonized Sales Tax / Goods and Services Tax</small>
+                                                <label for="hst_gst_amount_{{ form_num }}"><span class="tax-label-{{ form_num }}">HST/GST</span> (<span class="currency-label-{{ form_num }}">CAD</span>) *</label>
+                                                <input type="number" id="hst_gst_amount_{{ form_num }}" name="hst_gst_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})" required>
+                                                <small class="financial-help tax-help-{{ form_num }}">Harmonized Sales Tax / Goods and Services Tax (required for CAD purchases)</small>
                                             </div>
                                         </div>
                                         
@@ -332,18 +332,26 @@
             const proofOfPaymentSection = document.querySelector(`.proof-of-payment-section-${formNumber}`);
             const cadBreakdown = document.querySelector(`.cad-breakdown-${formNumber}`);
             const usdBreakdown = document.querySelector(`.usd-breakdown-${formNumber}`);
+            const hstGstInput = document.getElementById(`hst_gst_amount_${formNumber}`);
+            const hstGstLabel = document.querySelector(`label[for="hst_gst_amount_${formNumber}"]`);
             
             currencyLabels.forEach(label => {
                 label.textContent = selectedCurrency;
             });
             
-            // Update tax labels based on currency
+            // Update tax labels and requirements based on currency
             if (selectedCurrency === 'USD') {
                 taxLabels.forEach(label => {
                     label.textContent = 'Taxes';
                 });
                 if (taxHelp) {
-                    taxHelp.textContent = 'Sales tax, state tax, or other applicable taxes';
+                    taxHelp.textContent = 'Sales tax, state tax, or other applicable taxes (not required for USD)';
+                }
+                if (hstGstInput) {
+                    hstGstInput.removeAttribute('required');
+                }
+                if (hstGstLabel) {
+                    hstGstLabel.innerHTML = `<span class="tax-label-${formNumber}">Taxes</span> (<span class="currency-label-${formNumber}">USD</span>)`;
                 }
                 
                 // Show USD breakdown, hide CAD breakdown
@@ -355,7 +363,13 @@
                     label.textContent = 'HST/GST';
                 });
                 if (taxHelp) {
-                    taxHelp.textContent = 'Harmonized Sales Tax / Goods and Services Tax';
+                    taxHelp.textContent = 'Harmonized Sales Tax / Goods and Services Tax (required for CAD purchases)';
+                }
+                if (hstGstInput) {
+                    hstGstInput.setAttribute('required', 'required');
+                }
+                if (hstGstLabel) {
+                    hstGstLabel.innerHTML = `<span class="tax-label-${formNumber}">HST/GST</span> (<span class="currency-label-${formNumber}">CAD</span>) *`;
                 }
                 
                 // Show CAD breakdown, hide USD breakdown
