@@ -2,43 +2,73 @@
 let autocomplete;
 
 function initAutocomplete() {
-    // Create the autocomplete object
-    autocomplete = new google.maps.places.Autocomplete(
-        document.getElementById('address'),
-        {
-            types: ['address'],
-            componentRestrictions: {'country': ['ca', 'us']}, // Restrict to Canada and US
-        }
-    );
+    console.log('Initializing Google Places Autocomplete...');
     
-    // When the user selects an address from the dropdown, populate the address field
-    autocomplete.addListener('place_changed', function() {
-        const place = autocomplete.getPlace();
+    // Check if Google Maps API is loaded
+    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        console.error('Google Maps API not loaded');
+        showFallback();
+        return;
+    }
+    
+    // Check if the address input exists
+    const addressInput = document.getElementById('address');
+    if (!addressInput) {
+        console.error('Address input field not found');
+        return;
+    }
+    
+    try {
+        // Create the autocomplete object
+        autocomplete = new google.maps.places.Autocomplete(
+            addressInput,
+            {
+                types: ['address'],
+                componentRestrictions: {'country': ['ca', 'us']}, // Restrict to Canada and US
+                fields: ['formatted_address', 'geometry', 'address_components']
+            }
+        );
         
-        if (!place.geometry) {
-            // User entered the name of a Place that was not suggested and
-            // pressed the Enter key, or the Place Details request failed.
-            console.log("No details available for input: '" + place.name + "'");
-            return;
-        }
+        // When the user selects an address from the dropdown, populate the address field
+        autocomplete.addListener('place_changed', function() {
+            const place = autocomplete.getPlace();
+            
+            if (!place.geometry) {
+                // User entered the name of a Place that was not suggested and
+                // pressed the Enter key, or the Place Details request failed.
+                console.log("No details available for input: '" + place.name + "'");
+                return;
+            }
+            
+            // Get the formatted address
+            addressInput.value = place.formatted_address;
+            console.log('Address selected:', place.formatted_address);
+            
+            // Optional: You can extract individual address components
+            // const addressComponents = place.address_components;
+            // console.log('Address components:', addressComponents);
+        });
         
-        // Get the formatted address
-        document.getElementById('address').value = place.formatted_address;
+        console.log('Google Places Autocomplete initialized successfully');
         
-        // Optional: You can extract individual address components
-        // const addressComponents = place.address_components;
-        // console.log('Address components:', addressComponents);
-    });
+    } catch (error) {
+        console.error('Error initializing autocomplete:', error);
+        showFallback();
+    }
 }
 
-// Fallback if Google Maps API fails to load
+function showFallback() {
+    const helpText = document.querySelector('.address-help');
+    if (helpText) {
+        helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
+        helpText.style.color = '#dc3545';
+    }
+}
+
+// Fallback if Google Maps API fails to load within 10 seconds
 window.setTimeout(function() {
     if (typeof google === 'undefined') {
-        console.log('Google Maps API failed to load. Address autocomplete disabled.');
-        const helpText = document.querySelector('.address-help');
-        if (helpText) {
-            helpText.textContent = 'Please enter your full address manually.';
-            helpText.style.color = '#dc3545';
-        }
+        console.log('Google Maps API failed to load within 10 seconds. Address autocomplete disabled.');
+        showFallback();
     }
-}, 5000); 
+}, 10000); 

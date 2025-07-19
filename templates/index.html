@@ -9,7 +9,6 @@
 <body>
     <div class="container">
         <h1>{{ heading }}</h1>
-        <p class="subtitle">Streamline your procurement process with our easy-to-use request system</p>
         
         {% if success_message %}
         <div class="success-message">
@@ -19,69 +18,78 @@
         
         <div class="form-section">
             <h2>Your Information</h2>
-            
-            <form method="POST" action="/submit-request">
+            <form method="POST" action="/submit-request" enctype="multipart/form-data">
                 <div class="form-group">
-                    <label for="name">Full Legal Name *</label>
-                    <input type="text" id="name" name="name" required>
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required placeholder="Enter your full name">
                 </div>
                 
                 <div class="form-group">
-                    <label for="email">McMaster Email Address *</label>
-                    <input type="email" id="email" name="email" required>
+                    <label for="email">McMaster Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="your.email@mcmaster.ca">
                 </div>
                 
                 <div class="form-group">
-                    <label for="e_transfer_email">E-Transfer Email *</label>
-                    <input type="email" id="e_transfer_email" name="e_transfer_email" required placeholder="Enter E-transfer email address">
+                    <label for="e_transfer_email">E-Transfer Email Address</label>
+                    <input type="email" id="e_transfer_email" name="e_transfer_email" required placeholder="email@example.com">
+                    <small class="address-help">Email address where you'd like to receive the reimbursement e-transfer</small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="address">Address *</label>
+                    <label for="address">Address</label>
                     <input type="text" id="address" name="address" required placeholder="Start typing your address...">
-                    <small class="address-help">Start typing and select from the suggestions for accurate address validation</small>
+                    <small class="address-help">Start typing and we'll help you find your complete address</small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="team">Team *</label>
+                    <label for="team">Team/Department</label>
                     <select id="team" name="team" required>
-                        <option value="">Please select your team</option>
-                        <option value="Aeroshell">Aeroshell</option>
-                        <option value="Battery">Battery</option>
-                        <option value="Chassis">Chassis</option>
-                        <option value="Data Acquisition">Data Acquisition</option>
-                        <option value="Firmware">Firmware</option>
-                        <option value="Management">Management</option>
-                        <option value="Media">Media</option>
-                        <option value="Power Management Systems">Power Management Systems</option>
+                        <option value="">Select your team</option>
                         <option value="Solar Cells">Solar Cells</option>
-                        <option value="Strategies">Strategies</option>
-                        <option value="Suspension">Suspension</option>
+                        <option value="Fuel Cells">Fuel Cells</option>
+                        <option value="Batteries">Batteries</option>
+                        <option value="Supercapacitors">Supercapacitors</option>
+                        <option value="Materials Science">Materials Science</option>
+                        <option value="Electrochemistry">Electrochemistry</option>
+                        <option value="Nanotechnology">Nanotechnology</option>
+                        <option value="Energy Storage">Energy Storage</option>
+                        <option value="Renewable Energy">Renewable Energy</option>
+                        <option value="Chemical Engineering">Chemical Engineering</option>
+                        <option value="Electrical Engineering">Electrical Engineering</option>
+                        <option value="Mechanical Engineering">Mechanical Engineering</option>
+                        <option value="Administration">Administration</option>
+                        <option value="IT Support">IT Support</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <button type="submit" class="btn">Continue to Purchase Requests</button>
+                    <label for="signature">Digital Signature</label>
+                    <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg,.gif,.pdf" required>
+                    <small class="file-help">Upload an image of your signature (PNG, JPG, GIF, or PDF format). This signature will apply to all your purchase requests.</small>
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit" class="btn">Continue to Dashboard</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Load Google Places API and autocomplete script -->
     {% if google_api_key %}
-    <!-- Google Places API -->
+    <script src="{{ url_for('static', path='/js/address-autocomplete.js') }}"></script>
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key={{ google_api_key }}&libraries=places&callback=initAutocomplete">
     </script>
-    
-    <!-- Address autocomplete functionality -->
-    <script src="{{ url_for('static', path='/js/address-autocomplete.js') }}"></script>
     {% else %}
     <script>
         // Fallback when no API key is available
         document.addEventListener('DOMContentLoaded', function() {
             const helpText = document.querySelector('.address-help');
             if (helpText) {
-                helpText.textContent = 'Please enter your full address manually.';
+                helpText.textContent = 'Please enter your full address manually. (Google Places API key not configured)';
                 helpText.style.color = '#dc3545';
             }
         });

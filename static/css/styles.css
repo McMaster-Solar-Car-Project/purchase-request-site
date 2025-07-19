@@ -154,6 +154,28 @@ h1 {
     color: #495057;
 }
 
+/* Signature display */
+.signature-display {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #dee2e6;
+}
+
+.signature-display p {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.signature-image {
+    max-width: 200px;
+    max-height: 100px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 5px;
+    background-color: white;
+    object-fit: contain;
+}
+
 /* Items section */
 .items-section {
     margin: 30px 0;
@@ -388,7 +410,7 @@ h1 {
 .btn-secondary {
     background-color: #6c757d;
     color: white;
-    padding: 12px 24px;
+    padding: 12px 0px;
     border: none;
     border-radius: 4px;
     cursor: pointer;

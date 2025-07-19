@@ -16,6 +16,10 @@
                 <p><strong>Name:</strong> {{ name }}</p>
                 <p><strong>Team:</strong> {{ team }}</p>
                 <p><strong>McMaster Email:</strong> {{ email }}</p>
+                <div class="signature-display">
+                    <p><strong>Digital Signature:</strong></p>
+                    <img src="/uploads/{{ signature }}" alt="Digital Signature" class="signature-image">
+                </div>
             </div>
         </div>
         
@@ -32,6 +36,7 @@
             <input type="hidden" name="e_transfer_email" value="{{ e_transfer_email }}">
             <input type="hidden" name="address" value="{{ address }}">
             <input type="hidden" name="team" value="{{ team }}">
+            <input type="hidden" name="signature" value="{{ signature }}">
             
             <div class="dashboard-section">
                 <h2>Your Purchase Request Forms</h2>
