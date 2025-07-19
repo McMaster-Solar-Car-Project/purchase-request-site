@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
 from typing import List, Optional
 from data_processing import create_excel_report
+from image_processing import convert_signature_to_png, crop_signature
 
 # Load environment variables
 load_dotenv()
@@ -84,14 +85,55 @@ async def submit_request(
     signature_filename = f"signature.{signature_extension}"
     signature_location = f"{session_folder}/{signature_filename}"
     
-    # Save the signature file
+    # Save the original signature file first
     with open(signature_location, "wb") as file_object:
         content = await signature.read()
         file_object.write(content)
     
+    # Convert signature to PNG format
+    png_signature_filename = "signature.png"
+    png_signature_location = f"{session_folder}/{png_signature_filename}"
+    
+    if convert_signature_to_png(signature_location, png_signature_location):
+        # Crop the converted PNG to remove any remaining whitespace
+        cropped_signature_filename = "signature_cropped.png"
+        cropped_signature_location = f"{session_folder}/{cropped_signature_filename}"
+        
+        cropped_path = crop_signature(png_signature_location, cropped_signature_location)
+        
+        if cropped_path:
+            # Use the cropped version
+            final_signature_filename = cropped_signature_filename
+            print(f"Signature cropped and optimized: {cropped_signature_location}")
+            
+            # Remove the uncropped PNG to save space
+            try:
+                os.remove(png_signature_location)
+                print(f"Uncropped PNG removed: {png_signature_location}")
+            except Exception as e:
+                print(f"Could not remove uncropped PNG: {e}")
+        else:
+            # Cropping failed, use the regular PNG
+            final_signature_filename = png_signature_filename
+            print(f"Signature cropping failed, using converted PNG: {png_signature_location}")
+        
+        print(f"Signature converted to PNG: {png_signature_location}")
+        
+        # Optionally remove the original file if conversion was successful
+        if signature_extension.lower() != 'png':
+            try:
+                os.remove(signature_location)
+                print(f"Original signature file removed: {signature_location}")
+            except Exception as e:
+                print(f"Could not remove original signature file: {e}")
+    else:
+        # Fall back to original file if conversion failed
+        final_signature_filename = signature_filename
+        print(f"Signature conversion failed, using original: {signature_location}")
+    
     # Redirect to dashboard with user information including session folder
     return RedirectResponse(
-        url=f"/dashboard?name={name}&email={email}&e_transfer_email={e_transfer_email}&address={address}&team={team}&session_folder={session_folder}&signature={signature_filename}",
+        url=f"/dashboard?name={name}&email={email}&e_transfer_email={e_transfer_email}&address={address}&team={team}&session_folder={session_folder}&signature={final_signature_filename}",
         status_code=303
     )
 

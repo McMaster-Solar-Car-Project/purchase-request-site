@@ -4,6 +4,7 @@ from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.utils import get_column_letter
+from image_processing import insert_signature_into_worksheet
 
 def create_excel_report(user_info, submitted_forms, session_folder):
     """Create Excel file using the template with multiple tabs for each submitted form"""
@@ -103,12 +104,12 @@ def create_excel_report(user_info, submitted_forms, session_folder):
         # F19: Total
         ws['F19'] = form['total_amount']
         
-        # E20 & F20: Conversion Rate (only for USD)
+        # C7 & D7: Conversion Rate (only for USD)
         if form['currency'] == 'USD':
-            # E20: Conversion Rate label
-            ws['E20'] = 'Conversion Rate'
+            # C7: Conversion Rate label
+            ws['C7'] = 'Conversion Rate'
             
-            # F20: Calculate conversion rate = Canadian Total / (USD Subtotal + USD Taxes)
+            # D7: Calculate conversion rate = Canadian Total / (USD Subtotal + USD Taxes)
             usd_subtotal = sum(item['total'] for item in form['items'])
             usd_taxes = form['hst_gst_amount']  # This contains USD taxes for USD forms
             usd_total = usd_subtotal + usd_taxes
@@ -116,9 +117,12 @@ def create_excel_report(user_info, submitted_forms, session_folder):
             
             if usd_total > 0:  # Avoid division by zero
                 conversion_rate = canadian_total / usd_total
-                ws['F20'] = round(conversion_rate, 4)  # Round to 4 decimal places
+                ws['D7'] = round(conversion_rate, 4)  # Round to 4 decimal places
             else:
-                ws['F20'] = 0
+                ws['D7'] = 0
+        
+        # Insert signature image
+        insert_signature_into_worksheet(ws, user_info, form, session_folder)
     
     # Save the modified workbook
     wb.save(output_path)
