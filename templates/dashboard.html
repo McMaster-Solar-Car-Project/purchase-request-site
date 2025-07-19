@@ -102,11 +102,11 @@
                                             </div>
                                             <div class="item-input-group">
                                                 <label>Quantity</label>
-                                                <input type="number" name="item_quantity_{{ form_num }}_1" min="1" value="1" onchange="calculateItemTotal({{ form_num }}, 1)">
+                                                <input type="number" name="item_quantity_{{ form_num }}_1" min="1" value="1" oninput="calculateItemTotal({{ form_num }}, 1)">
                                             </div>
                                             <div class="item-input-group">
                                                 <label>Unit Price</label>
-                                                <input type="number" name="item_price_{{ form_num }}_1" min="0" step="0.01" placeholder="0.00" onchange="calculateItemTotal({{ form_num }}, 1)">
+                                                <input type="number" name="item_price_{{ form_num }}_1" min="0" step="0.01" placeholder="0.00" oninput="calculateItemTotal({{ form_num }}, 1)">
                                             </div>
                                             <div class="item-input-group">
                                                 <label>Total</label>
@@ -139,7 +139,7 @@
                                         <div class="form-row">
                                             <div class="form-group">
                                                 <label for="discount_amount_{{ form_num }}">Discount (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="discount_amount_{{ form_num }}" name="discount_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})">
+                                                <input type="number" id="discount_amount_{{ form_num }}" name="discount_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
                                                 <small class="financial-help">Coupons, promotional discounts, or rebates</small>
                                             </div>
                                         </div>
@@ -147,7 +147,7 @@
                                         <div class="form-row">
                                             <div class="form-group">
                                                 <label for="hst_gst_amount_{{ form_num }}"><span class="tax-label-{{ form_num }}">HST/GST</span> (<span class="currency-label-{{ form_num }}">CAD</span>) <span class="required-indicator-{{ form_num }}"></span></label>
-                                                <input type="number" id="hst_gst_amount_{{ form_num }}" name="hst_gst_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})">
+                                                <input type="number" id="hst_gst_amount_{{ form_num }}" name="hst_gst_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
                                                 <small class="financial-help tax-help-{{ form_num }}">Harmonized Sales Tax / Goods and Services Tax</small>
                                             </div>
                                         </div>
@@ -155,7 +155,7 @@
                                         <div class="form-row">
                                             <div class="form-group">
                                                 <label for="shipping_amount_{{ form_num }}">Shipping & Handling (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="shipping_amount_{{ form_num }}" name="shipping_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})">
+                                                <input type="number" id="shipping_amount_{{ form_num }}" name="shipping_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
                                                 <small class="financial-help">Shipping, delivery, and handling fees</small>
                                             </div>
                                         </div>
@@ -250,11 +250,11 @@
                 </div>
                 <div class="item-input-group">
                     <label>Quantity</label>
-                    <input type="number" name="item_quantity_${formNumber}_${itemCounts[formNumber]}" min="1" value="1" onchange="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
+                    <input type="number" name="item_quantity_${formNumber}_${itemCounts[formNumber]}" min="1" value="1" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
                 </div>
                 <div class="item-input-group">
                     <label>Unit Price</label>
-                    <input type="number" name="item_price_${formNumber}_${itemCounts[formNumber]}" min="0" step="0.01" placeholder="0.00" onchange="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
+                    <input type="number" name="item_price_${formNumber}_${itemCounts[formNumber]}" min="0" step="0.01" placeholder="0.00" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
                 </div>
                 <div class="item-input-group">
                     <label>Total</label>
@@ -285,9 +285,12 @@
         }
 
         function calculateItemTotal(formNumber, itemNumber) {
+            console.log(`calculateItemTotal called: Form ${formNumber}, Item ${itemNumber}`);
             const quantityInput = document.querySelector(`input[name="item_quantity_${formNumber}_${itemNumber}"]`);
             const priceInput = document.querySelector(`input[name="item_price_${formNumber}_${itemNumber}"]`);
             const totalInput = document.querySelector(`input[name="item_total_${formNumber}_${itemNumber}"]`);
+            
+            console.log(`Found inputs: quantity=${quantityInput ? quantityInput.value : 'null'}, price=${priceInput ? priceInput.value : 'null'}, total=${totalInput ? 'found' : 'null'}`);
             
             if (quantityInput && priceInput && totalInput) {
                 const quantity = parseFloat(quantityInput.value) || 0;
@@ -295,7 +298,10 @@
                 const total = quantity * price;
                 
                 totalInput.value = total.toFixed(2);
+                console.log(`Form ${formNumber}, Item ${itemNumber}: ${quantity} x ${price} = ${total}`);
                 calculateSubtotal(formNumber);
+            } else {
+                console.log(`Missing inputs for Form ${formNumber}, Item ${itemNumber}`);
             }
         }
 
@@ -309,7 +315,13 @@
                 subtotal += value;
             });
             
-            document.getElementById(`subtotal_amount_${formNumber}`).value = subtotal.toFixed(2);
+            // Always update the subtotal field (even if hidden for USD)
+            const subtotalField = document.getElementById(`subtotal_amount_${formNumber}`);
+            if (subtotalField) {
+                subtotalField.value = subtotal.toFixed(2);
+            }
+            
+            console.log(`Form ${formNumber} subtotal calculated: ${subtotal}`);
             updateHstRequirement(formNumber, subtotal);
             calculateFinalTotal(formNumber);
         }
@@ -345,6 +357,7 @@
             
             const total = subtotal - discount + hstGst + shipping;
             document.getElementById(`total_amount_${formNumber}`).value = Math.max(0, total).toFixed(2);
+            console.log(`Form ${formNumber} final total: ${subtotal} - ${discount} + ${hstGst} + ${shipping} = ${total}`);
         }
 
         function updateCurrencyLabels(formNumber) {

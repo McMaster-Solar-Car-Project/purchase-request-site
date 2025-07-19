@@ -8,15 +8,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
 from typing import List, Optional
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill
-from openpyxl.utils import get_column_letter
+from data_processing import create_excel_report
 
 # Load environment variables
 load_dotenv()
 
 # Create required directories immediately (before mounting static files)
-required_dirs = ["sessions", "static", "templates"]
+required_dirs = ["sessions", "static", "templates", "excel_templates"]
 for directory in required_dirs:
     os.makedirs(directory, exist_ok=True)
 
@@ -123,185 +121,6 @@ async def dashboard(
         },
     )
 
-def create_excel_export(user_info, submitted_forms, session_folder):
-    """Create an Excel file with all submitted form data in the session folder"""
-    
-    # Create a new workbook and select the active worksheet
-    wb = Workbook()
-    
-    # Create Summary sheet
-    ws_summary = wb.active
-    ws_summary.title = "Summary"
-    
-    # Header style
-    header_font = Font(bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-    header_alignment = Alignment(horizontal="center", vertical="center")
-    
-    # User Information Section
-    ws_summary['A1'] = "PURCHASE REQUEST SUBMISSION SUMMARY"
-    ws_summary['A1'].font = Font(bold=True, size=16)
-    ws_summary.merge_cells('A1:G1')
-    
-    ws_summary['A3'] = "Submission Date:"
-    ws_summary['B3'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    ws_summary['A4'] = "Submitter Name:"
-    ws_summary['B4'] = user_info['name']
-    
-    ws_summary['A5'] = "McMaster Email:"
-    ws_summary['B5'] = user_info['email']
-    
-    ws_summary['A6'] = "E-Transfer Email:"
-    ws_summary['B6'] = user_info['e_transfer_email']
-    
-    ws_summary['A7'] = "Address:"
-    ws_summary['B7'] = user_info['address']
-    
-    ws_summary['A8'] = "Team/Department:"
-    ws_summary['B8'] = user_info['team']
-    
-    ws_summary['A9'] = "Digital Signature:"
-    ws_summary['B9'] = user_info['signature']
-    
-    # Forms Summary Section
-    ws_summary['A11'] = "FORMS SUBMITTED"
-    ws_summary['A11'].font = Font(bold=True, size=14)
-    
-    # Summary headers
-    summary_headers = ["Form #", "Vendor", "Currency", "Total Amount", "# of Items", "Invoice File", "Proof of Payment"]
-    for col, header in enumerate(summary_headers, 1):
-        cell = ws_summary.cell(row=13, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = header_alignment
-    
-    # Summary data
-    total_overall = 0
-    for i, form in enumerate(submitted_forms, 14):
-        ws_summary.cell(row=i, column=1, value=form['form_number'])
-        ws_summary.cell(row=i, column=2, value=form['vendor_name'])
-        ws_summary.cell(row=i, column=3, value=form['currency'])
-        ws_summary.cell(row=i, column=4, value=f"${form['total_amount']:.2f} {form['currency']}")
-        ws_summary.cell(row=i, column=5, value=len(form['items']))
-        ws_summary.cell(row=i, column=6, value=form['invoice_filename'])
-        ws_summary.cell(row=i, column=7, value=form['proof_of_payment_filename'] or "N/A")
-        total_overall += form['total_amount']
-    
-    # Total row
-    total_row = 14 + len(submitted_forms)
-    ws_summary.cell(row=total_row, column=2, value="TOTAL:").font = Font(bold=True)
-    ws_summary.cell(row=total_row, column=3, value=f"${total_overall:.2f}").font = Font(bold=True)
-    
-    # Create detailed sheet for each form
-    for form in submitted_forms:
-        ws_detail = wb.create_sheet(title=f"Form {form['form_number']}")
-        
-        # Form header
-        ws_detail['A1'] = f"PURCHASE REQUEST #{form['form_number']}"
-        ws_detail['A1'].font = Font(bold=True, size=16)
-        ws_detail.merge_cells('A1:F1')
-        
-        # Vendor information
-        ws_detail['A3'] = "Vendor/Store:"
-        ws_detail['B3'] = form['vendor_name']
-        
-        ws_detail['A4'] = "Currency:"
-        ws_detail['B4'] = form['currency']
-        
-        ws_detail['A5'] = "Invoice File:"
-        ws_detail['B5'] = form['invoice_filename']
-        
-        # Add proof of payment info if exists
-        row_offset = 0
-        if form['proof_of_payment_filename']:
-            ws_detail['A6'] = "Proof of Payment:"
-            ws_detail['B6'] = form['proof_of_payment_filename']
-            row_offset = 1
-        
-        # Financial breakdown (adjust row numbers based on proof of payment)
-        ws_detail[f'A{7 + row_offset}'] = "FINANCIAL BREAKDOWN"
-        ws_detail[f'A{7 + row_offset}'].font = Font(bold=True, size=14)
-        
-        if form['currency'] == "USD":
-            # USD breakdown
-            ws_detail[f'A{8 + row_offset}'] = "US Total:"
-            ws_detail[f'B{8 + row_offset}'] = f"${form['us_total']:.2f} USD"
-            
-            ws_detail[f'A{9 + row_offset}'] = "Canadian Amount:"
-            ws_detail[f'B{9 + row_offset}'] = f"${form['canadian_amount']:.2f} CAD"
-            
-            ws_detail[f'A{10 + row_offset}'] = "REIMBURSEMENT TOTAL:"
-            ws_detail[f'A{10 + row_offset}'].font = Font(bold=True)
-            ws_detail[f'B{10 + row_offset}'] = f"${form['canadian_amount']:.2f} CAD"
-            ws_detail[f'B{10 + row_offset}'].font = Font(bold=True)
-            
-            # Adjust items section row
-            items_row = 12 + row_offset
-        else:
-            # CAD breakdown
-            ws_detail[f'A{8 + row_offset}'] = "Subtotal:"
-            ws_detail[f'B{8 + row_offset}'] = f"${form['subtotal_amount']:.2f} {form['currency']}"
-            
-            ws_detail[f'A{9 + row_offset}'] = "Discount:"
-            ws_detail[f'B{9 + row_offset}'] = f"-${form['discount_amount']:.2f} {form['currency']}"
-            
-            # Use appropriate tax label based on currency
-            tax_label = "Taxes" if form['currency'] == "USD" else "HST/GST"
-            ws_detail[f'A{10 + row_offset}'] = f"{tax_label}:"
-            ws_detail[f'B{10 + row_offset}'] = f"${form['hst_gst_amount']:.2f} {form['currency']}"
-            
-            ws_detail[f'A{11 + row_offset}'] = "Shipping:"
-            ws_detail[f'B{11 + row_offset}'] = f"${form['shipping_amount']:.2f} {form['currency']}"
-            
-            ws_detail[f'A{12 + row_offset}'] = "TOTAL:"
-            ws_detail[f'A{12 + row_offset}'].font = Font(bold=True)
-            ws_detail[f'B{12 + row_offset}'] = f"${form['total_amount']:.2f} {form['currency']}"
-            ws_detail[f'B{12 + row_offset}'].font = Font(bold=True)
-            
-            # Adjust items section row
-            items_row = 14 + row_offset
-        
-        # Items section
-        ws_detail[f'A{items_row}'] = "ITEMS PURCHASED"
-        ws_detail[f'A{items_row}'].font = Font(bold=True, size=14)
-        
-        # Item headers
-        item_headers = ["Item #", "Item Name", "Usage/Purpose", "Quantity", f"Unit Price ({form['currency']})", f"Total ({form['currency']})"]
-        for col, header in enumerate(item_headers, 1):
-            cell = ws_detail.cell(row=items_row + 2, column=col, value=header)
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = header_alignment
-        
-        # Item data
-        for i, item in enumerate(form['items'], items_row + 3):
-            ws_detail.cell(row=i, column=1, value=i - (items_row + 2))
-            ws_detail.cell(row=i, column=2, value=item['name'])
-            ws_detail.cell(row=i, column=3, value=item['usage'])
-            ws_detail.cell(row=i, column=4, value=item['quantity'])
-            ws_detail.cell(row=i, column=5, value=f"${item['unit_price']:.2f}")
-            ws_detail.cell(row=i, column=6, value=f"${item['total']:.2f}")
-        
-        # Auto-adjust column widths
-        for col in range(1, 7):
-            column_letter = get_column_letter(col)
-            ws_detail.column_dimensions[column_letter].width = 20
-    
-    # Auto-adjust column widths for summary
-    for col in range(1, 6):
-        column_letter = get_column_letter(col)
-        ws_summary.column_dimensions[column_letter].width = 20
-    
-    # Save Excel file in session folder
-    filename = "purchase_requests.xlsx"
-    filepath = f"{session_folder}/{filename}"
-    
-    # Save the workbook
-    wb.save(filepath)
-    
-    return filename, filepath
-
 @app.post("/submit-all-requests")
 async def submit_all_requests(request: Request):
     # Get form data
@@ -357,6 +176,22 @@ async def submit_all_requests(request: Request):
             # Set USD fields to 0 for CAD
             us_total = 0
             canadian_amount = 0
+        
+        # Debug logging to see what values we're getting
+        print(f"Form {form_num} ({currency}) financial data:")
+        print(f"  Raw subtotal_amount: '{form_data.get(f'subtotal_amount_{form_num}')}'")
+        print(f"  Raw total_amount: '{form_data.get(f'total_amount_{form_num}')}'")
+        print(f"  Raw hst_gst_amount: '{form_data.get(f'hst_gst_amount_{form_num}')}'")
+        print(f"  Raw shipping_amount: '{form_data.get(f'shipping_amount_{form_num}')}'")
+        print(f"  Parsed values:")
+        print(f"    subtotal_amount: {subtotal_amount}")
+        print(f"    discount_amount: {discount_amount}")
+        print(f"    hst_gst_amount: {hst_gst_amount}")
+        print(f"    shipping_amount: {shipping_amount}")
+        print(f"    total_amount: {total_amount}")
+        print(f"    us_total: {us_total}")
+        print(f"    canadian_amount: {canadian_amount}")
+        print("---")
         
         # Extract items for this form
         items = []
@@ -442,7 +277,7 @@ async def submit_all_requests(request: Request):
             'signature': signature_filename
         }
         
-        excel_filename, excel_filepath = create_excel_export(user_info, submitted_forms, session_folder)
+        excel_report = create_excel_report(user_info, submitted_forms, session_folder)
         
         print(f"Bulk submission received from:")
         print(f"Name: {name}")
@@ -452,7 +287,10 @@ async def submit_all_requests(request: Request):
         print(f"Team: {team}")
         print(f"Session Folder: {session_folder}")
         print(f"Digital Signature: {signature_filename} (saved to {session_folder}/{signature_filename})")
-        print(f"Excel Export: {excel_filename} (saved to {excel_filepath})")
+        print(f"Excel Report Generated: {excel_report['filename']}")
+        print(f"  - Forms processed: {excel_report['forms_processed']}")
+        print(f"  - Tabs used: {', '.join(excel_report['tabs_used'])}")
+        print(f"  - File location: {excel_report['filepath']}")
         print(f"")
         print(f"Number of forms submitted: {len(submitted_forms)}")
         print("=" * 60)
