@@ -79,8 +79,14 @@ def create_excel_report(user_info, submitted_forms, session_folder):
             ws[f'F{row}'] = item['total']
         
         # Financial summary
-        # F16: Subtotal
-        ws['F16'] = form['subtotal_amount']
+        # F16: Subtotal (different logic for USD vs CAD)
+        if form['currency'] == 'USD':
+            # For USD: Calculate subtotal from item totals (excluding taxes)
+            usd_subtotal = sum(item['total'] for item in form['items'])
+            ws['F16'] = usd_subtotal
+        else:
+            # For CAD: Use the calculated subtotal amount
+            ws['F16'] = form['subtotal_amount']
         
         # E17: Tax label (depends on currency)
         if form['currency'] == 'USD':
@@ -88,14 +94,31 @@ def create_excel_report(user_info, submitted_forms, session_folder):
         else:
             ws['E17'] = 'HST/GST'
         
-        # H17: HST/GST/Tax amount
-        ws['H17'] = form['hst_gst_amount']
+        # F17: Tax amount (HST/GST for CAD, Taxes for USD)
+        ws['F17'] = form['hst_gst_amount']
         
         # F18: Shipping
         ws['F18'] = form['shipping_amount']
         
         # F19: Total
         ws['F19'] = form['total_amount']
+        
+        # E20 & F20: Conversion Rate (only for USD)
+        if form['currency'] == 'USD':
+            # E20: Conversion Rate label
+            ws['E20'] = 'Conversion Rate'
+            
+            # F20: Calculate conversion rate = Canadian Total / (USD Subtotal + USD Taxes)
+            usd_subtotal = sum(item['total'] for item in form['items'])
+            usd_taxes = form['hst_gst_amount']  # This contains USD taxes for USD forms
+            usd_total = usd_subtotal + usd_taxes
+            canadian_total = form['total_amount']  # This is the Canadian equivalent
+            
+            if usd_total > 0:  # Avoid division by zero
+                conversion_rate = canadian_total / usd_total
+                ws['F20'] = round(conversion_rate, 4)  # Round to 4 decimal places
+            else:
+                ws['F20'] = 0
     
     # Save the modified workbook
     wb.save(output_path)

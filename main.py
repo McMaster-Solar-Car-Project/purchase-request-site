@@ -157,12 +157,13 @@ async def submit_all_requests(request: Request):
         if currency == "USD":
             # For USD, use simplified breakdown
             us_total = float(form_data.get(f"us_total_{form_num}") or 0)
+            usd_taxes = float(form_data.get(f"usd_taxes_{form_num}") or 0)
             canadian_amount = float(form_data.get(f"canadian_amount_{form_num}") or 0)
             
             # Set other fields to 0 for USD
             subtotal_amount = 0
             discount_amount = 0
-            hst_gst_amount = 0
+            hst_gst_amount = usd_taxes  # Use USD taxes as the tax amount
             shipping_amount = 0
             total_amount = canadian_amount  # Use Canadian amount as total for reimbursement
         else:
@@ -175,6 +176,7 @@ async def submit_all_requests(request: Request):
             
             # Set USD fields to 0 for CAD
             us_total = 0
+            usd_taxes = 0
             canadian_amount = 0
         
         # Debug logging to see what values we're getting
@@ -183,6 +185,10 @@ async def submit_all_requests(request: Request):
         print(f"  Raw total_amount: '{form_data.get(f'total_amount_{form_num}')}'")
         print(f"  Raw hst_gst_amount: '{form_data.get(f'hst_gst_amount_{form_num}')}'")
         print(f"  Raw shipping_amount: '{form_data.get(f'shipping_amount_{form_num}')}'")
+        if currency == "USD":
+            print(f"  Raw us_total: '{form_data.get(f'us_total_{form_num}')}'")
+            print(f"  Raw usd_taxes: '{form_data.get(f'usd_taxes_{form_num}')}'")
+            print(f"  Raw canadian_amount: '{form_data.get(f'canadian_amount_{form_num}')}'")
         print(f"  Parsed values:")
         print(f"    subtotal_amount: {subtotal_amount}")
         print(f"    discount_amount: {discount_amount}")
@@ -190,6 +196,7 @@ async def submit_all_requests(request: Request):
         print(f"    shipping_amount: {shipping_amount}")
         print(f"    total_amount: {total_amount}")
         print(f"    us_total: {us_total}")
+        print(f"    usd_taxes: {usd_taxes}")
         print(f"    canadian_amount: {canadian_amount}")
         print("---")
         
@@ -206,14 +213,26 @@ async def submit_all_requests(request: Request):
             item_price = form_data.get(f"item_price_{form_num}_{item_num}")
             item_total = form_data.get(f"item_total_{form_num}_{item_num}")
             
+            # Debug logging for item values
+            print(f"  Item {item_num} raw values:")
+            print(f"    name: '{item_name}'")
+            print(f"    usage: '{item_usage}'")
+            print(f"    quantity: '{item_quantity}'")
+            print(f"    price: '{item_price}'")
+            print(f"    total: '{item_total}'")
+            
             if item_name and item_usage and item_quantity and item_price:
+                parsed_total = float(item_total) if item_total else 0
                 items.append({
                     "name": item_name,
                     "usage": item_usage,
                     "quantity": int(item_quantity),
                     "unit_price": float(item_price),
-                    "total": float(item_total) if item_total else 0
+                    "total": parsed_total
                 })
+                print(f"    → Added to items: qty={int(item_quantity)}, price=${float(item_price)}, total=${parsed_total}")
+            else:
+                print(f"    → Skipped (missing required fields)")
             
             item_num += 1
         
@@ -259,6 +278,7 @@ async def submit_all_requests(request: Request):
             "shipping_amount": shipping_amount,
             "total_amount": total_amount,
             "us_total": us_total,
+            "usd_taxes": usd_taxes,
             "canadian_amount": canadian_amount,
             "items": items
         }
