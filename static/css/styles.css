@@ -42,14 +42,20 @@ h1 {
     text-align: center;
 }
 
-.coming-soon {
-    color: #888;
-    font-style: italic;
-    text-align: center;
-    padding: 20px;
+.success-message {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
 }
 
-/* Form styles for future use */
+.success-message p {
+    margin: 0;
+}
+
+/* Form styles */
 .form-group {
     margin-bottom: 20px;
 }
@@ -65,10 +71,25 @@ h1 {
 .form-group textarea,
 .form-group select {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 16px;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
 }
 
 .btn {
@@ -80,8 +101,13 @@ h1 {
     cursor: pointer;
     font-size: 16px;
     transition: background-color 0.3s;
+    width: 100%;
 }
 
 .btn:hover {
     background-color: #0056b3;
+}
+
+.btn:active {
+    transform: translateY(1px);
 } 

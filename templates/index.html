@@ -13,9 +13,38 @@
         
         <div class="form-section">
             <h2>Purchase Request Form</h2>
-            <div class="coming-soon">
-                Form will be implemented here...
+            
+            {% if success_message %}
+            <div class="success-message">
+                <p>{{ success_message }}</p>
             </div>
+            {% endif %}
+            
+            <form method="POST" action="/submit-request">
+                <div class="form-group">
+                    <label for="name">Full Name *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">Address *</label>
+                    <textarea id="address" name="address" rows="3" required placeholder="Enter your full address. Please include city, province, and zip code."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="request_details">Purchase Request Details</label>
+                    <textarea id="request_details" name="request_details" rows="4" placeholder="Describe what you need to purchase (optional)"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit" class="btn">Submit Request</button>
+                </div>
+            </form>
         </div>
     </div>
 </body>
