@@ -1,7 +1,7 @@
 /* Main styles for Purchase Request Site */
 body {
     font-family: Arial, sans-serif;
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 40px 20px;
     background-color: #f5f5f5;
@@ -55,6 +55,153 @@ h1 {
     margin: 0;
 }
 
+/* Info summary for step 2 */
+.info-summary {
+    background-color: #e9ecef;
+    padding: 20px;
+    border-radius: 4px;
+    margin-bottom: 25px;
+    border-left: 4px solid #007bff;
+}
+
+.info-summary p {
+    margin: 8px 0;
+    color: #495057;
+}
+
+/* Items section */
+.items-section {
+    margin: 30px 0;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.items-section h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+.items-help,
+.file-help,
+.total-help,
+.financial-help {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.item-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 100px 120px 120px auto;
+    gap: 15px;
+    align-items: end;
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.item-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-input-group label {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.item-input-group input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.item-input-group input.total-field {
+    background-color: #e9ecef;
+    font-weight: bold;
+    color: #495057;
+}
+
+.item-actions {
+    display: flex;
+    align-items: center;
+}
+
+.total-section {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #e3f2fd;
+    border-radius: 4px;
+    border: 1px solid #bbdefb;
+}
+
+.total-section h3 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.3em;
+    text-align: center;
+}
+
+/* Financial breakdown section */
+.financial-breakdown {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    margin-bottom: 20px;
+}
+
+.form-row {
+    margin-bottom: 15px;
+}
+
+.form-row.total-row {
+    border-top: 2px solid #007bff;
+    padding-top: 15px;
+    margin-top: 20px;
+}
+
+.form-row.total-row input {
+    font-weight: bold;
+    font-size: 18px;
+    background-color: #f8f9fa;
+    border: 2px solid #007bff;
+}
+
+/* Calculation buttons */
+.calculation-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-calc {
+    background-color: #17a2b8;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+}
+
+.btn-calc:hover {
+    background-color: #138496;
+}
+
 /* Form styles */
 .form-group {
     margin-bottom: 20px;
@@ -79,6 +226,10 @@ h1 {
     transition: border-color 0.3s;
 }
 
+.form-group input[type="file"] {
+    padding: 8px;
+}
+
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
@@ -92,7 +243,8 @@ h1 {
     min-height: 80px;
 }
 
-.address-help {
+.address-help,
+.reimbursement-help {
     display: block;
     font-size: 12px;
     color: #666;
@@ -133,6 +285,9 @@ h1 {
     font-size: 16px;
     transition: background-color 0.3s;
     width: 100%;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
 }
 
 .btn:hover {
@@ -141,4 +296,77 @@ h1 {
 
 .btn:active {
     transform: translateY(1px);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    width: 100%;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+}
+
+.btn-remove {
+    background-color: #dc3545;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+}
+
+.btn-remove:hover {
+    background-color: #c82333;
+}
+
+/* Responsive design for item rows */
+@media (max-width: 1024px) {
+    .item-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    
+    .item-actions {
+        justify-content: center;
+        grid-column: span 2;
+    }
+    
+    .calculation-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-calc {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        max-width: 800px;
+    }
+    
+    .item-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .item-actions {
+        justify-content: center;
+        grid-column: span 1;
+    }
 } 

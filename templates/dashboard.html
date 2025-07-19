@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Purchase Request Dashboard</h1>
+        <p class="subtitle">Manage up to 10 separate purchase requests</p>
+        
+        <div class="user-info">
+            <div class="info-summary">
+                <p><strong>Name:</strong> {{ name }}</p>
+                <p><strong>Team:</strong> {{ team }}</p>
+                <p><strong>McMaster Email:</strong> {{ email }}</p>
+            </div>
+        </div>
+        
+        {% if success_message %}
+        <div class="success-message">
+            <p>{{ success_message }}</p>
+        </div>
+        {% endif %}
+        
+        <div class="dashboard-section">
+            <h2>Your Purchase Request Forms</h2>
+            <p class="dashboard-help">Each form represents a separate purchase request. You can fill them out individually and submit them when ready.</p>
+            
+            <div class="forms-grid">
+                {% for i in range(1, 11) %}
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <h3>Purchase Request #{{ i }}</h3>
+                        <span class="form-status">Ready to Fill</span>
+                    </div>
+                    <div class="form-card-body">
+                        <p>Create a detailed purchase request with items, vendor information, and financial breakdown.</p>
+                        <div class="form-actions">
+                            <a href="/reimbursement/{{ i }}?name={{ name }}&email={{ email }}&e_transfer_email={{ e_transfer_email }}&address={{ address }}&team={{ team }}" class="btn">Start Request #{{ i }}</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="dashboard-actions">
+            <a href="/" class="btn-secondary">Update Your Information</a>
+        </div>
+    </div>
+</body>
+</html> 
