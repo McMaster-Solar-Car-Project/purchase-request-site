@@ -33,7 +33,18 @@
                 
                 <div class="form-group">
                     <label for="address">Address *</label>
-                    <textarea id="address" name="address" rows="3" required placeholder="Enter your full address. Please include city, province, and zip code."></textarea>
+                    <input type="text" id="address" name="address" required placeholder="Start typing your address...">
+                    <small class="address-help">Start typing and select from the suggestions for accurate address validation</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="team">Team *</label>
+                    <select id="team" name="team" required>
+                        <option value="">Please select your team</option>
+                        <option value="Electrical">Electrical</option>
+                        <option value="Mechanical">Mechanical</option>
+                        <option value="Operations">Operations</option>
+                    </select>
                 </div>
                 
                 <div class="form-group">
@@ -47,5 +58,26 @@
             </form>
         </div>
     </div>
+
+    {% if google_api_key %}
+    <!-- Google Places API -->
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_api_key }}&libraries=places&callback=initAutocomplete">
+    </script>
+    
+    <!-- Address autocomplete functionality -->
+    <script src="{{ url_for('static', path='/js/address-autocomplete.js') }}"></script>
+    {% else %}
+    <script>
+        // Fallback when no API key is available
+        document.addEventListener('DOMContentLoaded', function() {
+            const helpText = document.querySelector('.address-help');
+            if (helpText) {
+                helpText.textContent = 'Please enter your full address manually.';
+                helpText.style.color = '#dc3545';
+            }
+        });
+    </script>
+    {% endif %}
 </body>
 </html> 

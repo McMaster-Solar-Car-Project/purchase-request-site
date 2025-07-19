@@ -1,7 +1,12 @@
+import os
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI(title="Purchase Request Site")
 
@@ -21,7 +26,8 @@ async def home(request: Request, success: str = None):
         "request": request,
         "title": "Purchase Request Site",
         "heading": "Enter your purchase request information",
-        "success_message": success_message
+        "success_message": success_message,
+        "google_api_key": os.getenv("GOOGLE_PLACES_API_KEY")
     })
 
 @app.post("/submit-request")
@@ -29,6 +35,7 @@ async def submit_request(
     name: str = Form(...),
     email: str = Form(...),
     address: str = Form(...),
+    team: str = Form(...),
     request_details: str = Form("")
 ):
     # Here you would typically save to a database
@@ -37,6 +44,7 @@ async def submit_request(
     print(f"Name: {name}")
     print(f"Email: {email}")
     print(f"Address: {address}")
+    print(f"Team: {team}")
     print(f"Request Details: {request_details}")
     print("-" * 50)
     
@@ -45,4 +53,9 @@ async def submit_request(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        app, 
+        host=os.getenv("HOST", "0.0.0.0"), 
+        port=int(os.getenv("PORT", 8000)), 
+        reload=os.getenv("DEBUG", "false").lower() == "true"
+    )
