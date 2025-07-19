@@ -297,10 +297,10 @@ async def submit_all_requests(request: Request):
             content = await invoice_file.read()
             file_object.write(content)
         
-        # Save proof of payment file if provided (required for USD)
+        # Save proof of payment file only for USD currency
         proof_of_payment_filename = None
         proof_of_payment_location = None
-        if proof_of_payment_file and hasattr(proof_of_payment_file, 'filename'):
+        if currency == "USD" and proof_of_payment_file and hasattr(proof_of_payment_file, 'filename'):
             payment_extension = proof_of_payment_file.filename.split('.')[-1] if '.' in proof_of_payment_file.filename else 'pdf'
             proof_of_payment_filename = f"{form_num}_proof_of_payment.{payment_extension}"
             proof_of_payment_location = f"{session_folder}/{proof_of_payment_filename}"

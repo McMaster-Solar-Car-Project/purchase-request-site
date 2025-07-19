@@ -201,8 +201,11 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
         # Convert signature to PNG for Excel (if not already PNG)
         signature_png_path = f"{session_folder}/signature.png"
         if signature_path.endswith('.png'):
-            # Already PNG, copy it
-            shutil.copy2(signature_path, signature_png_path)
+            # Already PNG, check if it's the same file
+            if os.path.abspath(signature_path) != os.path.abspath(signature_png_path):
+                # Different files, copy it
+                shutil.copy2(signature_path, signature_png_path)
+            # If it's the same file, no need to copy
             conversion_success = True
         else:
             # Convert to PNG
