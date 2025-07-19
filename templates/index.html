@@ -22,13 +22,18 @@
             
             <form method="POST" action="/submit-request">
                 <div class="form-group">
-                    <label for="name">Full Name *</label>
+                    <label for="name">Full Legal Name *</label>
                     <input type="text" id="name" name="name" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="email">Email Address *</label>
+                    <label for="email">McMaster Email Address *</label>
                     <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="e_transfer_email">E-Transfer Email *</label>
+                    <input type="email" id="e_transfer_email" name="e_transfer_email" required placeholder="Enter E-transfer email address">
                 </div>
                 
                 <div class="form-group">
@@ -41,15 +46,18 @@
                     <label for="team">Team *</label>
                     <select id="team" name="team" required>
                         <option value="">Please select your team</option>
-                        <option value="Electrical">Electrical</option>
-                        <option value="Mechanical">Mechanical</option>
-                        <option value="Operations">Operations</option>
+                        <option value="Aeroshell">Aeroshell</option>
+                        <option value="Battery">Battery</option>
+                        <option value="Chassis">Chassis</option>
+                        <option value="Data Acquisition">Data Acquisition</option>
+                        <option value="Firmware">Firmware</option>
+                        <option value="Management">Management</option>
+                        <option value="Media">Media</option>
+                        <option value="Power Management Systems">Power Management Systems</option>
+                        <option value="Solar Cells">Solar Cells</option>
+                        <option value="Strategies">Strategies</option>
+                        <option value="Suspension">Suspension</option>
                     </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="request_details">Purchase Request Details</label>
-                    <textarea id="request_details" name="request_details" rows="4" placeholder="Describe what you need to purchase (optional)"></textarea>
                 </div>
                 
                 <div class="form-group">

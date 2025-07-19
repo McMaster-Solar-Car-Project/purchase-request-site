@@ -34,18 +34,18 @@ async def home(request: Request, success: str = None):
 async def submit_request(
     name: str = Form(...),
     email: str = Form(...),
+    e_transfer_email: str = Form(...),
     address: str = Form(...),
-    team: str = Form(...),
-    request_details: str = Form("")
+    team: str = Form(...)
 ):
     # Here you would typically save to a database
     # For now, we'll just print the data and redirect
     print(f"New purchase request received:")
     print(f"Name: {name}")
     print(f"Email: {email}")
+    print(f"E-Transfer Email: {e_transfer_email}")
     print(f"Address: {address}")
     print(f"Team: {team}")
-    print(f"Request Details: {request_details}")
     print("-" * 50)
     
     # Redirect back to home with success message
