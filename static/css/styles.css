@@ -503,9 +503,10 @@ h1 {
 .custom-file-upload input[type="file"] {
     position: absolute;
     opacity: 0;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
+    width: 0.1px;
+    height: 0.1px;
+    overflow: hidden;
+    z-index: -1;
 }
 
 .custom-file-upload .file-upload-btn {
@@ -519,6 +520,7 @@ h1 {
     font-size: 14px;
     transition: background-color 0.3s;
     margin-right: 10px;
+    user-select: none;
 }
 
 .custom-file-upload .file-upload-btn:hover {

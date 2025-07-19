@@ -70,7 +70,7 @@
                                     <label for="invoice_file_{{ form_num }}">Upload Invoice/Receipt</label>
                                     <div class="custom-file-upload">
                                         <input type="file" id="invoice_file_{{ form_num }}" name="invoice_file_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif" onchange="updateFileName(this, 'invoice-filename-{{ form_num }}')">
-                                        <span class="file-upload-btn">Choose File</span>
+                                        <span class="file-upload-btn" onclick="document.getElementById('invoice_file_{{ form_num }}').click()">Choose File</span>
                                         <span class="file-name" id="invoice-filename-{{ form_num }}">No file chosen</span>
                                     </div>
                                     <small class="file-help">Please upload your invoice or receipt (PDF, JPG, PNG, or GIF format)</small>
@@ -80,7 +80,7 @@
                                     <label for="proof_of_payment_{{ form_num }}">Proof of Payment (Required for USD purchases)</label>
                                     <div class="custom-file-upload">
                                         <input type="file" id="proof_of_payment_{{ form_num }}" name="proof_of_payment_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif" onchange="updateFileName(this, 'payment-filename-{{ form_num }}')">
-                                        <span class="file-upload-btn">Choose File</span>
+                                        <span class="file-upload-btn" onclick="document.getElementById('proof_of_payment_{{ form_num }}').click()">Choose File</span>
                                         <span class="file-name" id="payment-filename-{{ form_num }}">No file chosen</span>
                                     </div>
                                     <small class="file-help">Upload a screenshot of your bank transaction or payment confirmation (PDF, JPG, PNG, or GIF format)</small>
@@ -126,7 +126,8 @@
                                 <div class="total-section">
                                     <h4>Financial Summary</h4>
                                     
-                                    <div class="financial-breakdown">
+                                    <!-- CAD Financial Breakdown -->
+                                    <div class="financial-breakdown cad-breakdown-{{ form_num }}">
                                         <div class="form-row">
                                             <div class="form-group">
                                                 <label for="subtotal_amount_{{ form_num }}">Subtotal (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
@@ -145,9 +146,9 @@
                                         
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="hst_gst_amount_{{ form_num }}">HST/GST (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
+                                                <label for="hst_gst_amount_{{ form_num }}"><span class="tax-label-{{ form_num }}">HST/GST</span> (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="hst_gst_amount_{{ form_num }}" name="hst_gst_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" onchange="calculateFinalTotal({{ form_num }})">
-                                                <small class="financial-help">Harmonized Sales Tax / Goods and Services Tax</small>
+                                                <small class="financial-help tax-help-{{ form_num }}">Harmonized Sales Tax / Goods and Services Tax</small>
                                             </div>
                                         </div>
                                         
@@ -164,6 +165,25 @@
                                                 <label for="total_amount_{{ form_num }}">Total Reimbursement Amount (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="total_amount_{{ form_num }}" name="total_amount_{{ form_num }}" readonly min="0" step="0.01" placeholder="0.00" class="total-field">
                                                 <small class="financial-help">Automatically calculated (Subtotal - Discount + Tax + Shipping)</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- USD Financial Breakdown -->
+                                    <div class="financial-breakdown usd-breakdown-{{ form_num }}" style="display: none;">
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="us_total_{{ form_num }}">US Total (USD)</label>
+                                                <input type="number" id="us_total_{{ form_num }}" name="us_total_{{ form_num }}" min="0" step="0.01" placeholder="0.00">
+                                                <small class="financial-help">Total amount paid in US dollars</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="canadian_amount_{{ form_num }}">Canadian Amount (CAD)</label>
+                                                <input type="number" id="canadian_amount_{{ form_num }}" name="canadian_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00">
+                                                <small class="financial-help">Equivalent amount in Canadian dollars for reimbursement</small>
                                             </div>
                                         </div>
                                     </div>
@@ -307,11 +327,41 @@
             const currencySelect = document.getElementById(`currency_${formNumber}`);
             const selectedCurrency = currencySelect.value;
             const currencyLabels = document.querySelectorAll(`.currency-label-${formNumber}`);
+            const taxLabels = document.querySelectorAll(`.tax-label-${formNumber}`);
+            const taxHelp = document.querySelector(`.tax-help-${formNumber}`);
             const proofOfPaymentSection = document.querySelector(`.proof-of-payment-section-${formNumber}`);
+            const cadBreakdown = document.querySelector(`.cad-breakdown-${formNumber}`);
+            const usdBreakdown = document.querySelector(`.usd-breakdown-${formNumber}`);
             
             currencyLabels.forEach(label => {
                 label.textContent = selectedCurrency;
             });
+            
+            // Update tax labels based on currency
+            if (selectedCurrency === 'USD') {
+                taxLabels.forEach(label => {
+                    label.textContent = 'Taxes';
+                });
+                if (taxHelp) {
+                    taxHelp.textContent = 'Sales tax, state tax, or other applicable taxes';
+                }
+                
+                // Show USD breakdown, hide CAD breakdown
+                if (cadBreakdown) cadBreakdown.style.display = 'none';
+                if (usdBreakdown) usdBreakdown.style.display = 'block';
+                
+            } else {
+                taxLabels.forEach(label => {
+                    label.textContent = 'HST/GST';
+                });
+                if (taxHelp) {
+                    taxHelp.textContent = 'Harmonized Sales Tax / Goods and Services Tax';
+                }
+                
+                // Show CAD breakdown, hide USD breakdown
+                if (cadBreakdown) cadBreakdown.style.display = 'block';
+                if (usdBreakdown) usdBreakdown.style.display = 'none';
+            }
             
             // Show/hide proof of payment section based on currency
             if (selectedCurrency === 'USD') {

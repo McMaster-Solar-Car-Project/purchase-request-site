@@ -207,38 +207,60 @@ def create_excel_export(user_info, submitted_forms, session_folder):
         ws_detail[f'A{7 + row_offset}'] = "FINANCIAL BREAKDOWN"
         ws_detail[f'A{7 + row_offset}'].font = Font(bold=True, size=14)
         
-        ws_detail[f'A{8 + row_offset}'] = "Subtotal:"
-        ws_detail[f'B{8 + row_offset}'] = f"${form['subtotal_amount']:.2f} {form['currency']}"
-        
-        ws_detail[f'A{9 + row_offset}'] = "Discount:"
-        ws_detail[f'B{9 + row_offset}'] = f"-${form['discount_amount']:.2f} {form['currency']}"
-        
-        ws_detail[f'A{10 + row_offset}'] = "HST/GST:"
-        ws_detail[f'B{10 + row_offset}'] = f"${form['hst_gst_amount']:.2f} {form['currency']}"
-        
-        ws_detail[f'A{11 + row_offset}'] = "Shipping:"
-        ws_detail[f'B{11 + row_offset}'] = f"${form['shipping_amount']:.2f} {form['currency']}"
-        
-        ws_detail[f'A{12 + row_offset}'] = "TOTAL:"
-        ws_detail[f'A{12 + row_offset}'].font = Font(bold=True)
-        ws_detail[f'B{12 + row_offset}'] = f"${form['total_amount']:.2f} {form['currency']}"
-        ws_detail[f'B{12 + row_offset}'].font = Font(bold=True)
+        if form['currency'] == "USD":
+            # USD breakdown
+            ws_detail[f'A{8 + row_offset}'] = "US Total:"
+            ws_detail[f'B{8 + row_offset}'] = f"${form['us_total']:.2f} USD"
+            
+            ws_detail[f'A{9 + row_offset}'] = "Canadian Amount:"
+            ws_detail[f'B{9 + row_offset}'] = f"${form['canadian_amount']:.2f} CAD"
+            
+            ws_detail[f'A{10 + row_offset}'] = "REIMBURSEMENT TOTAL:"
+            ws_detail[f'A{10 + row_offset}'].font = Font(bold=True)
+            ws_detail[f'B{10 + row_offset}'] = f"${form['canadian_amount']:.2f} CAD"
+            ws_detail[f'B{10 + row_offset}'].font = Font(bold=True)
+            
+            # Adjust items section row
+            items_row = 12 + row_offset
+        else:
+            # CAD breakdown
+            ws_detail[f'A{8 + row_offset}'] = "Subtotal:"
+            ws_detail[f'B{8 + row_offset}'] = f"${form['subtotal_amount']:.2f} {form['currency']}"
+            
+            ws_detail[f'A{9 + row_offset}'] = "Discount:"
+            ws_detail[f'B{9 + row_offset}'] = f"-${form['discount_amount']:.2f} {form['currency']}"
+            
+            # Use appropriate tax label based on currency
+            tax_label = "Taxes" if form['currency'] == "USD" else "HST/GST"
+            ws_detail[f'A{10 + row_offset}'] = f"{tax_label}:"
+            ws_detail[f'B{10 + row_offset}'] = f"${form['hst_gst_amount']:.2f} {form['currency']}"
+            
+            ws_detail[f'A{11 + row_offset}'] = "Shipping:"
+            ws_detail[f'B{11 + row_offset}'] = f"${form['shipping_amount']:.2f} {form['currency']}"
+            
+            ws_detail[f'A{12 + row_offset}'] = "TOTAL:"
+            ws_detail[f'A{12 + row_offset}'].font = Font(bold=True)
+            ws_detail[f'B{12 + row_offset}'] = f"${form['total_amount']:.2f} {form['currency']}"
+            ws_detail[f'B{12 + row_offset}'].font = Font(bold=True)
+            
+            # Adjust items section row
+            items_row = 14 + row_offset
         
         # Items section
-        ws_detail[f'A{14 + row_offset}'] = "ITEMS PURCHASED"
-        ws_detail[f'A{14 + row_offset}'].font = Font(bold=True, size=14)
+        ws_detail[f'A{items_row}'] = "ITEMS PURCHASED"
+        ws_detail[f'A{items_row}'].font = Font(bold=True, size=14)
         
         # Item headers
         item_headers = ["Item #", "Item Name", "Usage/Purpose", "Quantity", f"Unit Price ({form['currency']})", f"Total ({form['currency']})"]
         for col, header in enumerate(item_headers, 1):
-            cell = ws_detail.cell(row=16 + row_offset, column=col, value=header)
+            cell = ws_detail.cell(row=items_row + 2, column=col, value=header)
             cell.font = header_font
             cell.fill = header_fill
             cell.alignment = header_alignment
         
         # Item data
-        for i, item in enumerate(form['items'], 17 + row_offset):
-            ws_detail.cell(row=i, column=1, value=i - (16 + row_offset))
+        for i, item in enumerate(form['items'], items_row + 3):
+            ws_detail.cell(row=i, column=1, value=i - (items_row + 2))
             ws_detail.cell(row=i, column=2, value=item['name'])
             ws_detail.cell(row=i, column=3, value=item['usage'])
             ws_detail.cell(row=i, column=4, value=item['quantity'])
@@ -296,12 +318,29 @@ async def submit_all_requests(request: Request):
             print(f"Warning: Form {form_num} in USD currency missing proof of payment - skipping")
             continue
             
-        # Extract financial data
-        subtotal_amount = float(form_data.get(f"subtotal_amount_{form_num}") or 0)
-        discount_amount = float(form_data.get(f"discount_amount_{form_num}") or 0)
-        hst_gst_amount = float(form_data.get(f"hst_gst_amount_{form_num}") or 0)
-        shipping_amount = float(form_data.get(f"shipping_amount_{form_num}") or 0)
-        total_amount = float(form_data.get(f"total_amount_{form_num}") or 0)
+        # Extract financial data based on currency
+        if currency == "USD":
+            # For USD, use simplified breakdown
+            us_total = float(form_data.get(f"us_total_{form_num}") or 0)
+            canadian_amount = float(form_data.get(f"canadian_amount_{form_num}") or 0)
+            
+            # Set other fields to 0 for USD
+            subtotal_amount = 0
+            discount_amount = 0
+            hst_gst_amount = 0
+            shipping_amount = 0
+            total_amount = canadian_amount  # Use Canadian amount as total for reimbursement
+        else:
+            # For CAD, use detailed breakdown
+            subtotal_amount = float(form_data.get(f"subtotal_amount_{form_num}") or 0)
+            discount_amount = float(form_data.get(f"discount_amount_{form_num}") or 0)
+            hst_gst_amount = float(form_data.get(f"hst_gst_amount_{form_num}") or 0)
+            shipping_amount = float(form_data.get(f"shipping_amount_{form_num}") or 0)
+            total_amount = float(form_data.get(f"total_amount_{form_num}") or 0)
+            
+            # Set USD fields to 0 for CAD
+            us_total = 0
+            canadian_amount = 0
         
         # Extract items for this form
         items = []
@@ -333,7 +372,7 @@ async def submit_all_requests(request: Request):
             
         # Save uploaded invoice file in session folder
         invoice_extension = invoice_file.filename.split('.')[-1] if '.' in invoice_file.filename else 'pdf'
-        invoice_filename = f"form_{form_num}_invoice.{invoice_extension}"
+        invoice_filename = f"{form_num}_invoice.{invoice_extension}"
         invoice_file_location = f"{session_folder}/{invoice_filename}"
         
         # Save the invoice file
@@ -346,7 +385,7 @@ async def submit_all_requests(request: Request):
         proof_of_payment_location = None
         if proof_of_payment_file and hasattr(proof_of_payment_file, 'filename'):
             payment_extension = proof_of_payment_file.filename.split('.')[-1] if '.' in proof_of_payment_file.filename else 'pdf'
-            proof_of_payment_filename = f"form_{form_num}_proof_of_payment.{payment_extension}"
+            proof_of_payment_filename = f"{form_num}_proof_of_payment.{payment_extension}"
             proof_of_payment_location = f"{session_folder}/{proof_of_payment_filename}"
             
             # Save the proof of payment file
@@ -368,6 +407,8 @@ async def submit_all_requests(request: Request):
             "hst_gst_amount": hst_gst_amount,
             "shipping_amount": shipping_amount,
             "total_amount": total_amount,
+            "us_total": us_total,
+            "canadian_amount": canadian_amount,
             "items": items
         }
         
@@ -408,11 +449,24 @@ async def submit_all_requests(request: Request):
             if form['proof_of_payment_filename']:
                 print(f"  Proof of Payment: {form['proof_of_payment_filename']} (saved to {form['proof_of_payment_location']})")
             print(f"  Financial Breakdown:")
-            print(f"    Subtotal: ${form['subtotal_amount']:.2f} {form['currency']}")
-            print(f"    Discount: -${form['discount_amount']:.2f} {form['currency']}")
-            print(f"    HST/GST: ${form['hst_gst_amount']:.2f} {form['currency']}")
-            print(f"    Shipping: ${form['shipping_amount']:.2f} {form['currency']}")
-            print(f"    Total Amount: ${form['total_amount']:.2f} {form['currency']}")
+            
+            if form['currency'] == "USD":
+                # Show USD breakdown
+                print(f"    US Total: ${form['us_total']:.2f} USD")
+                print(f"    Canadian Amount: ${form['canadian_amount']:.2f} CAD")
+                print(f"    Reimbursement Total: ${form['canadian_amount']:.2f} CAD")
+            else:
+                # Show CAD breakdown
+                print(f"    Subtotal: ${form['subtotal_amount']:.2f} {form['currency']}")
+                print(f"    Discount: -${form['discount_amount']:.2f} {form['currency']}")
+                
+                # Use appropriate tax label based on currency
+                tax_label = "Taxes" if form['currency'] == "USD" else "HST/GST"
+                print(f"    {tax_label}: ${form['hst_gst_amount']:.2f} {form['currency']}")
+                
+                print(f"    Shipping: ${form['shipping_amount']:.2f} {form['currency']}")
+                print(f"    Total Amount: ${form['total_amount']:.2f} {form['currency']}")
+            
             print(f"  Items:")
             for i, item in enumerate(form['items'], 1):
                 print(f"    {i}. {item['name']}")

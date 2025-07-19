@@ -68,7 +68,7 @@
                     <label for="signature">Digital Signature</label>
                     <div class="custom-file-upload">
                         <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg,.gif,.pdf" required onchange="updateFileName(this, 'signature-filename')">
-                        <span class="file-upload-btn">Choose File</span>
+                        <span class="file-upload-btn" onclick="document.getElementById('signature').click()">Choose File</span>
                         <span class="file-name" id="signature-filename">No file chosen</span>
                     </div>
                     <small class="file-help">Upload an image of your signature (PNG, JPG, GIF, or PDF format). This signature will apply to all your purchase requests.</small>
