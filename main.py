@@ -15,16 +15,15 @@ from openpyxl.utils import get_column_letter
 # Load environment variables
 load_dotenv()
 
+# Create required directories immediately (before mounting static files)
+required_dirs = ["sessions", "static", "templates"]
+for directory in required_dirs:
+    os.makedirs(directory, exist_ok=True)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager - runs on startup and shutdown"""
-    # Startup: Create required directories
-    required_dirs = ["sessions", "static", "templates"]
-    
-    for directory in required_dirs:
-        os.makedirs(directory, exist_ok=True)
-        print(f"✓ Ensured directory exists: {directory}/")
-    
+    # Startup: Log directory status
     print("🚀 Application startup complete - all directories ready!")
     
     yield  # Application runs here
@@ -34,7 +33,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
 
-# Mount static files
+# Mount static files (directories are guaranteed to exist now)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
 
