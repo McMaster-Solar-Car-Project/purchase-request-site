@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: purchase-request-site
+    env: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DEBUG
+        value: true
+      - key: HOST  
+        value: 0.0.0.0
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false  # Set this manually in Render dashboard
+    disk:
+      name: sessions-storage
+      mountPath: /opt/render/project/src/sessions
+      sizeGB: 1 
