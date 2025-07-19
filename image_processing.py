@@ -1,167 +1,181 @@
 import os
-import cv2
-import numpy as np
+import shutil
 from PIL import Image
 from openpyxl.drawing import image
+import matplotlib.pyplot as plt
+import cv2
+import numpy as np
 
-def crop_signature(input_image, output_path=None):
-    """Crop signature to remove excess whitespace using OpenCV
+def detect_and_crop_signature(input_path, output_path=None):
+    """Convert image to grayscale and apply basic processing
     
     Args:
-        input_image: Can be either a file path (str) or PIL Image object
-        output_path: Optional path to save cropped image (only used if input_image is a path)
+        input_path: Path to input image file
+        output_path: Path to save processed image
     
     Returns:
-        - If input_image is a path: returns output_path or None if failed
-        - If input_image is PIL Image: returns cropped PIL Image
+        True if processing successful, False otherwise
     """
     try:
-        # Handle input type
-        if isinstance(input_image, str):
-            # Input is a file path
-            img = cv2.imread(input_image)
-            if img is None:
-                print(f"Could not load image: {input_image}")
-                return None
-            is_file_input = True
-            original_pil = None
-        else:
-            # Input is a PIL Image
-            original_pil = input_image
-            img_array = np.array(input_image)
+        # Read the image in color first
+        img = cv2.imread(input_path)
+        if img is None:
+            print(f"Could not read image: {input_path}")
+            return False
             
-            # Handle different image modes
-            if len(img_array.shape) == 3:
-                if img_array.shape[2] == 4:  # RGBA
-                    img = cv2.cvtColor(img_array, cv2.COLOR_RGBA2BGR)
-                else:  # RGB
-                    img = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
-            else:  # Grayscale
-                img = img_array
-            is_file_input = False
-            
-        # Resize if image is very large (width > 1000px)
-        height, width = img.shape[:2]
-        scale_factor = 1.0
-        if width > 1000:
-            scale_factor = 1000 / width
-            new_width = int(width * scale_factor)
-            new_height = int(height * scale_factor)
-            img = cv2.resize(img, (new_width, new_height))
+        print(f"Processing image: {input_path}")
+        print(f"Original image dimensions: {img.shape}")
         
-        # Convert to grayscale if needed
-        if len(img.shape) == 3:
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        else:
-            gray = img
+        # Convert to grayscale
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        # Apply adaptive threshold to isolate signature
-        thresh_gray = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 10
-        )
+        # Background subtraction approach for signature enhancement
+        dilated_img = cv2.dilate(gray, np.ones((7,7), np.uint8)) 
+        bg_img = cv2.medianBlur(dilated_img, 21)
+        diff_img = 255 - cv2.absdiff(gray, bg_img)
+        norm_img = diff_img.copy() # Needed for 3.x compatibility
+        cv2.normalize(diff_img, norm_img, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+        _, thr_img = cv2.threshold(norm_img, 230, 0, cv2.THRESH_TRUNC)
+        cv2.normalize(thr_img, thr_img, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+
+        # Apply final threshold to clean up the image
+        retval, final_result = cv2.threshold(thr_img, thresh=0, maxval=255, type=cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # Save the result
+        if output_path:
+            cv2.imwrite(output_path, final_result)
+            trim_whitespace(output_path, output_path)
+            print(f"Processed image saved to: {output_path}")
         
-        # Invert so signature pixels are white (255)
-        thresh_gray = cv2.bitwise_not(thresh_gray)
+        return True
         
-        # Find signature pixels
-        points = np.argwhere(thresh_gray == 255)
-        
-        if len(points) == 0:
-            print("No signature content found")
-            return original_pil if not is_file_input else None
-            
-        # Get bounding rectangle
-        points = np.fliplr(points)  # Convert row,col to x,y
-        x, y, w, h = cv2.boundingRect(points)
-        
-        # Add padding (10% of dimensions, minimum 10 pixels)
-        padding_x = max(10, int(w * 0.1))
-        padding_y = max(10, int(h * 0.1))
-        
-        # Apply scale factor back to coordinates if image was resized
-        if scale_factor != 1.0:
-            x = int(x / scale_factor)
-            y = int(y / scale_factor)
-            w = int(w / scale_factor)
-            h = int(h / scale_factor)
-            padding_x = int(padding_x / scale_factor)
-            padding_y = int(padding_y / scale_factor)
-        
-        # Expand bounding box with padding
-        if is_file_input:
-            # Use original image dimensions
-            original_img = cv2.imread(input_image)
-            img_height, img_width = original_img.shape[:2]
-            x = max(0, x - padding_x)
-            y = max(0, y - padding_y)
-            w = min(img_width - x, w + 2 * padding_x)
-            h = min(img_height - y, h + 2 * padding_y)
-            
-            # Crop the original image
-            cropped = original_img[y:y+h, x:x+w]
-            
-            # Save cropped image
-            if output_path is None:
-                base, ext = os.path.splitext(input_image)
-                output_path = f"{base}_cropped{ext}"
-            
-            cv2.imwrite(output_path, cropped)
-            print(f"Signature cropped and saved to: {output_path}")
-            return output_path
-        else:
-            # Use PIL image dimensions
-            img_width, img_height = original_pil.size
-            x = max(0, x - padding_x)
-            y = max(0, y - padding_y)
-            w = min(img_width - x, w + 2 * padding_x)
-            h = min(img_height - y, h + 2 * padding_y)
-            
-            # Crop the PIL image
-            cropped_pil = original_pil.crop((x, y, x + w, y + h))
-            print(f"Signature cropped (removed {x}px left, {y}px top)")
-            return cropped_pil
-            
     except Exception as e:
-        print(f"Error cropping signature: {e}")
-        return original_pil if not is_file_input else None
+        print(f"Error in image processing: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def trim_whitespace(image_path, output_path=None):
+    """
+    Trim whitespace from all edges of an image.
+    A row/column is considered whitespace if ALL pixels have RGB values > (245, 245, 245).
+    
+    Args:
+        image_path (str): Path to the input image
+        output_path (str, optional): Path to save the trimmed image. If None, overwrites original.
+    
+    Returns:
+        PIL.Image: The trimmed image
+    """
+    # Open the image
+    img = Image.open(image_path)
+    
+    # Convert to RGB if necessary
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
+    
+    # Convert to numpy array for easier processing
+    img_array = np.array(img)
+    height, width = img_array.shape[:2]
+    
+    def is_all_white(pixels):
+        """Check if ALL pixels in a row or column have RGB > (245, 245, 245)"""
+        # Check if all pixels have R > 245 AND G > 245 AND B > 245
+        return np.all(pixels > 235)
+    
+    def is_all_black(pixels):
+        """Check if ALL pixels in a row or column have RGB > (245, 245, 245)"""
+        # Check if all pixels have R > 245 AND G > 245 AND B > 245
+        return np.all(pixels < 20)
+    
+    # Find top boundary
+    top = 0
+    for i in range(height):
+        if not is_all_white(img_array[i]) and not is_all_black(img_array[i]):
+            top = i
+            break
+    
+    # Find bottom boundary
+    bottom = height - 1
+    for i in range(height - 1, -1, -1):
+        if not is_all_white(img_array[i]) and not is_all_black(img_array[i]):
+            bottom = i
+            break
+    
+    # Find left boundary
+    left = 0
+    for i in range(width):
+        if not is_all_white(img_array[:, i]) and not is_all_black(img_array[:, i]):
+            left = i
+            break   
+    
+    # Find right boundary
+    right = width - 1
+    for i in range(width - 1, -1, -1):
+        if not is_all_white(img_array[:, i]) and not is_all_black(img_array[:, i]):
+            right = i
+            break
+    
+    # Handle edge case where entire image is white
+    if top > bottom or left > right:
+        print("Warning: Entire image appears to be white")
+        return img
+    
+    # Crop the image
+    cropped_img = img.crop((left, top, right + 1, bottom + 1))
+    
+    # Save the result
+    if output_path:
+        cropped_img.save(output_path)
+    else:
+        cropped_img.save(image_path)
+    
+    return cropped_img
+
+
 
 def convert_signature_to_png(signature_path, output_path):
     """Convert signature image to PNG format for Excel compatibility
-    Supports: PNG, JPG, JPEG, GIF, PDF formats
-    Includes automatic cropping to remove excess whitespace"""
+    Supports: PNG, JPG, JPEG, GIF, PDF formats"""
     try:
-        # Check if it's a PDF file
+        print(f"Processing signature: {signature_path}")
+        
+        # Check if it's a PDF file first
         if signature_path.lower().endswith('.pdf'):
+            # Handle PDF files - convert to image first
             try:
                 from pdf2image import convert_from_path
-                # Convert PDF to images (take first page only for signature)
                 pages = convert_from_path(signature_path, first_page=1, last_page=1)
                 if pages:
-                    img = pages[0]  # Use first page
-                    # Crop the PDF-converted image
-                    img = crop_signature(img)
+                    img = pages[0]
+                    print("PDF converted to image successfully")
                 else:
                     print(f"No pages found in PDF: {signature_path}")
                     return False
             except ImportError:
                 print("pdf2image library not installed. Cannot convert PDF files.")
-                print("Install with: pip install pdf2image")
                 return False
             except Exception as e:
                 print(f"Error converting PDF: {e}")
                 return False
         else:
-            # Handle regular image formats (PNG, JPG, GIF, etc.)
-            img = Image.open(signature_path)
-            # Crop the regular image
-            img = crop_signature(img)
+            # For regular image formats, try intelligent cropping first
+            success = detect_and_crop_signature(signature_path, output_path)
+            
+            if success:
+                # Signature detected and cropped successfully
+                return True
+            else:
+                # Fallback: basic format conversion without cropping
+                print("Falling back to basic format conversion")
+                img = Image.open(signature_path)
         
         # Convert to RGBA (supports transparency)
         if img.mode != 'RGBA':
             img = img.convert('RGBA')
         
-        # Resize if too large (max 200px width, maintain aspect ratio)
-        max_width = 200
+        # Resize if too large (max 400px width for initial conversion)
+        max_width = 400
         if img.width > max_width:
             ratio = max_width / img.width
             new_height = int(img.height * ratio)
@@ -170,25 +184,39 @@ def convert_signature_to_png(signature_path, output_path):
         # Save as PNG
         img.save(output_path, 'PNG', optimize=True)
         return True
+            
     except Exception as e:
         print(f"Error converting signature: {e}")
         return False
 
 def insert_signature_into_worksheet(ws, user_info, form, session_folder):
     """Insert signature image into Excel worksheet"""
-    signature_path = f"{session_folder}/{user_info['signature']}"
+    # Look for the cropped signature first, then fall back to original
+    cropped_signature_path = f"{session_folder}/signature.png"
+    original_signature_path = f"{session_folder}/{user_info['signature']}"
+    
+    signature_path = cropped_signature_path if os.path.exists(cropped_signature_path) else original_signature_path
+    
     if os.path.exists(signature_path):
-        # Convert signature to PNG
-        signature_png_path = f"{session_folder}/signature_form_{form['form_number']}.png"
-        if convert_signature_to_png(signature_path, signature_png_path):
+        # Convert signature to PNG for Excel (if not already PNG)
+        signature_png_path = f"{session_folder}/signature.png"
+        if signature_path.endswith('.png'):
+            # Already PNG, copy it
+            shutil.copy2(signature_path, signature_png_path)
+            conversion_success = True
+        else:
+            # Convert to PNG
+            conversion_success = convert_signature_to_png(signature_path, signature_png_path)
+        
+        if conversion_success:
             try:
-                # Insert signature image at cell G3 (next to user info)
+                # Insert signature image at cell B25 (signature area)
                 img = image.Image(signature_png_path)
-                img.anchor = 'G3'  # Position at cell G3
-                img.width = 150   # Set width (adjust as needed)
-                img.height = 50   # Set height (adjust as needed)
+                img.anchor = 'B25'  # Position at cell B25
+                img.width = 280   # Set width for 5 cells wide (approximately)
+                img.height = 70    # Set height for 3 cells high (approximately)
                 ws.add_image(img)
-                print(f"Signature inserted for form {form['form_number']}")
+                print(f"Signature inserted at B25 for form {form['form_number']}")
                 return True
             except Exception as e:
                 print(f"Error inserting signature for form {form['form_number']}: {e}")
@@ -198,4 +226,5 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
             return False
     else:
         print(f"Signature file not found: {signature_path}")
-        return False 
+        return False
+    

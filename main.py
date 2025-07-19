@@ -9,7 +9,7 @@ from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
 from typing import List, Optional
 from data_processing import create_excel_report
-from image_processing import convert_signature_to_png, crop_signature
+from image_processing import convert_signature_to_png, detect_and_crop_signature
 
 # Load environment variables
 load_dotenv()
@@ -91,17 +91,17 @@ async def submit_request(
         file_object.write(content)
     
     # Convert signature to PNG format
-    png_signature_filename = "signature.png"
+    png_signature_filename = "signature_uncropped.png"
     png_signature_location = f"{session_folder}/{png_signature_filename}"
     
     if convert_signature_to_png(signature_location, png_signature_location):
         # Crop the converted PNG to remove any remaining whitespace
-        cropped_signature_filename = "signature_cropped.png"
+        cropped_signature_filename = "signature.png"
         cropped_signature_location = f"{session_folder}/{cropped_signature_filename}"
         
-        cropped_path = crop_signature(png_signature_location, cropped_signature_location)
+        cropped_success = detect_and_crop_signature(png_signature_location, cropped_signature_location)
         
-        if cropped_path:
+        if cropped_success:
             # Use the cropped version
             final_signature_filename = cropped_signature_filename
             print(f"Signature cropped and optimized: {cropped_signature_location}")
@@ -113,9 +113,14 @@ async def submit_request(
             except Exception as e:
                 print(f"Could not remove uncropped PNG: {e}")
         else:
-            # Cropping failed, use the regular PNG
-            final_signature_filename = png_signature_filename
-            print(f"Signature cropping failed, using converted PNG: {png_signature_location}")
+            # Cropping failed, rename the uncropped PNG to the final name
+            try:
+                os.rename(png_signature_location, f"{session_folder}/signature.png")
+                final_signature_filename = "signature.png"
+                print(f"Signature cropping failed, using converted PNG: {session_folder}/signature.png")
+            except Exception as e:
+                print(f"Could not rename uncropped PNG: {e}")
+                final_signature_filename = png_signature_filename
         
         print(f"Signature converted to PNG: {png_signature_location}")
         
