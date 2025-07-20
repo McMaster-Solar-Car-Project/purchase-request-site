@@ -304,3 +304,50 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
     else:
         logger.warning(f"No signature file found for form {form['form_number']}")
         return False
+
+
+def insert_signature_at_cell(ws, session_folder, cell_location="A19", width=200, height=60):
+    """Insert signature image into Excel worksheet at specified cell location"""
+    
+    # Look for signature files in order of preference:
+    # 1. signature.png (cropped/processed version)
+    # 2. signature_original.png (original PNG without cropping)
+    
+    processed_signature_path = f"{session_folder}/signature.png"
+    original_png_signature_path = f"{session_folder}/signature_original.png"
+
+    signature_path = None
+    signature_type = None
+
+    if os.path.exists(processed_signature_path):
+        signature_path = processed_signature_path
+        signature_type = "processed"
+    elif os.path.exists(original_png_signature_path):
+        signature_path = original_png_signature_path
+        signature_type = "original_png"
+
+    logger.debug(f"Signature files check for cell {cell_location}:")
+    logger.debug(
+        f"  - Processed (signature.png): {'exists' if os.path.exists(processed_signature_path) else 'missing'}"
+    )
+    logger.debug(
+        f"  - Original PNG (signature_original.png): {'exists' if os.path.exists(original_png_signature_path) else 'missing'}"
+    )
+    logger.debug(f"  - Using: {signature_type} ({signature_path})")
+
+    if signature_path:
+        try:
+            # Insert signature image at specified cell
+            img = image.Image(signature_path)
+            img.anchor = cell_location
+            img.width = width
+            img.height = height
+            ws.add_image(img)
+            logger.info(f"Signature inserted at {cell_location} (using {signature_type})")
+            return True
+        except Exception as e:
+            logger.error(f"Error inserting signature at {cell_location}: {e}")
+            return False
+    else:
+        logger.warning(f"No signature file found for cell {cell_location}")
+        return False

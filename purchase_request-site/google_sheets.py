@@ -289,7 +289,10 @@ def test_google_sheets_connection():
 
 
 def log_purchase_request_to_sheets(
-    user_info: Dict[str, Any], forms: List[Dict[str, Any]], session_folder: str, drive_folder_url: str = ""
+    user_info: Dict[str, Any],
+    forms: List[Dict[str, Any]],
+    session_folder: str,
+    drive_folder_url: str = "",
 ):
     """
     Convenience function to log session data to Google Sheets (one row per session)
@@ -301,7 +304,9 @@ def log_purchase_request_to_sheets(
         drive_folder_url: Google Drive folder URL for easy access
     """
     try:
-        success = sheets_client.log_purchase_request(user_info, forms, session_folder, drive_folder_url)
+        success = sheets_client.log_purchase_request(
+            user_info, forms, session_folder, drive_folder_url
+        )
         if success:
             logger.info("Session data successfully logged to Google Sheets")
         else:

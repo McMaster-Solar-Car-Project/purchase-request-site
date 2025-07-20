@@ -317,21 +317,21 @@ class GoogleDriveClient:
     ) -> tuple[bool, str, str]:
         """
         Create the folder structure in Google Drive and return folder URL and ID
-        
+
         Args:
             session_folder_path: Local path to the session folder
             user_info: User information dictionary for naming
-            
+
         Returns:
             tuple: (success: bool, folder_url: str, folder_id: str)
         """
         if not self.service and not self._authenticate():
             return False, "", ""
-            
+
         try:
             # Ensure parent folder exists (Test_automation)
             parent_folder_id = self._ensure_parent_folder()
-            
+
             # Ensure month/year folder exists (e.g., "January 2025")
             month_year_folder_id = self._ensure_month_year_folder(parent_folder_id)
 
@@ -344,21 +344,24 @@ class GoogleDriveClient:
             session_folder_id = self._create_session_folder(
                 drive_folder_name, month_year_folder_id
             )
-            
+
             # Construct Google Drive folder URL
             folder_url = f"https://drive.google.com/drive/folders/{session_folder_id}"
-            
+
             logger.info(f"Created Google Drive folder: {drive_folder_name}")
             logger.info(f"Folder URL: {folder_url}")
-            
+
             return True, folder_url, session_folder_id
-            
+
         except Exception as e:
             logger.error(f"Error creating session folder structure: {e}")
             return False, "", ""
 
     def upload_session_folder(
-        self, session_folder_path: str, user_info: Dict[str, Any], session_folder_id: str = None
+        self,
+        session_folder_path: str,
+        user_info: Dict[str, Any],
+        session_folder_id: str = None,
     ) -> bool:
         """
         Upload an entire session folder to Google Drive
@@ -385,7 +388,9 @@ class GoogleDriveClient:
                 logger.info(f"Using existing session folder ID: {session_folder_id}")
             else:
                 # Fallback: create folder structure if no ID provided
-                logger.info("No session folder ID provided, creating new folder structure")
+                logger.info(
+                    "No session folder ID provided, creating new folder structure"
+                )
                 # Ensure parent folder exists (Test_automation)
                 parent_folder_id = self._ensure_parent_folder()
 
@@ -540,19 +545,23 @@ def upload_session_to_drive(
         return False
 
 
-def create_drive_folder_and_get_url(session_folder_path: str, user_info: Dict[str, Any]) -> tuple[str, str]:
+def create_drive_folder_and_get_url(
+    session_folder_path: str, user_info: Dict[str, Any]
+) -> tuple[str, str]:
     """
     Create Google Drive folder structure and return the folder URL and ID
-    
+
     Args:
         session_folder_path: Local path to the session folder
         user_info: User information dictionary
-        
+
     Returns:
         tuple: (folder_url: str, folder_id: str) or ("", "") if failed
     """
     try:
-        success, folder_url, folder_id = drive_client.create_session_folder_structure(session_folder_path, user_info)
+        success, folder_url, folder_id = drive_client.create_session_folder_structure(
+            session_folder_path, user_info
+        )
         if success:
             logger.info(f"Google Drive folder created: {folder_url}")
             return folder_url, folder_id
@@ -581,7 +590,9 @@ def upload_session_to_drive_background(
             logger.info(
                 f"Starting background upload to Google Drive: {session_folder_path}"
             )
-            success = drive_client.upload_session_folder(session_folder_path, user_info, session_folder_id)
+            success = drive_client.upload_session_folder(
+                session_folder_path, user_info, session_folder_id
+            )
             if success:
                 logger.info(
                     "✅ Background upload to Google Drive completed successfully"

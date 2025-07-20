@@ -2,11 +2,162 @@ import os
 import shutil
 from datetime import datetime
 from openpyxl import load_workbook
-from image_processing import insert_signature_into_worksheet
+from image_processing import insert_signature_into_worksheet, insert_signature_at_cell
 from logging_utils import setup_logger
 
 # Set up logger
 logger = setup_logger(__name__)
+
+
+def copy_expense_report_template(session_folder, user_info, submitted_forms):
+    """Copy the expense report template to the session folder and populate with user data"""
+    
+    template_path = "excel_templates/expense_report_template.xlsx"
+    
+    # Check if template exists
+    if not os.path.exists(template_path):
+        logger.error(f"Expense report template not found: {template_path}")
+        return False
+    
+    try:
+        # Copy template to session folder with descriptive name
+        output_filename = "expense_report.xlsx"
+        output_path = f"{session_folder}/{output_filename}"
+        
+        shutil.copy2(template_path, output_path)
+        logger.info(f"Copied expense report template to: {output_path}")
+        
+        # Load the copied template and populate with user data
+        wb = load_workbook(output_path)
+        
+        # Get the active worksheet (assuming first sheet)
+        ws = wb.active
+        
+        # Populate user information in specified cells
+        ws['C2'] = user_info.get('name', '')                    # User's name in C2
+        ws['F2'] = datetime.now().strftime("%Y-%m-%d")          # Current date in F2
+        ws['C3'] = user_info.get('email', '')                   # Email in C3
+        ws['F3'] = user_info.get('address', '')                 # Address in F3
+        
+        # Populate expense rows from submitted form data
+        try:
+            populate_expense_rows_from_submitted_forms(ws, submitted_forms)
+        except Exception as e:
+            logger.error(f"Failed to populate expense rows from submitted forms: {e}")
+
+        # Insert signature if available
+        signature_filename = user_info.get('signature')
+        if signature_filename:
+            try:
+                # Insert signature at cell A19
+                insert_signature_at_cell(ws, session_folder, 'A19')
+                logger.info(f"Inserted signature into expense report at A19")
+            except Exception as e:
+                logger.warning(f"Failed to insert signature into expense report: {e}")
+        
+        # Save the populated template
+        wb.save(output_path)
+        wb.close()
+        
+        logger.info(f"Populated expense report with user data:")
+        logger.info(f"  - Name: {user_info.get('name', '')}")
+        logger.info(f"  - Date: {datetime.now().strftime('%Y-%m-%d')}")
+        logger.info(f"  - Email: {user_info.get('email', '')}")
+        logger.info(f"  - Address: {user_info.get('address', '')}")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to copy and populate expense report template: {e}")
+        return False
+
+
+def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
+    """Populate expense report rows from submitted form data"""
+    
+    try:
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        start_row = 6  # Starting at row 6 as specified
+        current_row = start_row
+        
+        # Separate Canadian and US forms
+        canadian_forms = [form for form in submitted_forms if form.get('currency') == 'CAD']
+        us_forms = [form for form in submitted_forms if form.get('currency') == 'USD']
+        
+        logger.info(f"Populating expense report with {len(canadian_forms)} Canadian forms and {len(us_forms)} US forms")
+        
+        # Process Canadian forms first
+        for i, form in enumerate(canadian_forms):
+            row = current_row + i
+            
+            # B6, B7, B8... - Date of Receipt
+            ws[f'B{row}'] = current_date
+            
+            # C6, C7, C8... - Vendor name
+            ws[f'C{row}'] = form.get('vendor_name', '')
+            
+            # For CAD: D column stays empty, E column stays empty
+            
+            # F6, F7, F8... - CDN amount without GST (subtotal)
+            subtotal = form.get('subtotal_amount', 0)
+            ws[f'F{row}'] = subtotal
+            
+            # G6, G7, G8... - CDN amount with GST (total)
+            total = form.get('total_amount', 0)
+            ws[f'G{row}'] = total
+            
+            # H6, H7, H8... - GST/HST amount
+            hst_gst = form.get('hst_gst_amount', 0)
+            ws[f'H{row}'] = hst_gst
+            
+            logger.info(f"CAD Row {row}: {form.get('vendor_name', '')} - Subtotal: ${subtotal:.2f}, Total: ${total:.2f}, HST: ${hst_gst:.2f}")
+        
+        # Update current row for US forms
+        current_row += len(canadian_forms)
+        
+        # Process US forms
+        for i, form in enumerate(us_forms):
+            row = current_row + i
+            
+            # B6+, B7+, B8+... - Date of Receipt
+            ws[f'B{row}'] = current_date
+            
+            # C6+, C7+, C8+... - Vendor name
+            ws[f'C{row}'] = form.get('vendor_name', '')
+            
+            # D6+, D7+, D8+... - Total foreign amount including taxes (us_total)
+            us_total = form.get('us_total', 0)
+            ws[f'D{row}'] = us_total
+            
+            # E6+, E7+, E8+... - Exchange rate (CAD/USD)
+            # Calculate exchange rate from canadian_amount / us_total if both exist
+            canadian_amount = form.get('canadian_amount', 0)
+            if us_total > 0 and canadian_amount > 0:
+                exchange_rate = canadian_amount / us_total
+                ws[f'E{row}'] = exchange_rate
+            else:
+                exchange_rate = 0
+                ws[f'E{row}'] = 0
+                logger.warning(f"Could not calculate exchange rate for {form.get('vendor_name', '')} - us_total: {us_total}, canadian_amount: {canadian_amount}")
+            
+            # F6+, F7+, F8+... - Canadian amount paid (same as G column for US)
+            ws[f'F{row}'] = canadian_amount
+            
+            # G6+, G7+, G8+... - Canadian amount paid (same as F column for US)
+            ws[f'G{row}'] = canadian_amount
+            
+            # H6+, H7+, H8+... - HST amount (0 for US purchases)
+            ws[f'H{row}'] = 0
+            
+            logger.info(f"USD Row {row}: {form.get('vendor_name', '')} - USD Total: ${us_total:.2f}, Exchange Rate: {exchange_rate:.4f}, CAD Amount: ${canadian_amount:.2f}")
+        
+        total_forms = len(canadian_forms) + len(us_forms)
+        logger.info(f"Successfully populated {total_forms} total expense rows ({len(canadian_forms)} CAD, {len(us_forms)} USD)")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error populating expense rows: {e}")
+        return False
 
 
 def create_excel_report(user_info, submitted_forms, session_folder):
