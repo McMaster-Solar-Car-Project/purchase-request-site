@@ -525,33 +525,7 @@ async def success_page(
     )
 
 
-@app.get("/profile")
-async def user_profile(
-    request: Request,
-    user_email: str = None,
-    db: Session = Depends(get_db),
-    _: None = Depends(require_auth),
-):
-    """Display user profile information"""
-    if not user_email:
-        # If no email provided, redirect to home
-        return RedirectResponse(url="/", status_code=303)
 
-    user = get_user_by_email(db, user_email)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # Get signature as data URL for display
-    signature_data_url = get_user_signature_as_data_url(user)
-
-    return templates.TemplateResponse(
-        "user_profile.html",
-        {
-            "request": request,
-            "user": user,
-            "signature_data_url": signature_data_url,
-        },
-    )
 
 
 @app.get("/edit-profile")
