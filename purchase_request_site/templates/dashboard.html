@@ -6,6 +6,97 @@
     <title>Purchase Request Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
     <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .user-info span {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .edit-profile-btn {
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .edit-profile-btn:hover {
+            background: #218838;
+            text-decoration: none;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+            text-decoration: none;
+            color: white;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+            font-weight: bold;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+        
         .header-nav {
             display: flex;
             justify-content: space-between;
@@ -43,10 +134,27 @@
 </head>
 <body>
     <div class="container">
-        <div class="header-nav">
+        <div class="header">
             <h1>Purchase Request Dashboard</h1>
-            <a href="/logout" class="logout-link">Logout</a>
+            <div class="user-info">
+                <span>Welcome, {{ user_name }}!</span>
+                <a href="/edit-profile?user_email={{ user_email }}" class="edit-profile-btn">✏️ Edit Information</a>
+                <a href="/logout" class="logout-btn">Logout</a>
+            </div>
         </div>
+        
+        {% if success_message %}
+        <div class="success-message">
+            {{ success_message }}
+        </div>
+        {% endif %}
+        
+        {% if error_message %}
+        <div class="error-message">
+            {{ error_message }}
+        </div>
+        {% endif %}
+        
         <p class="subtitle">Fill out up to 10 separate purchase requests and submit them all together</p>
         
         <div class="user-info">

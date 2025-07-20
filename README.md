@@ -133,8 +133,10 @@ The application will start on `http://localhost:8000` with login authentication 
 2. **User Info** (`/`) - Enter personal details and signature (if needed)
    - **Skip Option**: Complete profiles show saved info with option to proceed or update
 3. **Dashboard** (`/dashboard`) - Fill out purchase request forms
-4. **Success Page** (`/success`) - View submission confirmation and download Excel report
-5. **Profile** (`/profile`) - View stored user information
+   - **Edit Information**: Button to update profile details anytime
+4. **Edit Profile** (`/edit-profile`) - Update saved user information
+5. **Success Page** (`/success`) - View submission confirmation and download Excel report
+6. **Profile** (`/profile`) - View stored user information
 
 #### Profile Auto-Skip Feature
 
@@ -143,6 +145,16 @@ The system automatically detects if a user has complete profile information (nam
 - **Complete Profile**: Skip directly to dashboard with saved information
 - **Incomplete Profile**: Show user info form to fill missing fields
 - **Update Option**: Users can always choose to update their saved information
+
+#### Edit Information Feature
+
+Users can update their profile information at any time:
+
+- **Access**: Click "✏️ Edit Information" button on dashboard
+- **Current Info**: Shows existing data for easy reference
+- **Optional Signature**: Keep current signature or upload new one
+- **Instant Update**: Changes are saved to database immediately
+- **Success Feedback**: Confirmation message on dashboard after update
 
 ## Requirements
 

@@ -1,4 +1,5 @@
 import os
+import io
 import shutil
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -128,12 +129,12 @@ async def login(
         request.session["authenticated"] = True
         request.session["user_email"] = email
         request.session["is_admin"] = False
-        
+
         # Check if user profile is complete
         if is_user_profile_complete(user):
             # Create a session folder with existing user data
             session_folder = create_session_folder(user.name)
-            
+
             # Save user's signature to session folder for dashboard use
             signature_filename = "signature.png"
             signature_path = f"{session_folder}/{signature_filename}"
@@ -141,9 +142,9 @@ async def login(
                 # Redirect directly to dashboard, skipping user info form
                 return RedirectResponse(
                     url=f"/dashboard?user_email={email}&session_folder={session_folder}&signature={signature_filename}",
-                    status_code=303
+                    status_code=303,
                 )
-        
+
         # If profile incomplete, go to user info form
         return RedirectResponse(url="/", status_code=303)
     else:
@@ -174,13 +175,13 @@ async def home(
     user_email = request.session.get("user_email")
     user_profile_complete = False
     saved_user = None
-    
+
     if user_email:
         user = get_user_by_email(db, user_email)
         if user and is_user_profile_complete(user):
             user_profile_complete = True
             saved_user = user
-    
+
     return templates.TemplateResponse(
         "index.html",
         {
@@ -359,6 +360,7 @@ async def dashboard(
     session_folder: str = None,
     signature: str = None,
     use_saved: bool = False,
+    updated: bool = False,
     error: str = None,
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
@@ -368,7 +370,7 @@ async def dashboard(
     if not user:
         logger.error(f"User not found in database: {user_email}")
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # If use_saved is True, create session folder and signature for existing user
     if use_saved and not session_folder:
         session_folder = create_session_folder(user.name)
@@ -381,14 +383,20 @@ async def dashboard(
             signature = "signature.png"  # Default filename
 
     error_message = None
+    success_message = None
+    
     if error == "no_forms":
         error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, upload an invoice file, and add at least one item."
+    elif updated:
+        success_message = "✅ Your profile has been updated successfully!"
 
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
             "title": "Purchase Request Site",
+            "user_name": user.name,
+            "user_email": user.email,
             "name": user.name,
             "email": user.email,
             "e_transfer_email": user.personal_email,
@@ -397,6 +405,7 @@ async def dashboard(
             "session_folder": session_folder,
             "signature": signature,
             "error_message": error_message,
+            "success_message": success_message,
         },
     )
 
@@ -688,6 +697,86 @@ async def user_profile(
             "signature_data_url": signature_data_url,
         },
     )
+
+
+@app.get("/edit-profile")
+async def edit_profile_get(
+    request: Request,
+    user_email: str,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
+    user = get_user_by_email(db, user_email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Convert signature to data URL for display
+    signature_data_url = get_user_signature_as_data_url(user)
+
+    return templates.TemplateResponse(
+        "edit_profile.html",
+        {
+            "request": request,
+            "title": "Edit Profile - Purchase Request Site",
+            "user": user,
+            "signature_data_url": signature_data_url,
+        },
+    )
+
+
+@app.post("/edit-profile")
+async def edit_profile_post(
+    request: Request,
+    user_email: str,
+    name: str = Form(...),
+    email: str = Form(...),
+    personal_email: str = Form(...),
+    team: str = Form(...),
+    address: str = Form(...),
+    signature: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
+    try:
+        # Get existing user
+        user = get_user_by_email(db, user_email)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Update user information
+        user.name = name
+        user.email = email
+        user.personal_email = personal_email
+        user.team = team
+        user.address = address
+
+        # Handle signature update if provided
+        if signature and signature.filename:
+            # Read the signature file content
+            signature_content = await signature.read()
+            if signature_content:
+                # Save signature content directly to database as binary data
+                user.signature_data = signature_content
+
+        # Save changes to database
+        db.commit()
+        logger.info(f"Profile updated for user: {email}")
+
+        # Redirect back to dashboard with success message
+        return RedirectResponse(
+            url=f"/dashboard?user_email={email}&use_saved=true&updated=true",
+            status_code=303,
+        )
+
+    except Exception as e:
+        logger.error(f"Error updating profile for {user_email}: {str(e)}")
+        db.rollback()
+        
+        # Redirect back to edit form with error
+        return RedirectResponse(
+            url=f"/edit-profile?user_email={user_email}&error=update_failed",
+            status_code=303,
+        )
 
 
 if __name__ == "__main__":

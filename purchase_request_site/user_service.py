@@ -131,31 +131,33 @@ def get_user_signature_as_data_url(user: User) -> Optional[str]:
 
 
 def save_signature_to_file(user: User, file_path: str) -> bool:
-    """Save user's signature to a file for processing"""
-    if user.signature_data:
-        try:
-            with open(file_path, "wb") as f:
-                f.write(user.signature_data)
-            return True
-        except Exception:
-            return False
-    return False
+    """Save user's signature from database to a file"""
+    if not user or not user.signature_data:
+        return False
+    
+    try:
+        with open(file_path, 'wb') as f:
+            f.write(user.signature_data)
+        return True
+    except Exception as e:
+        print(f"Error saving signature to file {file_path}: {e}")
+        return False
 
 
 def is_user_profile_complete(user: User) -> bool:
     """Check if user profile has all required fields filled"""
     if not user:
         return False
-    
+
     required_fields = [
         user.name,
-        user.email, 
+        user.email,
         user.personal_email,
         user.address,
         user.team,
-        user.signature_data  # Check if signature exists
+        user.signature_data,  # Check if signature exists
     ]
-    
+
     # Check if all required fields are present and not empty
     return all(field and str(field).strip() for field in required_fields)
 
