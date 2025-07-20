@@ -2,11 +2,13 @@ import os
 import shutil
 from datetime import datetime
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException
+from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException, Depends, status
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, FileResponse
+from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
+from sqlalchemy.orm import Session
 from data_processing import create_excel_report, copy_expense_report_template
 from image_processing import convert_signature_to_png, detect_and_crop_signature
 from logging_utils import setup_logger
@@ -15,6 +17,8 @@ from google_drive import (
     upload_session_to_drive_background,
     create_drive_folder_and_get_url,
 )
+from database import get_db, init_database
+from user_service import get_user_by_email, get_user_signature_as_data_url
 
 # Load environment variables
 load_dotenv()
@@ -31,8 +35,9 @@ for directory in required_dirs:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager - runs on startup and shutdown"""
-    # Startup: Log directory status
-    logger.info("🚀 Application startup complete - all directories ready!")
+    # Initialize database on startup
+    init_database()
+    logger.info("🚀 Application startup complete - database and directories ready!")
 
     yield  # Application runs here
 
@@ -42,12 +47,80 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
 
+# Add session middleware for authentication
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET_KEY", "your-secret-key-change-this"))
+
 # Mount static files (directories are guaranteed to exist now)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
 
 # Set up templates
 templates = Jinja2Templates(directory="templates")
+
+# Authentication configuration
+LOGIN_EMAIL = os.getenv("LOGIN_EMAIL", "admin@example.com")
+LOGIN_PASSWORD = os.getenv("LOGIN_PASSWORD", "admin123")
+
+
+def is_authenticated(request: Request) -> bool:
+    """Check if user is authenticated via session"""
+    return request.session.get("authenticated", False)
+
+
+def require_auth(request: Request):
+    """Dependency to require authentication"""
+    if not is_authenticated(request):
+        raise HTTPException(
+            status_code=status.HTTP_302_FOUND,
+            headers={"Location": "/login"}
+        )
+
+
+@app.get("/login")
+async def login_page(request: Request, error: str = None):
+    """Display login page"""
+    return templates.TemplateResponse(
+        "login.html",
+        {
+            "request": request,
+            "error_message": "Invalid email or password" if error == "invalid" else None,
+        },
+    )
+
+
+@app.post("/login")
+async def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    """Handle login form submission"""
+    # Check if it's the admin login
+    if email == LOGIN_EMAIL and password == LOGIN_PASSWORD:
+        request.session["authenticated"] = True
+        request.session["user_email"] = email
+        request.session["is_admin"] = True
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Check user database
+    user = get_user_by_email(db, email)
+    if user and user.password == password:
+        request.session["authenticated"] = True
+        request.session["user_email"] = email
+        request.session["is_admin"] = False
+        return RedirectResponse(url="/", status_code=303)
+    else:
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "error_message": "Invalid email or password",
+                "email": email,
+            },
+        )
+
+
+@app.get("/logout")
+async def logout(request: Request):
+    """Handle logout"""
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=303)
 
 
 @app.get("/")
@@ -56,6 +129,7 @@ async def home(
     success: str = None,
     session_folder: str = None,
     excel_file: str = None,
+    _: None = Depends(require_auth),
 ):
     success_message = None
     download_info = None
@@ -85,7 +159,7 @@ async def home(
 
 
 @app.get("/download-excel")
-async def download_excel(session_folder: str, excel_file: str):
+async def download_excel(request: Request, session_folder: str, excel_file: str, _: None = Depends(require_auth)):
     """Download the generated Excel file for a session"""
     file_path = f"{session_folder}/{excel_file}"
 
@@ -126,10 +200,18 @@ async def submit_request(
     e_transfer_email: str = Form(...),
     address: str = Form(...),
     team: str = Form(...),
+    password: str = Form(...),
     signature: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
 ):
-    # Create session folder for this user
-    session_folder = create_session_folder(name)
+    try:
+        session_folder = create_session_folder(name)
+        
+        # Continue with the rest of the function...
+    except Exception as e:
+        logger.error(f"Error processing user submission: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error processing your submission")
 
     # Save signature file in session folder
     signature_extension = (
@@ -195,15 +277,19 @@ async def submit_request(
 @app.get("/dashboard")
 async def dashboard(
     request: Request,
-    name: str,
-    email: str,
-    e_transfer_email: str,
-    address: str,
-    team: str,
+    user_email: str,
     session_folder: str,
     signature: str,
     error: str = None,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
 ):
+    # Get user from database
+    user = get_user_by_email(db, user_email)
+    if not user:
+        logger.error(f"User not found in database: {user_email}")
+        raise HTTPException(status_code=404, detail="User not found")
+    
     error_message = None
     if error == "no_forms":
         error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, upload an invoice file, and add at least one item."
@@ -213,11 +299,11 @@ async def dashboard(
         {
             "request": request,
             "title": "Purchase Request Site",
-            "name": name,
-            "email": email,
-            "e_transfer_email": e_transfer_email,
-            "address": address,
-            "team": team,
+            "name": user.name,
+            "email": user.email,
+            "e_transfer_email": user.personal_email,
+            "address": user.address,
+            "team": user.team,
             "session_folder": session_folder,
             "signature": signature,
             "error_message": error_message,
@@ -226,7 +312,7 @@ async def dashboard(
 
 
 @app.post("/submit-all-requests")
-async def submit_all_requests(request: Request):
+async def submit_all_requests(request: Request, _: None = Depends(require_auth)):
     # Get form data
     form_data = await request.form()
 
@@ -452,6 +538,35 @@ async def submit_all_requests(request: Request):
     return RedirectResponse(
         url=f"/?success=true&session_folder={session_folder}&excel_file=purchase_request.xlsx",
         status_code=303,
+    )
+
+
+@app.get("/profile")
+async def user_profile(
+    request: Request,
+    user_email: str = None,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
+    """Display user profile information"""
+    if not user_email:
+        # If no email provided, redirect to home
+        return RedirectResponse(url="/", status_code=303)
+    
+    user = get_user_by_email(db, user_email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get signature as data URL for display
+    signature_data_url = get_user_signature_as_data_url(user)
+    
+    return templates.TemplateResponse(
+        "user_profile.html",
+        {
+            "request": request,
+            "user": user,
+            "signature_data_url": signature_data_url,
+        },
     )
 
 

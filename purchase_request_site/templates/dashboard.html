@@ -3,12 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Dashboard</title>
+    <title>Purchase Request Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    <style>
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 2rem;
+        }
+        
+        .header-nav h1 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+        
+        .logout-link {
+            background-color: #dc3545;
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        
+        .logout-link:hover {
+            background-color: #c82333;
+            text-decoration: none;
+            color: white;
+        }
+        
+        /* Rest of existing styles... */
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Purchase Request Dashboard</h1>
+        <div class="header-nav">
+            <h1>Purchase Request Dashboard</h1>
+            <a href="/logout" class="logout-link">Logout</a>
+        </div>
         <p class="subtitle">Fill out up to 10 separate purchase requests and submit them all together</p>
         
         <div class="user-info">
