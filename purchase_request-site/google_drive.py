@@ -6,6 +6,7 @@ This module handles uploading session data (Excel files, invoices, signatures) t
 
 import os
 import mimetypes
+from datetime import datetime
 from typing import Dict, Any
 from pathlib import Path
 from dotenv import load_dotenv
@@ -25,7 +26,7 @@ logger = setup_logger(__name__)
 # Google Drive configuration
 DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"]
 # Use specific folder ID for "My Drive / Test_automation"
-PARENT_FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
+PARENT_FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "1fH2GB4LtYjGGhusqbjOLftB7jqgLNehW") #gitleaks: allowlist
 
 
 class GoogleDriveClient:
@@ -172,6 +173,59 @@ class GoogleDriveClient:
             logger.error(f"Error creating session folder: {e}")
             raise
 
+    def _ensure_month_year_folder(self, parent_id: str) -> str:
+        """
+        Create or find a month/year folder (e.g., "July 2025") in the parent directory
+        
+        Args:
+            parent_id: ID of the parent folder (Test_automation)
+            
+        Returns:
+            str: The folder ID of the month/year folder
+        """
+        try:
+            # Get current month and year
+            now = datetime.now()
+            month_year_name = now.strftime("%B %Y")  # e.g., "January 2025"
+            
+            # Search for existing month/year folder
+            query = f"name='{month_year_name}' and mimeType='application/vnd.google-apps.folder' and '{parent_id}' in parents and trashed=false"
+            results = self.service.files().list(
+                q=query,
+                fields="files(id, name)"
+            ).execute()
+            
+            folders = results.get('files', [])
+            
+            if folders:
+                # Folder exists
+                month_folder_id = folders[0]['id']
+                logger.info(f"Found existing month/year folder: {month_year_name} (ID: {month_folder_id})")
+                return month_folder_id
+            else:
+                # Create new month/year folder
+                folder_metadata = {
+                    'name': month_year_name,
+                    'mimeType': 'application/vnd.google-apps.folder',
+                    'parents': [parent_id]
+                }
+                
+                folder = self.service.files().create(
+                    body=folder_metadata,
+                    fields='id'
+                ).execute()
+                
+                month_folder_id = folder.get('id')
+                logger.info(f"Created month/year folder: {month_year_name} (ID: {month_folder_id})")
+                return month_folder_id
+                
+        except HttpError as e:
+            logger.error(f"HTTP error managing month/year folder: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Error managing month/year folder: {e}")
+            raise
+
     def _upload_file(
         self, file_path: str, folder_id: str, file_name: str = None
     ) -> str:
@@ -240,17 +294,20 @@ class GoogleDriveClient:
             return False
 
         try:
-            # Ensure parent folder exists
+            # Ensure parent folder exists (Test_automation)
             parent_folder_id = self._ensure_parent_folder()
+            
+            # Ensure month/year folder exists (e.g., "January 2025")
+            month_year_folder_id = self._ensure_month_year_folder(parent_folder_id)
 
             # Create session folder name with user info and timestamp
             session_name = os.path.basename(session_folder_path)
             user_name = user_info.get("name", "Unknown").replace(" ", "_")
             drive_folder_name = f"{session_name}_{user_name}"
 
-            # Create session folder in Drive
+            # Create session folder in the month/year folder
             session_folder_id = self._create_session_folder(
-                drive_folder_name, parent_folder_id
+                drive_folder_name, month_year_folder_id
             )
 
             # Upload all files in the session folder
