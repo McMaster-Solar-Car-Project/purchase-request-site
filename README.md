@@ -125,6 +125,14 @@ The application will start on `http://localhost:8000` with login authentication 
 
 **Note:** The FastAPI app runs from the `purchase_request_site` directory, where the database file `purchase_requests.db` is located.
 
+### 4. Application Flow
+
+1. **Login** (`/login`) - Authenticate with user credentials
+2. **User Info** (`/`) - Enter personal details and signature  
+3. **Dashboard** (`/dashboard`) - Fill out purchase request forms
+4. **Success Page** (`/success`) - View submission confirmation and download Excel report
+5. **Profile** (`/profile`) - View stored user information
+
 ## Requirements
 
 - Python 3.11+

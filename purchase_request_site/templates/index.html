@@ -48,20 +48,7 @@
     <div class="container">
         <h1>{{ heading }}</h1>
         
-        {% if success_message %}
-        <div class="success-message">
-            <p>{{ success_message }}</p>
-            
-            {% if download_info %}
-            <div class="download-section">
-                <h3>📄 Download Your Excel Report</h3>
-                <p>Your purchase request has been processed and your Excel report is ready for download.</p>
-                <a href="{{ download_info.download_url }}" class="btn download-btn">📥 Download Excel Report</a>
-                <small>Session: {{ download_info.session_folder }} | File: {{ download_info.excel_file }}</small>
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
+
 
         <form method="POST" action="/submit-request" enctype="multipart/form-data">
             <div class="form-group">

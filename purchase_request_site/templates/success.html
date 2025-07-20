@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Request Submitted - Success</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    <style>
+        .success-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .success-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 3rem 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+        }
+        
+        .success-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
+        .success-header p {
+            margin: 1rem 0 0 0;
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .download-card {
+            background: white;
+            border: 2px solid #28a745;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .download-card h3 {
+            color: #28a745;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 1rem 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
+            text-decoration: none;
+            color: white;
+        }
+        
+        .session-info {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            text-align: left;
+        }
+        
+        .session-info strong {
+            color: #495057;
+        }
+        
+        .actions {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #545b62);
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            margin: 0 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .next-steps {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 4px;
+            text-align: left;
+        }
+        
+        .next-steps h4 {
+            color: #1976d2;
+            margin-bottom: 1rem;
+        }
+        
+        .next-steps ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        
+        .next-steps li {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-header">
+            <div class="success-icon">🎉</div>
+            <h1>Purchase Request Submitted Successfully!</h1>
+            <p>Your purchase request has been processed and submitted for approval.</p>
+        </div>
+
+        {% if download_info %}
+        <div class="download-card">
+            <h3>📄 Your Excel Report is Ready</h3>
+            <p>Your purchase request has been compiled into an Excel report for your records and submission.</p>
+            
+            <div class="session-info">
+                <strong>Session ID:</strong> {{ download_info.session_folder }}<br>
+                <strong>Report File:</strong> {{ download_info.excel_file }}<br>
+                <strong>Generated:</strong> {{ current_time.strftime('%B %d, %Y at %I:%M %p') }}
+            </div>
+            
+            <a href="{{ download_info.download_url }}" class="download-btn" download="{{ download_info.excel_file }}">
+                📥 Download Excel Report
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="next-steps">
+            <h4>📋 What Happens Next?</h4>
+            <ul>
+                <li><strong>Review:</strong> Your purchase request will be reviewed by the appropriate team</li>
+                <li><strong>Approval:</strong> You'll be notified once your request is approved or if additional information is needed</li>
+                <li><strong>Processing:</strong> Approved requests will be processed according to your team's procedures</li>
+                <li><strong>Reimbursement:</strong> E-transfer will be sent to {{ user_email if user_email else 'your specified email' }} once processed</li>
+            </ul>
+        </div>
+
+        <div class="actions">
+            <h3>What would you like to do next?</h3>
+            <a href="/" class="btn-secondary">🏠 Return to Home</a>
+            <a href="/profile?user_email={{ user_email if user_email else '' }}" class="btn-secondary">👤 View Profile</a>
+            <a href="/logout" class="btn-secondary">🚪 Logout</a>
+        </div>
+
+        <div style="margin-top: 3rem; padding: 1rem; background: #f8f9fa; border-radius: 6px; font-size: 0.9rem; color: #6c757d;">
+            <p><strong>Need Help?</strong> If you have any questions about your purchase request, please contact your team lead or the finance department.</p>
+            <p><strong>Keep Your Receipt:</strong> Please save the downloaded Excel file for your records.</p>
+        </div>
+    </div>
+</body>
+</html> 

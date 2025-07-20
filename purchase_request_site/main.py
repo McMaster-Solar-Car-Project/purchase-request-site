@@ -148,33 +148,14 @@ async def logout(request: Request):
 @app.get("/")
 async def home(
     request: Request,
-    success: str = None,
-    session_folder: str = None,
-    excel_file: str = None,
     _: None = Depends(require_auth),
 ):
-    success_message = None
-    download_info = None
-
-    if success:
-        success_message = "All your purchase requests have been submitted successfully! We'll be in touch soon."
-
-        # If session info is provided, add download information
-        if session_folder and excel_file:
-            download_info = {
-                "session_folder": session_folder,
-                "excel_file": excel_file,
-                "download_url": f"/download-excel?session_folder={session_folder}&excel_file={excel_file}",
-            }
-
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "title": "Purchase Request Site",
             "heading": "Enter your purchase request information",
-            "success_message": success_message,
-            "download_info": download_info,
             "google_api_key": os.getenv("GOOGLE_PLACES_API_KEY"),
         },
     )
@@ -594,14 +575,44 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
         logger.warning("No forms were submitted (all forms were empty)")
         # Redirect back to dashboard with error message instead of success
         return RedirectResponse(
-            url=f"/dashboard?name={name}&email={email}&e_transfer_email={e_transfer_email}&address={address}&team={team}&session_folder={session_folder}&signature={signature_filename}&error=no_forms",
+            url=f"/dashboard?user_email={email}&session_folder={session_folder}&signature={signature_filename}&error=no_forms",
             status_code=303,
         )
 
     # Redirect back to home with success message and session info for download
     return RedirectResponse(
-        url=f"/?success=true&session_folder={session_folder}&excel_file=purchase_request.xlsx",
+        url=f"/success?session_folder={session_folder}&excel_file=purchase_request.xlsx&user_email={email}",
         status_code=303,
+    )
+
+
+@app.get("/success")
+async def success_page(
+    request: Request,
+    session_folder: str = None,
+    excel_file: str = None,
+    user_email: str = None,
+    _: None = Depends(require_auth),
+):
+    """Display success page after purchase request submission"""
+    download_info = None
+    current_time = datetime.now()
+    
+    if session_folder and excel_file:
+        download_info = {
+            "session_folder": session_folder,
+            "excel_file": excel_file,
+            "download_url": f"/download-excel?session_folder={session_folder}&excel_file={excel_file}",
+        }
+    
+    return templates.TemplateResponse(
+        "success.html",
+        {
+            "request": request,
+            "download_info": download_info,
+            "user_email": user_email,
+            "current_time": current_time,
+        },
     )
 
 
