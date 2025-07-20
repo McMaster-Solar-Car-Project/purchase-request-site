@@ -525,9 +525,6 @@ async def success_page(
     )
 
 
-
-
-
 @app.get("/edit-profile")
 async def edit_profile_get(
     request: Request,
@@ -587,7 +584,7 @@ async def edit_profile_post(
         current_password = current_password.strip()
         new_password = new_password.strip()
         confirm_password = confirm_password.strip()
-        
+
         password_error = None
         if new_password or current_password:
             if not current_password:
