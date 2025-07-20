@@ -27,7 +27,11 @@ from google_drive import (
     create_drive_folder_and_get_url,
 )
 from database import get_db, init_database
-from user_service import create_or_update_user, get_user_by_email, get_user_signature_as_data_url
+from user_service import (
+    create_or_update_user,
+    get_user_by_email,
+    get_user_signature_as_data_url,
+)
 
 # Load environment variables
 load_dotenv()
@@ -231,11 +235,13 @@ async def submit_request(
         # Read signature file content once at the beginning
         signature_content = await signature.read()
         if not signature_content:
-            raise HTTPException(status_code=400, detail="Uploaded signature file is empty")
-        
+            raise HTTPException(
+                status_code=400, detail="Uploaded signature file is empty"
+            )
+
         # Create session folder for this user
         session_folder = create_session_folder(name)
-        
+
         # Save signature file in session folder first
         signature_extension = (
             signature.filename.split(".")[-1] if "." in signature.filename else "png"
@@ -246,11 +252,12 @@ async def submit_request(
         # Save the signature file
         with open(signature_location, "wb") as file_object:
             file_object.write(signature_content)
-        
+
         # Create a new UploadFile-like object for database storage
         from user_service import FileUploadFromPath
+
         signature_for_db = FileUploadFromPath(signature_location)
-        
+
         # Check if user exists in database, if not create with default password
         existing_user = get_user_by_email(db, email)
         if existing_user:
@@ -263,7 +270,7 @@ async def submit_request(
                 address=address,
                 team=team,
                 password=existing_user.password,  # Keep existing password
-                signature_file=signature_for_db
+                signature_file=signature_for_db,
             )
         else:
             # Create new user with default password
@@ -275,9 +282,9 @@ async def submit_request(
                 address=address,
                 team=team,
                 password="default123",  # Default password for new users
-                signature_file=signature_for_db
+                signature_file=signature_for_db,
             )
-        
+
     except Exception as e:
         logger.error(f"Error processing user submission: {str(e)}")
         raise HTTPException(status_code=500, detail="Error processing your submission")
