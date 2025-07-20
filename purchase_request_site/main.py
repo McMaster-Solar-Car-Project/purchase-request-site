@@ -31,6 +31,8 @@ from user_service import (
     create_or_update_user,
     get_user_by_email,
     get_user_signature_as_data_url,
+    is_user_profile_complete,
+    save_signature_to_file,
 )
 
 # Load environment variables
@@ -126,6 +128,23 @@ async def login(
         request.session["authenticated"] = True
         request.session["user_email"] = email
         request.session["is_admin"] = False
+        
+        # Check if user profile is complete
+        if is_user_profile_complete(user):
+            # Create a session folder with existing user data
+            session_folder = create_session_folder(user.name)
+            
+            # Save user's signature to session folder for dashboard use
+            signature_filename = "signature.png"
+            signature_path = f"{session_folder}/{signature_filename}"
+            if save_signature_to_file(user, signature_path):
+                # Redirect directly to dashboard, skipping user info form
+                return RedirectResponse(
+                    url=f"/dashboard?user_email={email}&session_folder={session_folder}&signature={signature_filename}",
+                    status_code=303
+                )
+        
+        # If profile incomplete, go to user info form
         return RedirectResponse(url="/", status_code=303)
     else:
         return templates.TemplateResponse(
@@ -148,8 +167,20 @@ async def logout(request: Request):
 @app.get("/")
 async def home(
     request: Request,
+    db: Session = Depends(get_db),
     _: None = Depends(require_auth),
 ):
+    # Check if user has a complete profile
+    user_email = request.session.get("user_email")
+    user_profile_complete = False
+    saved_user = None
+    
+    if user_email:
+        user = get_user_by_email(db, user_email)
+        if user and is_user_profile_complete(user):
+            user_profile_complete = True
+            saved_user = user
+    
     return templates.TemplateResponse(
         "index.html",
         {
@@ -157,6 +188,8 @@ async def home(
             "title": "Purchase Request Site",
             "heading": "Enter your purchase request information",
             "google_api_key": os.getenv("GOOGLE_PLACES_API_KEY"),
+            "user_profile_complete": user_profile_complete,
+            "saved_user": saved_user,
         },
     )
 
@@ -323,8 +356,9 @@ async def submit_request(
 async def dashboard(
     request: Request,
     user_email: str,
-    session_folder: str,
-    signature: str,
+    session_folder: str = None,
+    signature: str = None,
+    use_saved: bool = False,
     error: str = None,
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
@@ -334,6 +368,17 @@ async def dashboard(
     if not user:
         logger.error(f"User not found in database: {user_email}")
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # If use_saved is True, create session folder and signature for existing user
+    if use_saved and not session_folder:
+        session_folder = create_session_folder(user.name)
+        signature_filename = "signature.png"
+        signature_path = f"{session_folder}/{signature_filename}"
+        if save_signature_to_file(user, signature_path):
+            signature = signature_filename
+        else:
+            logger.warning(f"Could not save signature for user {user_email}")
+            signature = "signature.png"  # Default filename
 
     error_message = None
     if error == "no_forms":
@@ -597,14 +642,14 @@ async def success_page(
     """Display success page after purchase request submission"""
     download_info = None
     current_time = datetime.now()
-    
+
     if session_folder and excel_file:
         download_info = {
             "session_folder": session_folder,
             "excel_file": excel_file,
             "download_url": f"/download-excel?session_folder={session_folder}&excel_file={excel_file}",
         }
-    
+
     return templates.TemplateResponse(
         "success.html",
         {

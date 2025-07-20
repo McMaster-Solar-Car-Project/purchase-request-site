@@ -128,10 +128,21 @@ The application will start on `http://localhost:8000` with login authentication 
 ### 4. Application Flow
 
 1. **Login** (`/login`) - Authenticate with user credentials
-2. **User Info** (`/`) - Enter personal details and signature  
+   - **Smart Redirect**: Users with complete profiles skip directly to dashboard
+   - **Profile Check**: Users with incomplete profiles go to user info form
+2. **User Info** (`/`) - Enter personal details and signature (if needed)
+   - **Skip Option**: Complete profiles show saved info with option to proceed or update
 3. **Dashboard** (`/dashboard`) - Fill out purchase request forms
 4. **Success Page** (`/success`) - View submission confirmation and download Excel report
 5. **Profile** (`/profile`) - View stored user information
+
+#### Profile Auto-Skip Feature
+
+The system automatically detects if a user has complete profile information (name, email, personal email, address, team, and signature) and provides two options:
+
+- **Complete Profile**: Skip directly to dashboard with saved information
+- **Incomplete Profile**: Show user info form to fill missing fields
+- **Update Option**: Users can always choose to update their saved information
 
 ## Requirements
 

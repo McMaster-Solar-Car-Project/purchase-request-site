@@ -37,6 +37,95 @@
             text-decoration: none;
             color: white;
         }
+        
+        .profile-complete-notice {
+            background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+            border: 2px solid #28a745;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.1);
+        }
+        
+        .notice-header h3 {
+            color: #28a745;
+            margin-bottom: 0.5rem;
+        }
+        
+        .notice-header p {
+            color: #555;
+            margin-bottom: 1.5rem;
+        }
+        
+        .saved-info {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border: 1px solid #d4edda;
+        }
+        
+        .saved-info h4 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 0.75rem;
+        }
+        
+        .info-item {
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .info-item strong {
+            color: #495057;
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            text-decoration: none;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #545b62);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -48,6 +137,38 @@
     <div class="container">
         <h1>{{ heading }}</h1>
         
+        {% if user_profile_complete %}
+        <div class="profile-complete-notice">
+            <div class="notice-header">
+                <h3>✅ Your Profile is Complete</h3>
+                <p>We found your saved information in our system. You can proceed directly to create purchase requests or update your information below.</p>
+            </div>
+            
+            <div class="saved-info">
+                <h4>📋 Your Saved Information:</h4>
+                <div class="info-grid">
+                    <div class="info-item"><strong>Name:</strong> {{ saved_user.name }}</div>
+                    <div class="info-item"><strong>Email:</strong> {{ saved_user.email }}</div>
+                    <div class="info-item"><strong>E-Transfer Email:</strong> {{ saved_user.personal_email }}</div>
+                    <div class="info-item"><strong>Team:</strong> {{ saved_user.team }}</div>
+                    <div class="info-item"><strong>Address:</strong> {{ saved_user.address }}</div>
+                    <div class="info-item"><strong>Signature:</strong> On file ✓</div>
+                </div>
+            </div>
+            
+            <div class="quick-actions">
+                <a href="/dashboard?user_email={{ saved_user.email }}&use_saved=true" class="btn btn-primary">
+                    🚀 Use Saved Info & Create Purchase Request
+                </a>
+                <button onclick="showUpdateForm()" class="btn btn-secondary">
+                    ✏️ Update My Information
+                </button>
+            </div>
+        </div>
+        
+        <div id="update-form" style="display: none;">
+            <h3>📝 Update Your Information</h3>
+        {% endif %}
 
 
         <form method="POST" action="/submit-request" enctype="multipart/form-data">
@@ -105,9 +226,18 @@
                 <button type="submit" class="btn">Continue to Purchase Request Forms</button>
             </div>
         </form>
+        
+        {% if user_profile_complete %}
+        </div> <!-- End update-form div -->
+        {% endif %}
     </div>
 
     <script>
+        function showUpdateForm() {
+            document.getElementById('update-form').style.display = 'block';
+            document.querySelector('.profile-complete-notice').style.display = 'none';
+        }
+        
         function updateFileName(input, displayId) {
             const display = document.getElementById(displayId);
             if (input.files && input.files[0]) {

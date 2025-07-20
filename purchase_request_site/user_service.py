@@ -142,6 +142,24 @@ def save_signature_to_file(user: User, file_path: str) -> bool:
     return False
 
 
+def is_user_profile_complete(user: User) -> bool:
+    """Check if user profile has all required fields filled"""
+    if not user:
+        return False
+    
+    required_fields = [
+        user.name,
+        user.email, 
+        user.personal_email,
+        user.address,
+        user.team,
+        user.signature_data  # Check if signature exists
+    ]
+    
+    # Check if all required fields are present and not empty
+    return all(field and str(field).strip() for field in required_fields)
+
+
 if __name__ == "__main__":
     # Example usage - you can copy this code to create users programmatically
     from database import get_db, init_database
