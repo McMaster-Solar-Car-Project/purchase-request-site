@@ -242,7 +242,7 @@ class GoogleDriveClient:
             credentials = Credentials.from_service_account_info(
                 service_account_info, scopes=DRIVE_SCOPES
             )
-            return build('drive', 'v3', credentials=credentials)
+            return build("drive", "v3", credentials=credentials)
         except Exception as e:
             logger.error(f"Failed to create thread-safe service: {e}")
             return None
@@ -263,13 +263,13 @@ class GoogleDriveClient:
         """
         max_retries = 3
         retry_delay = 1  # seconds
-        
+
         # Create thread-safe service instance for this upload
         service = self._create_thread_safe_service()
         if not service:
             logger.error(f"Failed to create service for {file_path}")
             return None
-        
+
         for attempt in range(max_retries):
             try:
                 if not os.path.exists(file_path):
@@ -303,33 +303,35 @@ class GoogleDriveClient:
 
             except (HttpError, Exception) as e:
                 if attempt < max_retries - 1:
-                    logger.warning(f"Upload attempt {attempt + 1} failed for {file_name}, retrying in {retry_delay}s: {e}")
+                    logger.warning(
+                        f"Upload attempt {attempt + 1} failed for {file_name}, retrying in {retry_delay}s: {e}"
+                    )
                     time.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                 else:
                     logger.error(f"All upload attempts failed for {file_path}: {e}")
                     return None
 
-    def upload_session_folder(
+    def create_session_folder_structure(
         self, session_folder_path: str, user_info: Dict[str, Any]
-    ) -> bool:
+    ) -> tuple[bool, str, str]:
         """
-        Upload an entire session folder to Google Drive
-
+        Create the folder structure in Google Drive and return folder URL and ID
+        
         Args:
             session_folder_path: Local path to the session folder
             user_info: User information dictionary for naming
-
+            
         Returns:
-            bool: True if successful, False otherwise
+            tuple: (success: bool, folder_url: str, folder_id: str)
         """
         if not self.service and not self._authenticate():
-            return False
-
+            return False, "", ""
+            
         try:
             # Ensure parent folder exists (Test_automation)
             parent_folder_id = self._ensure_parent_folder()
-
+            
             # Ensure month/year folder exists (e.g., "January 2025")
             month_year_folder_id = self._ensure_month_year_folder(parent_folder_id)
 
@@ -342,6 +344,58 @@ class GoogleDriveClient:
             session_folder_id = self._create_session_folder(
                 drive_folder_name, month_year_folder_id
             )
+            
+            # Construct Google Drive folder URL
+            folder_url = f"https://drive.google.com/drive/folders/{session_folder_id}"
+            
+            logger.info(f"Created Google Drive folder: {drive_folder_name}")
+            logger.info(f"Folder URL: {folder_url}")
+            
+            return True, folder_url, session_folder_id
+            
+        except Exception as e:
+            logger.error(f"Error creating session folder structure: {e}")
+            return False, "", ""
+
+    def upload_session_folder(
+        self, session_folder_path: str, user_info: Dict[str, Any], session_folder_id: str = None
+    ) -> bool:
+        """
+        Upload an entire session folder to Google Drive
+
+        Args:
+            session_folder_path: Local path to the session folder
+            user_info: User information dictionary for naming
+            session_folder_id: Optional existing folder ID to upload to
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not self.service and not self._authenticate():
+            return False
+
+        try:
+            # Create session folder name with user info and timestamp (always needed for logging)
+            session_name = os.path.basename(session_folder_path)
+            user_name = user_info.get("name", "Unknown").replace(" ", "_")
+            drive_folder_name = f"{session_name}_{user_name}"
+
+            # Use provided folder ID or create new folder structure
+            if session_folder_id:
+                logger.info(f"Using existing session folder ID: {session_folder_id}")
+            else:
+                # Fallback: create folder structure if no ID provided
+                logger.info("No session folder ID provided, creating new folder structure")
+                # Ensure parent folder exists (Test_automation)
+                parent_folder_id = self._ensure_parent_folder()
+
+                # Ensure month/year folder exists (e.g., "January 2025")
+                month_year_folder_id = self._ensure_month_year_folder(parent_folder_id)
+
+                # Create session folder in the month/year folder
+                session_folder_id = self._create_session_folder(
+                    drive_folder_name, month_year_folder_id
+                )
 
             # Upload all files in the session folder (in parallel)
             uploaded_files = []
@@ -352,21 +406,29 @@ class GoogleDriveClient:
                 return False
 
             # Get all files to upload
-            files_to_upload = [file_path for file_path in session_path.iterdir() if file_path.is_file()]
-            
+            files_to_upload = [
+                file_path for file_path in session_path.iterdir() if file_path.is_file()
+            ]
+
             if not files_to_upload:
-                logger.warning(f"No files found in session folder: {session_folder_path}")
+                logger.warning(
+                    f"No files found in session folder: {session_folder_path}"
+                )
                 return True
 
             # Upload files in parallel using ThreadPoolExecutor (with conservative threading)
             logger.info(f"Starting parallel upload of {len(files_to_upload)} files...")
-            with ThreadPoolExecutor(max_workers=min(len(files_to_upload), 3)) as executor:
+            with ThreadPoolExecutor(
+                max_workers=min(len(files_to_upload), 3)
+            ) as executor:
                 # Submit all upload tasks
                 future_to_file = {
-                    executor.submit(self._upload_file, str(file_path), session_folder_id): file_path
+                    executor.submit(
+                        self._upload_file, str(file_path), session_folder_id
+                    ): file_path
                     for file_path in files_to_upload
                 }
-                
+
                 # Collect results as they complete
                 failed_files = []
                 for future in as_completed(future_to_file):
@@ -374,7 +436,9 @@ class GoogleDriveClient:
                     try:
                         file_id = future.result()
                         if file_id:
-                            uploaded_files.append({"name": file_path.name, "id": file_id})
+                            uploaded_files.append(
+                                {"name": file_path.name, "id": file_id}
+                            )
                             logger.debug(f"✓ Uploaded: {file_path.name}")
                         else:
                             failed_files.append(file_path)
@@ -384,16 +448,24 @@ class GoogleDriveClient:
 
             # Retry failed files sequentially (less network stress)
             if failed_files:
-                logger.info(f"Retrying {len(failed_files)} failed files sequentially...")
+                logger.info(
+                    f"Retrying {len(failed_files)} failed files sequentially..."
+                )
                 for file_path in failed_files:
                     try:
                         time.sleep(0.5)  # Small delay between sequential uploads
                         file_id = self._upload_file(str(file_path), session_folder_id)
                         if file_id:
-                            uploaded_files.append({"name": file_path.name, "id": file_id})
-                            logger.info(f"✓ Sequential retry succeeded: {file_path.name}")
+                            uploaded_files.append(
+                                {"name": file_path.name, "id": file_id}
+                            )
+                            logger.info(
+                                f"✓ Sequential retry succeeded: {file_path.name}"
+                            )
                     except Exception as e:
-                        logger.warning(f"Sequential retry also failed for {file_path.name}: {e}")
+                        logger.warning(
+                            f"Sequential retry also failed for {file_path.name}: {e}"
+                        )
 
             logger.info("Successfully uploaded session folder to Google Drive:")
             logger.info(f"  - Drive folder: {drive_folder_name}")
@@ -468,25 +540,57 @@ def upload_session_to_drive(
         return False
 
 
-def upload_session_to_drive_background(session_folder_path: str, user_info: Dict[str, Any]) -> None:
+def create_drive_folder_and_get_url(session_folder_path: str, user_info: Dict[str, Any]) -> tuple[str, str]:
     """
-    Upload session data to Google Drive in the background (non-blocking)
+    Create Google Drive folder structure and return the folder URL and ID
     
     Args:
         session_folder_path: Local path to the session folder
         user_info: User information dictionary
+        
+    Returns:
+        tuple: (folder_url: str, folder_id: str) or ("", "") if failed
     """
+    try:
+        success, folder_url, folder_id = drive_client.create_session_folder_structure(session_folder_path, user_info)
+        if success:
+            logger.info(f"Google Drive folder created: {folder_url}")
+            return folder_url, folder_id
+        else:
+            logger.warning("Failed to create Google Drive folder")
+            return "", ""
+    except Exception as e:
+        logger.error(f"Unexpected error creating Google Drive folder: {e}")
+        return "", ""
+
+
+def upload_session_to_drive_background(
+    session_folder_path: str, user_info: Dict[str, Any], session_folder_id: str = None
+) -> None:
+    """
+    Upload session data to Google Drive in the background (non-blocking)
+
+    Args:
+        session_folder_path: Local path to the session folder
+        user_info: User information dictionary
+        session_folder_id: Optional existing folder ID to upload to
+    """
+
     def background_upload():
         try:
-            logger.info(f"Starting background upload to Google Drive: {session_folder_path}")
-            success = drive_client.upload_session_folder(session_folder_path, user_info)
+            logger.info(
+                f"Starting background upload to Google Drive: {session_folder_path}"
+            )
+            success = drive_client.upload_session_folder(session_folder_path, user_info, session_folder_id)
             if success:
-                logger.info("✅ Background upload to Google Drive completed successfully")
+                logger.info(
+                    "✅ Background upload to Google Drive completed successfully"
+                )
             else:
                 logger.warning("❌ Background upload to Google Drive failed")
         except Exception as e:
             logger.error(f"Unexpected error in background upload to Google Drive: {e}")
-    
+
     # Start upload in background thread
     upload_thread = threading.Thread(target=background_upload, daemon=True)
     upload_thread.start()

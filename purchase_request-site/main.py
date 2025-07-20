@@ -11,7 +11,7 @@ from data_processing import create_excel_report
 from image_processing import convert_signature_to_png, detect_and_crop_signature
 from logging_utils import setup_logger
 from google_sheets import log_purchase_request_to_sheets
-from google_drive import upload_session_to_drive_background
+from google_drive import upload_session_to_drive_background, create_drive_folder_and_get_url
 
 # Load environment variables
 load_dotenv()
@@ -514,19 +514,30 @@ async def submit_all_requests(request: Request):
 
         logger.info("=" * 60)
 
-        # Log to Google Sheets
+        # Create Google Drive folder and get URL
+        drive_folder_url = ""
+        drive_folder_id = ""
+        try:
+            logger.info("Creating Google Drive folder structure...")
+            drive_folder_url, drive_folder_id = create_drive_folder_and_get_url(session_folder, user_info)
+        except Exception as e:
+            logger.error(f"Failed to create Google Drive folder (continuing anyway): {e}")
+
+        # Log to Google Sheets (with Drive folder URL)
         try:
             logger.info("Logging session data to Google Sheets...")
-            log_purchase_request_to_sheets(user_info, submitted_forms, session_folder)
+            log_purchase_request_to_sheets(user_info, submitted_forms, session_folder, drive_folder_url)
         except Exception as e:
             logger.error(f"Failed to log to Google Sheets (continuing anyway): {e}")
 
-        # Upload to Google Drive (in background)
+        # Upload files to Google Drive (in background)
         try:
-            logger.info("Starting background upload to Google Drive...")
-            upload_session_to_drive_background(session_folder, user_info)
+            logger.info("Starting background file upload to Google Drive...")
+            upload_session_to_drive_background(session_folder, user_info, drive_folder_id)
         except Exception as e:
-            logger.error(f"Failed to start Google Drive upload (continuing anyway): {e}")
+            logger.error(
+                f"Failed to start Google Drive upload (continuing anyway): {e}"
+            )
 
     else:
         logger.warning("No forms were submitted (all forms were empty)")

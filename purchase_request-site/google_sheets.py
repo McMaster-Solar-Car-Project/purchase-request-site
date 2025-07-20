@@ -153,6 +153,7 @@ class GoogleSheetsClient:
                     "123 Test St",
                     "test.etransfer@email.com",
                     "Test Team",
+                    "https://drive.google.com/drive/folders/test_folder_id",
                 ],
                 [
                     current_time,
@@ -161,12 +162,13 @@ class GoogleSheetsClient:
                     "456 Demo Ave",
                     "demo.etransfer@email.com",
                     "Demo Team",
+                    "https://drive.google.com/drive/folders/test_folder_id_2",
                 ],
             ]
 
             # Write to the sheet
             range_name = (
-                f"{SHEET_TAB_NAME}!A:F"  # 6 columns to match session data format
+                f"{SHEET_TAB_NAME}!A:G"  # 7 columns to match session data format
             )
             body = {"values": test_data}
 
@@ -199,6 +201,7 @@ class GoogleSheetsClient:
         user_info: Dict[str, Any],
         forms: List[Dict[str, Any]],
         session_folder: str,
+        drive_folder_url: str = "",
     ) -> bool:
         """
         Log purchase request session data to Google Sheets (one row per session)
@@ -207,6 +210,7 @@ class GoogleSheetsClient:
             user_info: User information dictionary
             forms: List of submitted form data (not used for logging, but kept for compatibility)
             session_folder: Session folder path
+            drive_folder_url: Google Drive folder URL for easy access
 
         Returns:
             bool: True if successful, False otherwise
@@ -226,10 +230,11 @@ class GoogleSheetsClient:
                 user_info.get("address", ""),
                 user_info.get("e_transfer_email", ""),  # Email Address
                 user_info.get("team", ""),
+                drive_folder_url,  # Google Drive folder link
             ]
 
             # Write to the sheet
-            range_name = f"{SHEET_TAB_NAME}!A:F"  # 6 columns: Timestamp, Name, Mac Email, Address, Email Address, Team
+            range_name = f"{SHEET_TAB_NAME}!A:G"  # 7 columns: Timestamp, Name, Mac Email, Address, Email Address, Team, Drive Link
             body = {
                 "values": [row]  # Single row
             }
@@ -284,7 +289,7 @@ def test_google_sheets_connection():
 
 
 def log_purchase_request_to_sheets(
-    user_info: Dict[str, Any], forms: List[Dict[str, Any]], session_folder: str
+    user_info: Dict[str, Any], forms: List[Dict[str, Any]], session_folder: str, drive_folder_url: str = ""
 ):
     """
     Convenience function to log session data to Google Sheets (one row per session)
@@ -293,9 +298,10 @@ def log_purchase_request_to_sheets(
         user_info: User information dictionary (name, email, address, e_transfer_email, team)
         forms: List of submitted form data (not used for logging, kept for compatibility)
         session_folder: Session folder path
+        drive_folder_url: Google Drive folder URL for easy access
     """
     try:
-        success = sheets_client.log_purchase_request(user_info, forms, session_folder)
+        success = sheets_client.log_purchase_request(user_info, forms, session_folder, drive_folder_url)
         if success:
             logger.info("Session data successfully logged to Google Sheets")
         else:
