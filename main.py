@@ -1,10 +1,10 @@
 import os
 from datetime import datetime
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Form, File, UploadFile
+from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from dotenv import load_dotenv
 from data_processing import create_excel_report
 from image_processing import convert_signature_to_png, detect_and_crop_signature
@@ -41,10 +41,20 @@ templates = Jinja2Templates(directory="templates")
 
 
 @app.get("/")
-async def home(request: Request, success: str = None):
+async def home(request: Request, success: str = None, session_folder: str = None, excel_file: str = None):
     success_message = None
+    download_info = None
+    
     if success:
         success_message = "All your purchase requests have been submitted successfully! We'll be in touch soon."
+        
+        # If session info is provided, add download information
+        if session_folder and excel_file:
+            download_info = {
+                "session_folder": session_folder,
+                "excel_file": excel_file,
+                "download_url": f"/download-excel?session_folder={session_folder}&excel_file={excel_file}"
+            }
 
     return templates.TemplateResponse(
         "index.html",
@@ -53,8 +63,31 @@ async def home(request: Request, success: str = None):
             "title": "Purchase Request Site",
             "heading": "Enter your purchase request information",
             "success_message": success_message,
+            "download_info": download_info,
             "google_api_key": os.getenv("GOOGLE_PLACES_API_KEY"),
         },
+    )
+
+
+@app.get("/download-excel")
+async def download_excel(session_folder: str, excel_file: str):
+    """Download the generated Excel file for a session"""
+    file_path = f"{session_folder}/{excel_file}"
+    
+    # Security check: ensure the path is within the sessions directory
+    if not session_folder.startswith("sessions/"):
+        raise HTTPException(status_code=400, detail="Invalid session folder")
+    
+    # Check if file exists
+    if not os.path.exists(file_path):
+        print(f"File not found: {file_path}")
+        raise HTTPException(status_code=404, detail="Excel file not found")
+    
+    # Return the file for download
+    return FileResponse(
+        path=file_path,
+        filename=excel_file,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
 
@@ -162,7 +195,12 @@ async def dashboard(
     team: str,
     session_folder: str,
     signature: str,
+    error: str = None,
 ):
+    error_message = None
+    if error == "no_forms":
+        error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, upload an invoice file, and add at least one item."
+    
     return templates.TemplateResponse(
         "dashboard.html",
         {
@@ -175,6 +213,7 @@ async def dashboard(
             "team": team,
             "session_folder": session_folder,
             "signature": signature,
+            "error_message": error_message,
         },
     )
 
@@ -322,7 +361,7 @@ async def submit_all_requests(request: Request):
             if "." in invoice_file.filename
             else "pdf"
         )
-        invoice_filename = f"{form_num}_invoice.{invoice_extension}"
+        invoice_filename = f"{form_num}_{vendor_name}.{invoice_extension}"
         invoice_file_location = f"{session_folder}/{invoice_filename}"
 
         # Save the invoice file
@@ -422,7 +461,7 @@ async def submit_all_requests(request: Request):
 
             if form["currency"] == "USD":
                 # Show USD breakdown
-                print(f"    US Total: ${form['us_total']:.2f} USD")
+                print(f"    US Subtotal: ${form['us_total']:.2f} USD")
                 print(f"    Canadian Amount: ${form['canadian_amount']:.2f} CAD")
                 print(f"    Reimbursement Total: ${form['canadian_amount']:.2f} CAD")
             else:
@@ -461,9 +500,17 @@ async def submit_all_requests(request: Request):
         print("=" * 60)
     else:
         print("No forms were submitted (all forms were empty)")
+        # Redirect back to dashboard with error message instead of success
+        return RedirectResponse(
+            url=f"/dashboard?name={name}&email={email}&e_transfer_email={e_transfer_email}&address={address}&team={team}&session_folder={session_folder}&signature={signature_filename}&error=no_forms",
+            status_code=303
+        )
 
-    # Redirect back to home with success message
-    return RedirectResponse(url="/?success=true", status_code=303)
+    # Redirect back to home with success message and session info for download
+    return RedirectResponse(
+        url=f"/?success=true&session_folder={session_folder}&excel_file=purchase_request.xlsx", 
+        status_code=303
+    )
 
 
 if __name__ == "__main__":

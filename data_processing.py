@@ -16,7 +16,7 @@ def create_excel_report(user_info, submitted_forms, session_folder):
 
     # Create single output file
     output_filename = (
-        f"purchase_requests_{user_info['name'].replace(' ', '_').lower()}.xlsx"
+        f"purchase_request.xlsx"
     )
     output_path = f"{session_folder}/{output_filename}"
 

@@ -29,7 +29,13 @@
         </div>
         {% endif %}
         
-        <form method="POST" action="/submit-all-requests" enctype="multipart/form-data">
+        {% if error_message %}
+        <div class="error-message">
+            <p>{{ error_message }}</p>
+        </div>
+        {% endif %}
+        
+        <form method="POST" action="/submit-all-requests" enctype="multipart/form-data" onsubmit="return validateSubmission()">
             <!-- Hidden fields for user data -->
             <input type="hidden" name="name" value="{{ name }}">
             <input type="hidden" name="email" value="{{ email }}">
@@ -47,8 +53,11 @@
                     {% for form_num in range(1, 11) %}
                     <div class="form-accordion">
                         <div class="form-accordion-header" onclick="toggleForm({{ form_num }})">
-                            <h3>Purchase Request #{{ form_num }}</h3>
-                            <span class="form-toggle">▼</span>
+                            <h3>Invoice #{{ form_num }}</h3>
+                            <div class="form-header-actions">
+                                <button type="button" class="btn-clear" onclick="event.stopPropagation(); clearForm({{ form_num }})" title="Clear this form">Clear</button>
+                                <span class="form-toggle">▼</span>
+                            </div>
                         </div>
                         <div class="form-accordion-content" id="form-{{ form_num }}">
                             <div class="reimbursement-form">
@@ -173,7 +182,7 @@
                                     <div class="financial-breakdown usd-breakdown-{{ form_num }}" style="display: none;">
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="us_total_{{ form_num }}">US Total (USD)</label>
+                                                <label for="us_total_{{ form_num }}">US Subtotal (USD)</label>
                                                 <input type="number" id="us_total_{{ form_num }}" name="us_total_{{ form_num }}" min="0" step="0.01" placeholder="0.00">
                                                 <small class="financial-help">Total amount paid in US dollars</small>
                                             </div>
@@ -475,6 +484,165 @@
                 }
             }
         });
+
+        function validateSubmission() {
+            let hasValidForm = false;
+            const errors = [];
+
+            // Check each form for completeness
+            for (let formNumber = 1; formNumber <= 10; formNumber++) {
+                const vendorName = document.getElementById(`vendor_name_${formNumber}`);
+                const invoiceFile = document.getElementById(`invoice_file_${formNumber}`);
+                const currencySelect = document.getElementById(`currency_${formNumber}`);
+                const proofOfPaymentFile = document.getElementById(`proof_of_payment_${formNumber}`);
+
+                // Skip if vendor name is not filled
+                if (!vendorName || !vendorName.value.trim()) {
+                    continue;
+                }
+
+                // Check if invoice file is uploaded
+                if (!invoiceFile || !invoiceFile.files || invoiceFile.files.length === 0) {
+                    continue;
+                }
+
+                // For USD currency, check if proof of payment is uploaded
+                if (currencySelect && currencySelect.value === 'USD') {
+                    if (!proofOfPaymentFile || !proofOfPaymentFile.files || proofOfPaymentFile.files.length === 0) {
+                        continue;
+                    }
+                }
+
+                // Check if at least one item is properly filled
+                let hasValidItem = false;
+                const itemsContainer = document.getElementById(`items-container-${formNumber}`);
+                if (itemsContainer) {
+                    const itemRows = itemsContainer.querySelectorAll('.item-row');
+                    
+                    for (let row of itemRows) {
+                        const nameInput = row.querySelector('input[name*="_name_"]');
+                        const usageInput = row.querySelector('input[name*="_usage_"]');
+                        const quantityInput = row.querySelector('input[name*="_quantity_"]');
+                        const priceInput = row.querySelector('input[name*="_price_"]');
+
+                        if (nameInput && nameInput.value.trim() && 
+                            usageInput && usageInput.value.trim() && 
+                            quantityInput && quantityInput.value && parseFloat(quantityInput.value) > 0 &&
+                            priceInput && priceInput.value && parseFloat(priceInput.value) > 0) {
+                            hasValidItem = true;
+                            break;
+                        }
+                    }
+                }
+
+                // If this form has vendor, invoice, and at least one valid item, it's complete
+                if (hasValidItem) {
+                    hasValidForm = true;
+                }
+            }
+
+            if (!hasValidForm) {
+                alert('Please complete at least one invoice form before submitting.\n\nTo complete a form, you need:\n• Vendor/Store Name\n• Invoice file uploaded\n• At least one item with name, usage, quantity, and price\n• Proof of payment (for USD purchases only)');
+                return false;
+            }
+
+            return true;
+        }
+
+        function clearForm(formNumber) {
+            if (!confirm(`Are you sure you want to clear all data in Purchase Request #${formNumber}? This action cannot be undone.`)) {
+                return;
+            }
+
+            // Clear basic form fields
+            const vendorNameInput = document.getElementById(`vendor_name_${formNumber}`);
+            if (vendorNameInput) vendorNameInput.value = '';
+
+            // Reset currency to CAD (default)
+            const currencySelect = document.getElementById(`currency_${formNumber}`);
+            if (currencySelect) {
+                currencySelect.value = 'CAD';
+                updateCurrencyLabels(formNumber); // This will update visibility and labels
+            }
+
+            // Clear file inputs and reset filename displays
+            const invoiceFileInput = document.getElementById(`invoice_file_${formNumber}`);
+            const proofOfPaymentInput = document.getElementById(`proof_of_payment_${formNumber}`);
+            const invoiceFilenameSpan = document.getElementById(`invoice-filename-${formNumber}`);
+            const paymentFilenameSpan = document.getElementById(`payment-filename-${formNumber}`);
+
+            if (invoiceFileInput) {
+                invoiceFileInput.value = '';
+                invoiceFileInput.files = null;
+            }
+            if (proofOfPaymentInput) {
+                proofOfPaymentInput.value = '';
+                proofOfPaymentInput.files = null;
+            }
+            if (invoiceFilenameSpan) invoiceFilenameSpan.textContent = 'No file chosen';
+            if (paymentFilenameSpan) paymentFilenameSpan.textContent = 'No file chosen';
+
+            // Clear all items except the first one
+            const itemsContainer = document.getElementById(`items-container-${formNumber}`);
+            if (itemsContainer) {
+                // Remove all item rows except the first one
+                const itemRows = itemsContainer.querySelectorAll('.item-row');
+                for (let i = 1; i < itemRows.length; i++) {
+                    itemRows[i].remove();
+                }
+
+                // Clear the first item row
+                const firstRow = itemRows[0];
+                if (firstRow) {
+                    const inputs = firstRow.querySelectorAll('input');
+                    inputs.forEach(input => {
+                        if (input.name.includes('_quantity_')) {
+                            input.value = '1'; // Reset quantity to 1
+                        } else {
+                            input.value = '';
+                        }
+                    });
+                }
+
+                // Reset item count for this form
+                itemCounts[formNumber] = 1;
+                updateRemoveButtons(formNumber);
+            }
+
+            // Clear financial breakdown fields for CAD
+            const cadFinancialFields = [
+                `subtotal_amount_${formNumber}`,
+                `discount_amount_${formNumber}`,
+                `hst_gst_amount_${formNumber}`,
+                `shipping_amount_${formNumber}`,
+                `total_amount_${formNumber}`
+            ];
+
+            cadFinancialFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) field.value = '';
+            });
+
+            // Clear financial breakdown fields for USD
+            const usdFinancialFields = [
+                `us_total_${formNumber}`,
+                `usd_taxes_${formNumber}`,
+                `canadian_amount_${formNumber}`
+            ];
+
+            usdFinancialFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) field.value = '';
+            });
+
+            // Remove any required attributes and indicators that might have been set
+            const hstGstInput = document.getElementById(`hst_gst_amount_${formNumber}`);
+            const requiredIndicator = document.querySelector(`.required-indicator-${formNumber}`);
+            if (hstGstInput) hstGstInput.removeAttribute('required');
+            if (requiredIndicator) requiredIndicator.textContent = '';
+
+            console.log(`Form ${formNumber} has been cleared successfully.`);
+        }
     </script>
 </body>
 </html> 

@@ -16,6 +16,17 @@
         </div>
         {% endif %}
         
+        {% if download_info %}
+        <div class="download-section">
+            <h3>📄 Download Your Purchase Request</h3>
+            <p>Your purchase request has been processed and is ready for download:</p>
+            <a href="{{ download_info.download_url }}" class="btn btn-download" download="{{ download_info.excel_file }}">
+                📥 Download Purchase Request Excel File
+            </a>
+            <p class="download-help">Keep this file for your records. It contains all your submitted purchase requests.</p>
+        </div>
+        {% endif %}
+        
         <div class="form-section">
             <h2>Your Information</h2>
             <form method="POST" action="/submit-request" enctype="multipart/form-data">
