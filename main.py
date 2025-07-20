@@ -8,9 +8,13 @@ from fastapi.responses import RedirectResponse, FileResponse
 from dotenv import load_dotenv
 from data_processing import create_excel_report
 from image_processing import convert_signature_to_png, detect_and_crop_signature
+from logging_utils import setup_logger
 
 # Load environment variables
 load_dotenv()
+
+# Set up logger
+logger = setup_logger(__name__)
 
 # Create required directories immediately (before mounting static files)
 required_dirs = ["sessions", "static", "templates", "excel_templates"]
@@ -22,12 +26,12 @@ for directory in required_dirs:
 async def lifespan(app: FastAPI):
     """Application lifespan manager - runs on startup and shutdown"""
     # Startup: Log directory status
-    print("🚀 Application startup complete - all directories ready!")
+    logger.info("🚀 Application startup complete - all directories ready!")
 
     yield  # Application runs here
 
     # Shutdown: Cleanup code would go here if needed
-    print("👋 Application shutting down...")
+    logger.info("👋 Application shutting down...")
 
 
 app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
@@ -41,19 +45,24 @@ templates = Jinja2Templates(directory="templates")
 
 
 @app.get("/")
-async def home(request: Request, success: str = None, session_folder: str = None, excel_file: str = None):
+async def home(
+    request: Request,
+    success: str = None,
+    session_folder: str = None,
+    excel_file: str = None,
+):
     success_message = None
     download_info = None
-    
+
     if success:
         success_message = "All your purchase requests have been submitted successfully! We'll be in touch soon."
-        
+
         # If session info is provided, add download information
         if session_folder and excel_file:
             download_info = {
                 "session_folder": session_folder,
                 "excel_file": excel_file,
-                "download_url": f"/download-excel?session_folder={session_folder}&excel_file={excel_file}"
+                "download_url": f"/download-excel?session_folder={session_folder}&excel_file={excel_file}",
             }
 
     return templates.TemplateResponse(
@@ -73,21 +82,21 @@ async def home(request: Request, success: str = None, session_folder: str = None
 async def download_excel(session_folder: str, excel_file: str):
     """Download the generated Excel file for a session"""
     file_path = f"{session_folder}/{excel_file}"
-    
+
     # Security check: ensure the path is within the sessions directory
     if not session_folder.startswith("sessions/"):
         raise HTTPException(status_code=400, detail="Invalid session folder")
-    
+
     # Check if file exists
     if not os.path.exists(file_path):
-        print(f"File not found: {file_path}")
+        logger.error(f"File not found: {file_path}")
         raise HTTPException(status_code=404, detail="Excel file not found")
-    
+
     # Return the file for download
     return FileResponse(
         path=file_path,
         filename=excel_file,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
 
@@ -128,55 +137,49 @@ async def submit_request(
         content = await signature.read()
         file_object.write(content)
 
-    # Convert signature to PNG format
-    png_signature_filename = "signature_uncropped.png"
+    # Convert signature to PNG format first
+    png_signature_filename = "signature_converted.png"
     png_signature_location = f"{session_folder}/{png_signature_filename}"
 
-    if convert_signature_to_png(signature_location, png_signature_location):
-        # Crop the converted PNG to remove any remaining whitespace
-        cropped_signature_filename = "signature.png"
-        cropped_signature_location = f"{session_folder}/{cropped_signature_filename}"
+    conversion_success = convert_signature_to_png(signature_location, png_signature_location)
+    
+    if conversion_success:
+        # Now crop the converted PNG to remove whitespace and enhance quality
+        final_signature_filename = "signature.png"
+        final_signature_location = f"{session_folder}/{final_signature_filename}"
 
-        cropped_success = detect_and_crop_signature(
-            png_signature_location, cropped_signature_location
+        cropping_success = detect_and_crop_signature(
+            png_signature_location, final_signature_location
         )
 
-        if cropped_success:
-            # Use the cropped version
-            final_signature_filename = cropped_signature_filename
-            print(f"Signature cropped and optimized: {cropped_signature_location}")
-
-            # Remove the uncropped PNG to save space
+        if cropping_success:
+            # Cropping successful - remove the uncropped version
             try:
                 os.remove(png_signature_location)
-                print(f"Uncropped PNG removed: {png_signature_location}")
+                logger.info(f"Signature processed successfully: {final_signature_location}")
             except Exception as e:
-                print(f"Could not remove uncropped PNG: {e}")
+                logger.warning(f"Could not remove intermediate PNG file: {e}")
         else:
-            # Cropping failed, rename the uncropped PNG to the final name
+            # Cropping failed - use the converted PNG as final version
             try:
-                os.rename(png_signature_location, f"{session_folder}/signature.png")
-                final_signature_filename = "signature.png"
-                print(
-                    f"Signature cropping failed, using converted PNG: {session_folder}/signature.png"
-                )
+                os.rename(png_signature_location, final_signature_location)
+                logger.warning(f"Signature cropping failed, using converted PNG: {final_signature_location}")
             except Exception as e:
-                print(f"Could not rename uncropped PNG: {e}")
+                logger.error(f"Could not rename converted PNG: {e}")
                 final_signature_filename = png_signature_filename
 
-        print(f"Signature converted to PNG: {png_signature_location}")
-
-        # Optionally remove the original file if conversion was successful
+        # Remove the original file if conversion was successful and it's not PNG
         if signature_extension.lower() != "png":
             try:
                 os.remove(signature_location)
-                print(f"Original signature file removed: {signature_location}")
+                logger.info(f"Original signature file removed: {signature_location}")
             except Exception as e:
-                print(f"Could not remove original signature file: {e}")
+                logger.warning(f"Could not remove original signature file: {e}")
+                
     else:
-        # Fall back to original file if conversion failed
+        # Conversion failed - fall back to original file
         final_signature_filename = signature_filename
-        print(f"Signature conversion failed, using original: {signature_location}")
+        logger.error(f"Signature conversion failed, using original: {signature_location}")
 
     # Redirect to dashboard with user information including session folder
     return RedirectResponse(
@@ -200,7 +203,7 @@ async def dashboard(
     error_message = None
     if error == "no_forms":
         error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, upload an invoice file, and add at least one item."
-    
+
     return templates.TemplateResponse(
         "dashboard.html",
         {
@@ -251,9 +254,7 @@ async def submit_all_requests(request: Request):
         if currency == "USD" and (
             not proof_of_payment_file or not hasattr(proof_of_payment_file, "filename")
         ):
-            print(
-                f"Warning: Form {form_num} in USD currency missing proof of payment - skipping"
-            )
+            logger.warning(f"Form {form_num} in USD currency missing proof of payment - skipping")
             continue
 
         # Extract financial data based on currency
@@ -285,31 +286,25 @@ async def submit_all_requests(request: Request):
             canadian_amount = 0
 
         # Debug logging to see what values we're getting
-        print(f"Form {form_num} ({currency}) financial data:")
-        print(
-            f"  Raw subtotal_amount: '{form_data.get(f'subtotal_amount_{form_num}')}'"
-        )
-        print(f"  Raw total_amount: '{form_data.get(f'total_amount_{form_num}')}'")
-        print(f"  Raw hst_gst_amount: '{form_data.get(f'hst_gst_amount_{form_num}')}'")
-        print(
-            f"  Raw shipping_amount: '{form_data.get(f'shipping_amount_{form_num}')}'"
-        )
+        logger.debug(f"Form {form_num} ({currency}) financial data:")
+        logger.debug(f"  Raw subtotal_amount: '{form_data.get(f'subtotal_amount_{form_num}')}'")
+        logger.debug(f"  Raw total_amount: '{form_data.get(f'total_amount_{form_num}')}'")
+        logger.debug(f"  Raw hst_gst_amount: '{form_data.get(f'hst_gst_amount_{form_num}')}'")
+        logger.debug(f"  Raw shipping_amount: '{form_data.get(f'shipping_amount_{form_num}')}'")
         if currency == "USD":
-            print(f"  Raw us_total: '{form_data.get(f'us_total_{form_num}')}'")
-            print(f"  Raw usd_taxes: '{form_data.get(f'usd_taxes_{form_num}')}'")
-            print(
-                f"  Raw canadian_amount: '{form_data.get(f'canadian_amount_{form_num}')}'"
-            )
-        print("  Parsed values:")
-        print(f"    subtotal_amount: {subtotal_amount}")
-        print(f"    discount_amount: {discount_amount}")
-        print(f"    hst_gst_amount: {hst_gst_amount}")
-        print(f"    shipping_amount: {shipping_amount}")
-        print(f"    total_amount: {total_amount}")
-        print(f"    us_total: {us_total}")
-        print(f"    usd_taxes: {usd_taxes}")
-        print(f"    canadian_amount: {canadian_amount}")
-        print("---")
+            logger.debug(f"  Raw us_total: '{form_data.get(f'us_total_{form_num}')}'")
+            logger.debug(f"  Raw usd_taxes: '{form_data.get(f'usd_taxes_{form_num}')}'")
+            logger.debug(f"  Raw canadian_amount: '{form_data.get(f'canadian_amount_{form_num}')}'")
+        logger.debug("  Parsed values:")
+        logger.debug(f"    subtotal_amount: {subtotal_amount}")
+        logger.debug(f"    discount_amount: {discount_amount}")
+        logger.debug(f"    hst_gst_amount: {hst_gst_amount}")
+        logger.debug(f"    shipping_amount: {shipping_amount}")
+        logger.debug(f"    total_amount: {total_amount}")
+        logger.debug(f"    us_total: {us_total}")
+        logger.debug(f"    usd_taxes: {usd_taxes}")
+        logger.debug(f"    canadian_amount: {canadian_amount}")
+        logger.debug("---")
 
         # Extract items for this form
         items = []
@@ -325,12 +320,12 @@ async def submit_all_requests(request: Request):
             item_total = form_data.get(f"item_total_{form_num}_{item_num}")
 
             # Debug logging for item values
-            print(f"  Item {item_num} raw values:")
-            print(f"    name: '{item_name}'")
-            print(f"    usage: '{item_usage}'")
-            print(f"    quantity: '{item_quantity}'")
-            print(f"    price: '{item_price}'")
-            print(f"    total: '{item_total}'")
+            logger.debug(f"  Item {item_num} raw values:")
+            logger.debug(f"    name: '{item_name}'")
+            logger.debug(f"    usage: '{item_usage}'")
+            logger.debug(f"    quantity: '{item_quantity}'")
+            logger.debug(f"    price: '{item_price}'")
+            logger.debug(f"    total: '{item_total}'")
 
             if item_name and item_usage and item_quantity and item_price:
                 parsed_total = float(item_total) if item_total else 0
@@ -343,11 +338,9 @@ async def submit_all_requests(request: Request):
                         "total": parsed_total,
                     }
                 )
-                print(
-                    f"    → Added to items: qty={int(item_quantity)}, price=${float(item_price)}, total=${parsed_total}"
-                )
+                logger.debug(f"    → Added to items: qty={int(item_quantity)}, price=${float(item_price)}, total=${parsed_total}")
             else:
-                print("    → Skipped (missing required fields)")
+                logger.debug("    → Skipped (missing required fields)")
 
             item_num += 1
 
@@ -428,88 +421,70 @@ async def submit_all_requests(request: Request):
 
         excel_report = create_excel_report(user_info, submitted_forms, session_folder)
 
-        print("Bulk submission received from:")
-        print(f"Name: {name}")
-        print(f"McMaster Email: {email}")
-        print(f"E-Transfer Email: {e_transfer_email}")
-        print(f"Address: {address}")
-        print(f"Team: {team}")
-        print(f"Session Folder: {session_folder}")
-        print(
-            f"Digital Signature: {signature_filename} (saved to {session_folder}/{signature_filename})"
-        )
-        print(f"Excel Report Generated: {excel_report['filename']}")
-        print(f"  - Forms processed: {excel_report['forms_processed']}")
-        print(f"  - Tabs used: {', '.join(excel_report['tabs_used'])}")
-        print(f"  - File location: {excel_report['filepath']}")
-        print("")
-        print(f"Number of forms submitted: {len(submitted_forms)}")
-        print("=" * 60)
+        logger.info("Bulk submission received from:")
+        logger.info(f"Name: {name}")
+        logger.info(f"McMaster Email: {email}")
+        logger.info(f"E-Transfer Email: {e_transfer_email}")
+        logger.info(f"Address: {address}")
+        logger.info(f"Team: {team}")
+        logger.info(f"Session Folder: {session_folder}")
+        logger.info(f"Digital Signature: {signature_filename} (saved to {session_folder}/{signature_filename})")
+        logger.info(f"Excel Report Generated: {excel_report['filename']}")
+        logger.info(f"  - Forms processed: {excel_report['forms_processed']}")
+        logger.info(f"  - Tabs used: {', '.join(excel_report['tabs_used'])}")
+        logger.info(f"  - File location: {excel_report['filepath']}")
+        logger.info("")
+        logger.info(f"Number of forms submitted: {len(submitted_forms)}")
+        logger.info("=" * 60)
 
         for form in submitted_forms:
-            print(f"Purchase Request #{form['form_number']}:")
-            print(f"  Vendor: {form['vendor_name']}")
-            print(f"  Currency: {form['currency']}")
-            print(
-                f"  Invoice File: {form['invoice_filename']} (saved to {form['invoice_file_location']})"
-            )
+            logger.info(f"Purchase Request #{form['form_number']}:")
+            logger.info(f"  Vendor: {form['vendor_name']}")
+            logger.info(f"  Currency: {form['currency']}")
+            logger.info(f"  Invoice File: {form['invoice_filename']} (saved to {form['invoice_file_location']})")
             if form["proof_of_payment_filename"]:
-                print(
-                    f"  Proof of Payment: {form['proof_of_payment_filename']} (saved to {form['proof_of_payment_location']})"
-                )
-            print("  Financial Breakdown:")
+                logger.info(f"  Proof of Payment: {form['proof_of_payment_filename']} (saved to {form['proof_of_payment_location']})")
+            logger.info("  Financial Breakdown:")
 
             if form["currency"] == "USD":
                 # Show USD breakdown
-                print(f"    US Subtotal: ${form['us_total']:.2f} USD")
-                print(f"    Canadian Amount: ${form['canadian_amount']:.2f} CAD")
-                print(f"    Reimbursement Total: ${form['canadian_amount']:.2f} CAD")
+                logger.info(f"    US Subtotal: ${form['us_total']:.2f} USD")
+                logger.info(f"    Canadian Amount: ${form['canadian_amount']:.2f} CAD")
+                logger.info(f"    Reimbursement Total: ${form['canadian_amount']:.2f} CAD")
             else:
                 # Show CAD breakdown
-                print(
-                    f"    Subtotal: ${form['subtotal_amount']:.2f} {form['currency']}"
-                )
-                print(
-                    f"    Discount: -${form['discount_amount']:.2f} {form['currency']}"
-                )
+                logger.info(f"    Subtotal: ${form['subtotal_amount']:.2f} {form['currency']}")
+                logger.info(f"    Discount: -${form['discount_amount']:.2f} {form['currency']}")
 
                 # Use appropriate tax label based on currency
                 tax_label = "Taxes" if form["currency"] == "USD" else "HST/GST"
-                print(
-                    f"    {tax_label}: ${form['hst_gst_amount']:.2f} {form['currency']}"
-                )
+                logger.info(f"    {tax_label}: ${form['hst_gst_amount']:.2f} {form['currency']}")
 
-                print(
-                    f"    Shipping: ${form['shipping_amount']:.2f} {form['currency']}"
-                )
-                print(
-                    f"    Total Amount: ${form['total_amount']:.2f} {form['currency']}"
-                )
+                logger.info(f"    Shipping: ${form['shipping_amount']:.2f} {form['currency']}")
+                logger.info(f"    Total Amount: ${form['total_amount']:.2f} {form['currency']}")
 
-            print("  Items:")
+            logger.info("  Items:")
             for i, item in enumerate(form["items"], 1):
-                print(f"    {i}. {item['name']}")
-                print(f"       Usage: {item['usage']}")
-                print(f"       Quantity: {item['quantity']}")
-                print(
-                    f"       Unit Price: ${item['unit_price']:.2f} {form['currency']}"
-                )
-                print(f"       Total: ${item['total']:.2f} {form['currency']}")
-            print("-" * 40)
+                logger.info(f"    {i}. {item['name']}")
+                logger.info(f"       Usage: {item['usage']}")
+                logger.info(f"       Quantity: {item['quantity']}")
+                logger.info(f"       Unit Price: ${item['unit_price']:.2f} {form['currency']}")
+                logger.info(f"       Total: ${item['total']:.2f} {form['currency']}")
+            logger.info("-" * 40)
 
-        print("=" * 60)
+        logger.info("=" * 60)
     else:
-        print("No forms were submitted (all forms were empty)")
+        logger.warning("No forms were submitted (all forms were empty)")
         # Redirect back to dashboard with error message instead of success
         return RedirectResponse(
             url=f"/dashboard?name={name}&email={email}&e_transfer_email={e_transfer_email}&address={address}&team={team}&session_folder={session_folder}&signature={signature_filename}&error=no_forms",
-            status_code=303
+            status_code=303,
         )
 
     # Redirect back to home with success message and session info for download
     return RedirectResponse(
-        url=f"/?success=true&session_folder={session_folder}&excel_file=purchase_request.xlsx", 
-        status_code=303
+        url=f"/?success=true&session_folder={session_folder}&excel_file=purchase_request.xlsx",
+        status_code=303,
     )
 
 

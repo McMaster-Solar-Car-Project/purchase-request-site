@@ -3,6 +3,10 @@ import shutil
 from datetime import datetime
 from openpyxl import load_workbook
 from image_processing import insert_signature_into_worksheet
+from logging_utils import setup_logger
+
+# Set up logger
+logger = setup_logger(__name__)
 
 
 def create_excel_report(user_info, submitted_forms, session_folder):
@@ -15,9 +19,7 @@ def create_excel_report(user_info, submitted_forms, session_folder):
         raise FileNotFoundError(f"Template file not found: {template_path}")
 
     # Create single output file
-    output_filename = (
-        f"purchase_request.xlsx"
-    )
+    output_filename = "purchase_request.xlsx"
     output_path = f"{session_folder}/{output_filename}"
 
     # Copy template to session folder
@@ -33,9 +35,7 @@ def create_excel_report(user_info, submitted_forms, session_folder):
 
         # Check if the tab exists
         if tab_name not in wb.sheetnames:
-            print(
-                f"Warning: Tab '{tab_name}' not found in template, skipping form {form['form_number']}"
-            )
+            logger.warning(f"Tab '{tab_name}' not found in template, skipping form {form['form_number']}")
             continue
 
         # Select the appropriate worksheet

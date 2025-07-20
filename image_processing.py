@@ -4,15 +4,19 @@ from PIL import Image
 from openpyxl.drawing import image
 import cv2
 import numpy as np
+from logging_utils import setup_logger
+
+# Set up logger
+logger = setup_logger(__name__)
 
 
 def detect_and_crop_signature(input_path, output_path):
-    """Convert image to grayscale and apply basic processing
-
+    """Crop and process signature image to remove whitespace and enhance contrast
+    
     Args:
-        input_path: Path to input image file
+        input_path: Path to input PNG image file
         output_path: Path to save processed image
-
+        
     Returns:
         True if processing successful, False otherwise
     """
@@ -20,11 +24,11 @@ def detect_and_crop_signature(input_path, output_path):
         # Read the image in color first
         img = cv2.imread(input_path)
         if img is None:
-            print(f"Could not read image: {input_path}")
+            logger.error(f"Could not read image: {input_path}")
             return False
 
-        print(f"Processing image: {input_path}")
-        print(f"Original image dimensions: {img.shape}")
+        logger.info(f"Processing image: {input_path}")
+        logger.debug(f"Original image dimensions: {img.shape}")
 
         # Convert to grayscale
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -61,12 +65,12 @@ def detect_and_crop_signature(input_path, output_path):
         if output_path:
             cv2.imwrite(output_path, final_result)
             trim_whitespace(output_path, output_path)
-            print(f"Processed image saved to: {output_path}")
+            logger.info(f"Processed image saved to: {output_path}")
 
         return True
 
     except Exception as e:
-        print(f"Error in image processing: {e}")
+        logger.error(f"Error in image processing: {e}")
         import traceback
 
         traceback.print_exc()
@@ -136,7 +140,7 @@ def trim_whitespace(image_path, output_path=None):
 
     # Handle edge case where entire image is white
     if top > bottom or left > right:
-        print("Warning: Entire image appears to be white")
+        logger.warning("Entire image appears to be white")
         return img
 
     # Crop the image
@@ -152,10 +156,18 @@ def trim_whitespace(image_path, output_path=None):
 
 
 def convert_signature_to_png(signature_path, output_path):
-    """Convert signature image to PNG format for Excel compatibility
-    Supports: PNG, JPG, JPEG, GIF, PDF formats"""
+    """Convert signature file to PNG format (format conversion only, no cropping)
+    Supports: PNG, JPG, JPEG, GIF, PDF formats
+    
+    Args:
+        signature_path: Path to input signature file
+        output_path: Path to save PNG file
+        
+    Returns:
+        True if conversion successful, False otherwise
+    """
     try:
-        print(f"Processing signature: {signature_path}")
+        logger.info(f"Converting signature to PNG: {signature_path}")
 
         # Check if it's a PDF file first
         if signature_path.lower().endswith(".pdf"):
@@ -166,27 +178,24 @@ def convert_signature_to_png(signature_path, output_path):
                 pages = convert_from_path(signature_path, first_page=1, last_page=1)
                 if pages:
                     img = pages[0]
-                    print("PDF converted to image successfully")
+                    logger.info("PDF converted to image successfully")
                 else:
-                    print(f"No pages found in PDF: {signature_path}")
+                    logger.warning(f"No pages found in PDF: {signature_path}")
                     return False
             except ImportError:
-                print("pdf2image library not installed. Cannot convert PDF files.")
+                logger.error("pdf2image library not installed. Cannot convert PDF files.")
                 return False
             except Exception as e:
-                print(f"Error converting PDF: {e}")
+                logger.error(f"Error converting PDF: {e}")
                 return False
         else:
-            # For regular image formats, try intelligent cropping first
-            success = detect_and_crop_signature(signature_path, output_path)
-
-            if success:
-                # Signature detected and cropped successfully
-                return True
-            else:
-                # Fallback: basic format conversion without cropping
-                print("Falling back to basic format conversion")
+            # For regular image formats, load the image
+            try:
                 img = Image.open(signature_path)
+                logger.debug(f"Loaded image: {signature_path}")
+            except Exception as e:
+                logger.error(f"Error loading image {signature_path}: {e}")
+                return False
 
         # Convert to RGBA (supports transparency)
         if img.mode != "RGBA":
@@ -201,10 +210,11 @@ def convert_signature_to_png(signature_path, output_path):
 
         # Save as PNG
         img.save(output_path, "PNG", optimize=True)
+        logger.info(f"Signature converted to PNG: {output_path}")
         return True
 
     except Exception as e:
-        print(f"Error converting signature: {e}")
+        logger.error(f"Error converting signature: {e}")
         return False
 
 
@@ -244,14 +254,14 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
                 img.width = 280  # Set width for 5 cells wide (approximately)
                 img.height = 70  # Set height for 3 cells high (approximately)
                 ws.add_image(img)
-                print(f"Signature inserted at B25 for form {form['form_number']}")
+                logger.info(f"Signature inserted at B25 for form {form['form_number']}")
                 return True
             except Exception as e:
-                print(f"Error inserting signature for form {form['form_number']}: {e}")
+                logger.error(f"Error inserting signature for form {form['form_number']}: {e}")
                 return False
         else:
-            print(f"Failed to convert signature for form {form['form_number']}")
+            logger.warning(f"Failed to convert signature for form {form['form_number']}")
             return False
     else:
-        print(f"Signature file not found: {signature_path}")
+        logger.warning(f"Signature file not found: {signature_path}")
         return False
