@@ -4,7 +4,9 @@ from PIL import Image
 from openpyxl.drawing import image
 import cv2
 import numpy as np
+import traceback
 from logging_utils import setup_logger
+from pdf2image import convert_from_path
 
 # Set up logger
 logger = setup_logger(__name__)
@@ -71,8 +73,6 @@ def detect_and_crop_signature(input_path, output_path):
 
     except Exception as e:
         logger.error(f"Error in image processing: {e}")
-        import traceback
-
         traceback.print_exc()
         return False
 
@@ -173,8 +173,6 @@ def convert_signature_to_png(signature_path, output_path):
         if signature_path.lower().endswith(".pdf"):
             # Handle PDF files - convert to image first
             try:
-                from pdf2image import convert_from_path
-
                 pages = convert_from_path(signature_path, first_page=1, last_page=1)
                 if pages:
                     img = pages[0]

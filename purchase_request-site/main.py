@@ -1,4 +1,5 @@
 import os
+import shutil
 from datetime import datetime
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException
@@ -9,6 +10,7 @@ from dotenv import load_dotenv
 from data_processing import create_excel_report
 from image_processing import convert_signature_to_png, detect_and_crop_signature
 from logging_utils import setup_logger
+from google_sheets import log_purchase_request_to_sheets
 
 # Load environment variables
 load_dotenv()
@@ -161,8 +163,6 @@ async def submit_request(
         else:
             # Cropping failed - copy the original PNG as the final version
             try:
-                import shutil
-
                 shutil.copy2(original_png_location, final_signature_location)
                 logger.warning(
                     f"Signature cropping failed, using original PNG: {final_signature_location}"
@@ -512,6 +512,14 @@ async def submit_all_requests(request: Request):
             logger.info("-" * 40)
 
         logger.info("=" * 60)
+
+        # Log to Google Sheets
+        try:
+            logger.info("Logging session data to Google Sheets...")
+            log_purchase_request_to_sheets(user_info, submitted_forms, session_folder)
+        except Exception as e:
+            logger.error(f"Failed to log to Google Sheets (continuing anyway): {e}")
+
     else:
         logger.warning("No forms were submitted (all forms were empty)")
         # Redirect back to dashboard with error message instead of success
