@@ -147,7 +147,7 @@ async def submit_request(
 
     if conversion_success:
         logger.info(f"Original signature saved as PNG: {original_png_location}")
-        
+
         # Now crop the original PNG to create the processed version for Excel
         final_signature_filename = "signature.png"
         final_signature_location = f"{session_folder}/{final_signature_filename}"
@@ -162,8 +162,11 @@ async def submit_request(
             # Cropping failed - copy the original PNG as the final version
             try:
                 import shutil
+
                 shutil.copy2(original_png_location, final_signature_location)
-                logger.warning(f"Signature cropping failed, using original PNG: {final_signature_location}")
+                logger.warning(
+                    f"Signature cropping failed, using original PNG: {final_signature_location}"
+                )
             except Exception as e:
                 logger.error(f"Could not copy original PNG: {e}")
                 final_signature_filename = original_png_filename

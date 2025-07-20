@@ -226,34 +226,40 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
     # 1. signature.png (cropped/processed version)
     # 2. signature_original.png (original PNG without cropping)
     # 3. Original signature file
-    
+
     processed_signature_path = f"{session_folder}/signature.png"
     original_png_signature_path = f"{session_folder}/signature_original.png"
     original_signature_path = f"{session_folder}/{user_info['signature']}"
 
     signature_path = None
     signature_type = None
-    
+
     if os.path.exists(processed_signature_path):
         signature_path = processed_signature_path
         signature_type = "processed"
     elif os.path.exists(original_png_signature_path):
-        signature_path = original_png_signature_path  
+        signature_path = original_png_signature_path
         signature_type = "original_png"
     elif os.path.exists(original_signature_path):
         signature_path = original_signature_path
         signature_type = "original"
-    
+
     logger.debug(f"Signature files check for form {form['form_number']}:")
-    logger.debug(f"  - Processed (signature.png): {'exists' if os.path.exists(processed_signature_path) else 'missing'}")
-    logger.debug(f"  - Original PNG (signature_original.png): {'exists' if os.path.exists(original_png_signature_path) else 'missing'}")
-    logger.debug(f"  - Original file ({user_info['signature']}): {'exists' if os.path.exists(original_signature_path) else 'missing'}")
+    logger.debug(
+        f"  - Processed (signature.png): {'exists' if os.path.exists(processed_signature_path) else 'missing'}"
+    )
+    logger.debug(
+        f"  - Original PNG (signature_original.png): {'exists' if os.path.exists(original_png_signature_path) else 'missing'}"
+    )
+    logger.debug(
+        f"  - Original file ({user_info['signature']}): {'exists' if os.path.exists(original_signature_path) else 'missing'}"
+    )
     logger.debug(f"  - Using: {signature_type} ({signature_path})")
 
     if signature_path:
         # Use the signature.png file directly (it's already PNG and processed)
         signature_png_path = f"{session_folder}/signature.png"
-        
+
         if signature_path == processed_signature_path:
             # Already the processed PNG file, no conversion needed
             conversion_success = True
@@ -283,7 +289,9 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
                 img.width = 280  # Set width for 5 cells wide (approximately)
                 img.height = 70  # Set height for 3 cells high (approximately)
                 ws.add_image(img)
-                logger.info(f"Signature inserted at B25 for form {form['form_number']} (using {signature_type})")
+                logger.info(
+                    f"Signature inserted at B25 for form {form['form_number']} (using {signature_type})"
+                )
                 return True
             except Exception as e:
                 logger.error(
