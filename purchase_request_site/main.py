@@ -576,14 +576,18 @@ async def edit_profile_post(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # Update user information
-        user.name = name
-        user.email = email
-        user.personal_email = personal_email
-        user.team = team
-        user.address = address
+        # Update user information (strip whitespace from all fields)
+        user.name = name.strip()
+        user.email = email.strip()
+        user.personal_email = personal_email.strip()
+        user.team = team.strip()
+        user.address = address.strip()
 
-        # Handle password change if provided
+        # Handle password change if provided (strip whitespace from passwords too)
+        current_password = current_password.strip()
+        new_password = new_password.strip()
+        confirm_password = confirm_password.strip()
+        
         password_error = None
         if new_password or current_password:
             if not current_password:

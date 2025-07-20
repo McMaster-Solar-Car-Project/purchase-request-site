@@ -179,12 +179,12 @@ if __name__ == "__main__":
         user = create_user_from_cli(
             db=db,
             name="test_user",
-            email="test@mcmaster.ca ",
+            email="test@mcmaster.ca",
             personal_email="test@gmail.com",
             address="123 Main St, Hamilton, ON, Canada",
             team="Battery",
             password="password",
-            signature_path="static/img/default_signature.png", 
+            signature_path="static/img/default_signature.png",
         )
 
         print(f"✅ User created: {user.name} ({user.email})")
