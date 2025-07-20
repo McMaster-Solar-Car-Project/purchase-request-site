@@ -503,13 +503,15 @@
 
                 // Check if invoice file is uploaded
                 if (!invoiceFile || !invoiceFile.files || invoiceFile.files.length === 0) {
-                    continue;
+                    alert('Please upload an invoice file to Invoice #' + formNumber + ' before submitting.');
+                    return false;
                 }
 
                 // For USD currency, check if proof of payment is uploaded
                 if (currencySelect && currencySelect.value === 'USD') {
                     if (!proofOfPaymentFile || !proofOfPaymentFile.files || proofOfPaymentFile.files.length === 0) {
-                        continue;
+                        alert('Please upload a proof of payment file to Invoice #' + formNumber + ' before submitting.');
+                        return false;
                     }
                 }
 

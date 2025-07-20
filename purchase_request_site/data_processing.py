@@ -234,8 +234,8 @@ def create_excel_report(user_info, submitted_forms, session_folder):
         # B7: Vendor name
         ws["B7"] = form["vendor_name"]
 
-        # B24: Home address
-        ws["B24"] = user_info["address"]
+        # B32: Home address
+        ws["B32"] = user_info["address"]
 
         # Populate items starting from row 9 (limit to first 15 items)
         for i, item in enumerate(form["items"][:15]):  # Only process first 15 items
@@ -258,7 +258,7 @@ def create_excel_report(user_info, submitted_forms, session_folder):
 
         # Financial summary (updated row numbers)
         # Note: F24 is NOT the subtotal according to user feedback
-        
+
         # E25: Tax label (depends on currency)
         if form["currency"] == "USD":
             ws["E25"] = "Taxes"
@@ -280,7 +280,9 @@ def create_excel_report(user_info, submitted_forms, session_folder):
             ws["C7"] = "Conversion Rate"
 
             # D7: Calculate conversion rate = Canadian Total / (USD Subtotal + USD Taxes)
-            usd_subtotal = sum(item["total"] for item in form["items"][:15])  # Only use first 15 items
+            usd_subtotal = sum(
+                item["total"] for item in form["items"][:15]
+            )  # Only use first 15 items
             usd_taxes = form["hst_gst_amount"]  # This contains USD taxes for USD forms
             usd_total = usd_subtotal + usd_taxes
             canadian_total = form["total_amount"]  # This is the Canadian equivalent

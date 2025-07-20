@@ -281,14 +281,14 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
 
         if conversion_success:
             try:
-                # Insert signature image at cell B25 (signature area)
+                # Insert signature image at cell B33 (signature area)
                 img = image.Image(signature_png_path)
-                img.anchor = "B25"  # Position at cell B25
+                img.anchor = "B33"  # Position at cell B33
                 img.width = 280  # Set width for 5 cells wide (approximately)
                 img.height = 70  # Set height for 3 cells high (approximately)
                 ws.add_image(img)
                 logger.info(
-                    f"Signature inserted at B25 for form {form['form_number']} (using {signature_type})"
+                    f"Signature inserted at B33 for form {form['form_number']} (using {signature_type})"
                 )
                 return True
             except Exception as e:
