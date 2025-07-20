@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 
 
-def detect_and_crop_signature(input_path, output_path=None):
+def detect_and_crop_signature(input_path, output_path):
     """Convert image to grayscale and apply basic processing
 
     Args:
