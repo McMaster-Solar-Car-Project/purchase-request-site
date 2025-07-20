@@ -78,11 +78,17 @@
                   <label for="team">Team <span class="required">*</span></label>
                   <select id="team" name="team" required>
                       <option value="">Select your team</option>
-                      <option value="Subsystems" {% if user and user.team == 'Subsystems' %}selected{% endif %}>Subsystems</option>
-                      <option value="Operations" {% if user and user.team == 'Operations' %}selected{% endif %}>Operations</option>
-                      <option value="Business" {% if user and user.team == 'Business' %}selected{% endif %}>Business</option>
-                      <option value="Outreach" {% if user and user.team == 'Outreach' %}selected{% endif %}>Outreach</option>
-                      <option value="Admin" {% if user and user.team == 'Admin' %}selected{% endif %}>Admin</option>
+                      <option value="Aeroshell" {% if user and user.team == 'Aeroshell' %}selected{% endif %}>Aeroshell</option>
+                      <option value="Battery" {% if user and user.team == 'Battery' %}selected{% endif %}>Battery</option>
+                      <option value="Chassis" {% if user and user.team == 'Chassis' %}selected{% endif %}>Chassis</option>
+                      <option value="Data Acquisition" {% if user and user.team == 'Data Acquisition' %}selected{% endif %}>Data Acquisition</option>
+                      <option value="Firmware" {% if user and user.team == 'Firmware' %}selected{% endif %}>Firmware</option>
+                      <option value="Management" {% if user and user.team == 'Management' %}selected{% endif %}>Management</option>
+                      <option value="Media" {% if user and user.team == 'Media' %}selected{% endif %}>Media</option>
+                      <option value="Power Management Systems" {% if user and user.team == 'Power Management Systems' %}selected{% endif %}>Power Management Systems</option>
+                      <option value="Solar Cells" {% if user and user.team == 'Solar Cells' %}selected{% endif %}>Solar Cells</option>
+                      <option value="Strategies" {% if user and user.team == 'Strategies' %}selected{% endif %}>Strategies</option>
+                      <option value="Suspension" {% if user and user.team == 'Suspension' %}selected{% endif %}>Suspension</option>
                   </select>
               </div>
   
