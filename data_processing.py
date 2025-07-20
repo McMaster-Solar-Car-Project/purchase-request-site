@@ -35,7 +35,9 @@ def create_excel_report(user_info, submitted_forms, session_folder):
 
         # Check if the tab exists
         if tab_name not in wb.sheetnames:
-            logger.warning(f"Tab '{tab_name}' not found in template, skipping form {form['form_number']}")
+            logger.warning(
+                f"Tab '{tab_name}' not found in template, skipping form {form['form_number']}"
+            )
             continue
 
         # Select the appropriate worksheet

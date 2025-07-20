@@ -137,36 +137,36 @@ async def submit_request(
         content = await signature.read()
         file_object.write(content)
 
-    # Convert signature to PNG format first
-    png_signature_filename = "signature_converted.png"
-    png_signature_location = f"{session_folder}/{png_signature_filename}"
+    # Convert signature to PNG format first (save as original for records)
+    original_png_filename = "signature_original.png"
+    original_png_location = f"{session_folder}/{original_png_filename}"
 
-    conversion_success = convert_signature_to_png(signature_location, png_signature_location)
-    
+    conversion_success = convert_signature_to_png(
+        signature_location, original_png_location
+    )
+
     if conversion_success:
-        # Now crop the converted PNG to remove whitespace and enhance quality
+        logger.info(f"Original signature saved as PNG: {original_png_location}")
+        
+        # Now crop the original PNG to create the processed version for Excel
         final_signature_filename = "signature.png"
         final_signature_location = f"{session_folder}/{final_signature_filename}"
 
         cropping_success = detect_and_crop_signature(
-            png_signature_location, final_signature_location
+            original_png_location, final_signature_location
         )
 
         if cropping_success:
-            # Cropping successful - remove the uncropped version
-            try:
-                os.remove(png_signature_location)
-                logger.info(f"Signature processed successfully: {final_signature_location}")
-            except Exception as e:
-                logger.warning(f"Could not remove intermediate PNG file: {e}")
+            logger.info(f"Signature processed successfully: {final_signature_location}")
         else:
-            # Cropping failed - use the converted PNG as final version
+            # Cropping failed - copy the original PNG as the final version
             try:
-                os.rename(png_signature_location, final_signature_location)
-                logger.warning(f"Signature cropping failed, using converted PNG: {final_signature_location}")
+                import shutil
+                shutil.copy2(original_png_location, final_signature_location)
+                logger.warning(f"Signature cropping failed, using original PNG: {final_signature_location}")
             except Exception as e:
-                logger.error(f"Could not rename converted PNG: {e}")
-                final_signature_filename = png_signature_filename
+                logger.error(f"Could not copy original PNG: {e}")
+                final_signature_filename = original_png_filename
 
         # Remove the original file if conversion was successful and it's not PNG
         if signature_extension.lower() != "png":
@@ -175,11 +175,13 @@ async def submit_request(
                 logger.info(f"Original signature file removed: {signature_location}")
             except Exception as e:
                 logger.warning(f"Could not remove original signature file: {e}")
-                
+
     else:
         # Conversion failed - fall back to original file
         final_signature_filename = signature_filename
-        logger.error(f"Signature conversion failed, using original: {signature_location}")
+        logger.error(
+            f"Signature conversion failed, using original: {signature_location}"
+        )
 
     # Redirect to dashboard with user information including session folder
     return RedirectResponse(
@@ -254,7 +256,9 @@ async def submit_all_requests(request: Request):
         if currency == "USD" and (
             not proof_of_payment_file or not hasattr(proof_of_payment_file, "filename")
         ):
-            logger.warning(f"Form {form_num} in USD currency missing proof of payment - skipping")
+            logger.warning(
+                f"Form {form_num} in USD currency missing proof of payment - skipping"
+            )
             continue
 
         # Extract financial data based on currency
@@ -287,14 +291,24 @@ async def submit_all_requests(request: Request):
 
         # Debug logging to see what values we're getting
         logger.debug(f"Form {form_num} ({currency}) financial data:")
-        logger.debug(f"  Raw subtotal_amount: '{form_data.get(f'subtotal_amount_{form_num}')}'")
-        logger.debug(f"  Raw total_amount: '{form_data.get(f'total_amount_{form_num}')}'")
-        logger.debug(f"  Raw hst_gst_amount: '{form_data.get(f'hst_gst_amount_{form_num}')}'")
-        logger.debug(f"  Raw shipping_amount: '{form_data.get(f'shipping_amount_{form_num}')}'")
+        logger.debug(
+            f"  Raw subtotal_amount: '{form_data.get(f'subtotal_amount_{form_num}')}'"
+        )
+        logger.debug(
+            f"  Raw total_amount: '{form_data.get(f'total_amount_{form_num}')}'"
+        )
+        logger.debug(
+            f"  Raw hst_gst_amount: '{form_data.get(f'hst_gst_amount_{form_num}')}'"
+        )
+        logger.debug(
+            f"  Raw shipping_amount: '{form_data.get(f'shipping_amount_{form_num}')}'"
+        )
         if currency == "USD":
             logger.debug(f"  Raw us_total: '{form_data.get(f'us_total_{form_num}')}'")
             logger.debug(f"  Raw usd_taxes: '{form_data.get(f'usd_taxes_{form_num}')}'")
-            logger.debug(f"  Raw canadian_amount: '{form_data.get(f'canadian_amount_{form_num}')}'")
+            logger.debug(
+                f"  Raw canadian_amount: '{form_data.get(f'canadian_amount_{form_num}')}'"
+            )
         logger.debug("  Parsed values:")
         logger.debug(f"    subtotal_amount: {subtotal_amount}")
         logger.debug(f"    discount_amount: {discount_amount}")
@@ -338,7 +352,9 @@ async def submit_all_requests(request: Request):
                         "total": parsed_total,
                     }
                 )
-                logger.debug(f"    → Added to items: qty={int(item_quantity)}, price=${float(item_price)}, total=${parsed_total}")
+                logger.debug(
+                    f"    → Added to items: qty={int(item_quantity)}, price=${float(item_price)}, total=${parsed_total}"
+                )
             else:
                 logger.debug("    → Skipped (missing required fields)")
 
@@ -428,7 +444,9 @@ async def submit_all_requests(request: Request):
         logger.info(f"Address: {address}")
         logger.info(f"Team: {team}")
         logger.info(f"Session Folder: {session_folder}")
-        logger.info(f"Digital Signature: {signature_filename} (saved to {session_folder}/{signature_filename})")
+        logger.info(
+            f"Digital Signature: {signature_filename} (saved to {session_folder}/{signature_filename})"
+        )
         logger.info(f"Excel Report Generated: {excel_report['filename']}")
         logger.info(f"  - Forms processed: {excel_report['forms_processed']}")
         logger.info(f"  - Tabs used: {', '.join(excel_report['tabs_used'])}")
@@ -441,34 +459,52 @@ async def submit_all_requests(request: Request):
             logger.info(f"Purchase Request #{form['form_number']}:")
             logger.info(f"  Vendor: {form['vendor_name']}")
             logger.info(f"  Currency: {form['currency']}")
-            logger.info(f"  Invoice File: {form['invoice_filename']} (saved to {form['invoice_file_location']})")
+            logger.info(
+                f"  Invoice File: {form['invoice_filename']} (saved to {form['invoice_file_location']})"
+            )
             if form["proof_of_payment_filename"]:
-                logger.info(f"  Proof of Payment: {form['proof_of_payment_filename']} (saved to {form['proof_of_payment_location']})")
+                logger.info(
+                    f"  Proof of Payment: {form['proof_of_payment_filename']} (saved to {form['proof_of_payment_location']})"
+                )
             logger.info("  Financial Breakdown:")
 
             if form["currency"] == "USD":
                 # Show USD breakdown
                 logger.info(f"    US Subtotal: ${form['us_total']:.2f} USD")
                 logger.info(f"    Canadian Amount: ${form['canadian_amount']:.2f} CAD")
-                logger.info(f"    Reimbursement Total: ${form['canadian_amount']:.2f} CAD")
+                logger.info(
+                    f"    Reimbursement Total: ${form['canadian_amount']:.2f} CAD"
+                )
             else:
                 # Show CAD breakdown
-                logger.info(f"    Subtotal: ${form['subtotal_amount']:.2f} {form['currency']}")
-                logger.info(f"    Discount: -${form['discount_amount']:.2f} {form['currency']}")
+                logger.info(
+                    f"    Subtotal: ${form['subtotal_amount']:.2f} {form['currency']}"
+                )
+                logger.info(
+                    f"    Discount: -${form['discount_amount']:.2f} {form['currency']}"
+                )
 
                 # Use appropriate tax label based on currency
                 tax_label = "Taxes" if form["currency"] == "USD" else "HST/GST"
-                logger.info(f"    {tax_label}: ${form['hst_gst_amount']:.2f} {form['currency']}")
+                logger.info(
+                    f"    {tax_label}: ${form['hst_gst_amount']:.2f} {form['currency']}"
+                )
 
-                logger.info(f"    Shipping: ${form['shipping_amount']:.2f} {form['currency']}")
-                logger.info(f"    Total Amount: ${form['total_amount']:.2f} {form['currency']}")
+                logger.info(
+                    f"    Shipping: ${form['shipping_amount']:.2f} {form['currency']}"
+                )
+                logger.info(
+                    f"    Total Amount: ${form['total_amount']:.2f} {form['currency']}"
+                )
 
             logger.info("  Items:")
             for i, item in enumerate(form["items"], 1):
                 logger.info(f"    {i}. {item['name']}")
                 logger.info(f"       Usage: {item['usage']}")
                 logger.info(f"       Quantity: {item['quantity']}")
-                logger.info(f"       Unit Price: ${item['unit_price']:.2f} {form['currency']}")
+                logger.info(
+                    f"       Unit Price: ${item['unit_price']:.2f} {form['currency']}"
+                )
                 logger.info(f"       Total: ${item['total']:.2f} {form['currency']}")
             logger.info("-" * 40)
 

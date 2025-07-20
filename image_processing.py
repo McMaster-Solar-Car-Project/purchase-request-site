@@ -12,11 +12,11 @@ logger = setup_logger(__name__)
 
 def detect_and_crop_signature(input_path, output_path):
     """Crop and process signature image to remove whitespace and enhance contrast
-    
+
     Args:
         input_path: Path to input PNG image file
         output_path: Path to save processed image
-        
+
     Returns:
         True if processing successful, False otherwise
     """
@@ -158,11 +158,11 @@ def trim_whitespace(image_path, output_path=None):
 def convert_signature_to_png(signature_path, output_path):
     """Convert signature file to PNG format (format conversion only, no cropping)
     Supports: PNG, JPG, JPEG, GIF, PDF formats
-    
+
     Args:
         signature_path: Path to input signature file
         output_path: Path to save PNG file
-        
+
     Returns:
         True if conversion successful, False otherwise
     """
@@ -183,7 +183,9 @@ def convert_signature_to_png(signature_path, output_path):
                     logger.warning(f"No pages found in PDF: {signature_path}")
                     return False
             except ImportError:
-                logger.error("pdf2image library not installed. Cannot convert PDF files.")
+                logger.error(
+                    "pdf2image library not installed. Cannot convert PDF files."
+                )
                 return False
             except Exception as e:
                 logger.error(f"Error converting PDF: {e}")
@@ -220,26 +222,53 @@ def convert_signature_to_png(signature_path, output_path):
 
 def insert_signature_into_worksheet(ws, user_info, form, session_folder):
     """Insert signature image into Excel worksheet"""
-    # Look for the cropped signature first, then fall back to original
-    cropped_signature_path = f"{session_folder}/signature.png"
+    # Look for signature files in order of preference:
+    # 1. signature.png (cropped/processed version)
+    # 2. signature_original.png (original PNG without cropping)
+    # 3. Original signature file
+    
+    processed_signature_path = f"{session_folder}/signature.png"
+    original_png_signature_path = f"{session_folder}/signature_original.png"
     original_signature_path = f"{session_folder}/{user_info['signature']}"
 
-    signature_path = (
-        cropped_signature_path
-        if os.path.exists(cropped_signature_path)
-        else original_signature_path
-    )
+    signature_path = None
+    signature_type = None
+    
+    if os.path.exists(processed_signature_path):
+        signature_path = processed_signature_path
+        signature_type = "processed"
+    elif os.path.exists(original_png_signature_path):
+        signature_path = original_png_signature_path  
+        signature_type = "original_png"
+    elif os.path.exists(original_signature_path):
+        signature_path = original_signature_path
+        signature_type = "original"
+    
+    logger.debug(f"Signature files check for form {form['form_number']}:")
+    logger.debug(f"  - Processed (signature.png): {'exists' if os.path.exists(processed_signature_path) else 'missing'}")
+    logger.debug(f"  - Original PNG (signature_original.png): {'exists' if os.path.exists(original_png_signature_path) else 'missing'}")
+    logger.debug(f"  - Original file ({user_info['signature']}): {'exists' if os.path.exists(original_signature_path) else 'missing'}")
+    logger.debug(f"  - Using: {signature_type} ({signature_path})")
 
-    if os.path.exists(signature_path):
-        # Convert signature to PNG for Excel (if not already PNG)
+    if signature_path:
+        # Use the signature.png file directly (it's already PNG and processed)
         signature_png_path = f"{session_folder}/signature.png"
-        if signature_path.endswith(".png"):
-            # Already PNG, check if it's the same file
-            if os.path.abspath(signature_path) != os.path.abspath(signature_png_path):
-                # Different files, copy it
-                shutil.copy2(signature_path, signature_png_path)
-            # If it's the same file, no need to copy
+        
+        if signature_path == processed_signature_path:
+            # Already the processed PNG file, no conversion needed
             conversion_success = True
+        elif signature_path.endswith(".png"):
+            # PNG file but not the processed one, copy it to the processed location
+            if os.path.abspath(signature_path) != os.path.abspath(signature_png_path):
+                try:
+                    shutil.copy2(signature_path, signature_png_path)
+                    conversion_success = True
+                    logger.debug(f"Copied {signature_type} PNG to processed location")
+                except Exception as e:
+                    logger.error(f"Could not copy signature PNG: {e}")
+                    conversion_success = False
+            else:
+                conversion_success = True
         else:
             # Convert to PNG
             conversion_success = convert_signature_to_png(
@@ -254,14 +283,18 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
                 img.width = 280  # Set width for 5 cells wide (approximately)
                 img.height = 70  # Set height for 3 cells high (approximately)
                 ws.add_image(img)
-                logger.info(f"Signature inserted at B25 for form {form['form_number']}")
+                logger.info(f"Signature inserted at B25 for form {form['form_number']} (using {signature_type})")
                 return True
             except Exception as e:
-                logger.error(f"Error inserting signature for form {form['form_number']}: {e}")
+                logger.error(
+                    f"Error inserting signature for form {form['form_number']}: {e}"
+                )
                 return False
         else:
-            logger.warning(f"Failed to convert signature for form {form['form_number']}")
+            logger.warning(
+                f"Failed to convert signature for form {form['form_number']}"
+            )
             return False
     else:
-        logger.warning(f"Signature file not found: {signature_path}")
+        logger.warning(f"No signature file found for form {form['form_number']}")
         return False
