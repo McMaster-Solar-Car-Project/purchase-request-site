@@ -396,7 +396,9 @@ async def submit_all_requests(request: Request):
         excel_report = create_excel_report(user_info, submitted_forms, session_folder)
 
         logger.info(f"📋 Purchase request submitted by {name} ({email})")
-        logger.info(f"   {len(submitted_forms)} forms processed, session: {session_folder}")
+        logger.info(
+            f"   {len(submitted_forms)} forms processed, session: {session_folder}"
+        )
         logger.info(f"   Excel report: {excel_report['filename']}")
 
         # Copy expense report template to session folder

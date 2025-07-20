@@ -159,7 +159,9 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
             # USD form row populated
 
         total_forms = len(canadian_forms) + len(us_forms)
-        logger.info(f"✅ Populated {total_forms} expense rows ({len(canadian_forms)} CAD, {len(us_forms)} USD)")
+        logger.info(
+            f"✅ Populated {total_forms} expense rows ({len(canadian_forms)} CAD, {len(us_forms)} USD)"
+        )
         return True
 
     except Exception as e:

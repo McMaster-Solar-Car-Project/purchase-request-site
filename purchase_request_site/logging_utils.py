@@ -47,7 +47,7 @@ def setup_logger(name: str) -> logging.Logger:
 
 def _setup_email_handler() -> logging.Handler:
     """Set up email handler for error notifications.
-    
+
     Returns:
         logging.Handler or None: Email handler if properly configured, None otherwise.
     """
@@ -59,14 +59,14 @@ def _setup_email_handler() -> logging.Handler:
         smtp_password = os.getenv("SMTP_PASSWORD")
         from_email = os.getenv("ERROR_EMAIL_FROM")
         to_emails = os.getenv("ERROR_EMAIL_TO")
-        
+
         # Check if all required email settings are provided
         if not all([smtp_server, smtp_username, smtp_password, from_email, to_emails]):
             return None
-        
+
         # Parse multiple email addresses (comma-separated)
         to_email_list = [email.strip() for email in to_emails.split(",")]
-        
+
         # Create SMTP handler
         email_handler = logging.handlers.SMTPHandler(
             mailhost=(smtp_server, int(smtp_port)),
@@ -74,14 +74,15 @@ def _setup_email_handler() -> logging.Handler:
             toaddrs=to_email_list,
             subject="🚨 Purchase Request Site - Application Error",
             credentials=(smtp_username, smtp_password),
-            secure=()  # Use TLS
+            secure=(),  # Use TLS
         )
-        
+
         # Set level to ERROR (will catch ERROR and CRITICAL)
         email_handler.setLevel(logging.ERROR)
-        
+
         # Create detailed formatter for emails
-        email_formatter = logging.Formatter("""
+        email_formatter = logging.Formatter(
+            """
 Application Error Alert
 
 Time: %(asctime)s
@@ -95,12 +96,14 @@ Error Message:
 
 ---
 Purchase Request Site Error Notification System
-        """.strip(), datefmt="%Y-%m-%d %H:%M:%S")
-        
+        """.strip(),
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+
         email_handler.setFormatter(email_formatter)
-        
+
         return email_handler
-        
+
     except Exception as e:
         # Don't let email setup failure break the application
         print(f"Warning: Could not set up email handler: {e}")
