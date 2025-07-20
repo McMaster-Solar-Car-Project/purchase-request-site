@@ -268,8 +268,12 @@ def create_excel_report(user_info, submitted_forms, session_folder):
             ws["C7"] = "Conversion Rate"
 
             # D7: Calculate conversion rate using expense report method = Canadian Amount / US Total
-            us_total = form.get("us_total", 0)  # Direct from form (same as expense report)
-            canadian_amount = form.get("canadian_amount", 0)  # Direct from form (same as expense report)
+            us_total = form.get(
+                "us_total", 0
+            )  # Direct from form (same as expense report)
+            canadian_amount = form.get(
+                "canadian_amount", 0
+            )  # Direct from form (same as expense report)
 
             if us_total > 0 and canadian_amount > 0:  # Avoid division by zero
                 conversion_rate = canadian_amount / us_total

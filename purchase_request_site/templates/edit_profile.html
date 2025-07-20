@@ -4,249 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            padding: 2rem;
-            position: relative;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-            position: relative;
-        }
-
-        .header h1 {
-            color: #333;
-            margin-bottom: 0.5rem;
-            font-size: 2rem;
-        }
-
-        .header p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
-        .back-link {
-            position: absolute;
-            top: 0;
-            left: 0;
-            background: #6c757d;
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-        }
-
-        .back-link:hover {
-            background: #545b62;
-            text-decoration: none;
-            color: white;
-        }
-
-        .current-info {
-            background: #e3f2fd;
-            border: 1px solid #2196f3;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .current-info h3 {
-            color: #1976d2;
-            margin-bottom: 1rem;
-        }
-
-        .current-info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .current-info-item {
-            background: white;
-            padding: 0.75rem;
-            border-radius: 4px;
-            border-left: 3px solid #2196f3;
-        }
-
-        .current-info-item strong {
-            color: #333;
-            display: block;
-            margin-bottom: 0.25rem;
-        }
-
-        .current-info-item span {
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-            color: #333;
-        }
-
-        input[type="text"], input[type="email"], select, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-
-        input[type="text"]:focus, input[type="email"]:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        textarea {
-            min-height: 80px;
-            resize: vertical;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px dashed #ddd;
-            border-radius: 8px;
-            text-align: center;
-            background: #f8f9fa;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .file-input:hover {
-            border-color: #667eea;
-            background: #f0f2ff;
-        }
-
-        .file-input input[type="file"] {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .file-name {
-            margin-top: 0.5rem;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .current-signature {
-            margin-top: 1rem;
-            text-align: center;
-        }
-
-        .current-signature img {
-            max-width: 200px;
-            max-height: 100px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            padding: 0.5rem;
-        }
-
-        .submit-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 15px 40px;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s ease;
-            margin-top: 1rem;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .submit-btn:active {
-            transform: translateY(0);
-        }
-
-        .note {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 1rem;
-            border-radius: 6px;
-            margin-bottom: 1.5rem;
-        }
-
-        .required {
-            color: #dc3545;
-        }
-
-        /* Google Places Autocomplete styling */
-        .pac-container {
-            z-index: 9999 !important;
-            border-radius: 6px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            border: 1px solid #ddd;
-            margin-top: 1px;
-        }
-
-        .pac-item {
-            padding: 10px 14px;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background-color 0.2s ease;
-        }
-
-        .pac-item:hover {
-            background-color: #f8f9fa;
-        }
-
-        .pac-item-selected {
-            background-color: #667eea !important;
-            color: white;
-        }
-
-        .pac-matched {
-            font-weight: 600;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
-<body>
-    <div class="container">
-        <div class="header">
+  <body class="edit-profile-body">
+      <div class="edit-profile-container">
+          <div class="edit-profile-header">
             <a href="/dashboard?user_email={{ user.email }}&use_saved=true" class="back-link">← Back to Dashboard</a>
             <h1>✏️ Edit Your Information</h1>
             <p>Update your profile details below</p>
@@ -291,46 +53,46 @@
         </div>
         {% endif %}
 
-        <div class="note">
-            <strong>Note:</strong> All fields marked with <span class="required">*</span> are required. 
-            Leave signature blank to keep your current signature.
-        </div>
-
-        <form method="post" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="name">Full Name <span class="required">*</span></label>
-                <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required>
-            </div>
-
-            <div class="form-group">
-                <label for="email">McMaster Email <span class="required">*</span></label>
-                <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required>
-            </div>
-
-            <div class="form-group">
-                <label for="personal_email">Personal/E-Transfer Email <span class="required">*</span></label>
-                <input type="email" id="personal_email" name="personal_email" value="{{ user.personal_email if user else '' }}" required>
-            </div>
-
-            <div class="form-group">
-                <label for="team">Team <span class="required">*</span></label>
-                <select id="team" name="team" required>
-                    <option value="">Select your team</option>
-                    <option value="Subsystems" {% if user and user.team == 'Subsystems' %}selected{% endif %}>Subsystems</option>
-                    <option value="Operations" {% if user and user.team == 'Operations' %}selected{% endif %}>Operations</option>
-                    <option value="Business" {% if user and user.team == 'Business' %}selected{% endif %}>Business</option>
-                    <option value="Outreach" {% if user and user.team == 'Outreach' %}selected{% endif %}>Outreach</option>
-                    <option value="Admin" {% if user and user.team == 'Admin' %}selected{% endif %}>Admin</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="address">Address <span class="required">*</span></label>
-                <textarea id="address" name="address" placeholder="Start typing your address..." required>{{ user.address if user else '' }}</textarea>
-                <small class="address-help" style="color: #666;">Start typing and select from suggestions for accurate address</small>
-            </div>
-
-            <div class="form-group">
+                  <div class="edit-profile-note">
+              <strong>Note:</strong> All fields marked with <span class="required">*</span> are required. 
+              Leave signature blank to keep your current signature.
+          </div>
+  
+          <form method="post" enctype="multipart/form-data">
+              <div class="edit-profile-form-group">
+                  <label for="name">Full Name <span class="required">*</span></label>
+                  <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required>
+              </div>
+  
+              <div class="edit-profile-form-group">
+                  <label for="email">McMaster Email <span class="required">*</span></label>
+                  <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required>
+              </div>
+  
+              <div class="edit-profile-form-group">
+                  <label for="personal_email">Personal/E-Transfer Email <span class="required">*</span></label>
+                  <input type="email" id="personal_email" name="personal_email" value="{{ user.personal_email if user else '' }}" required>
+              </div>
+  
+              <div class="edit-profile-form-group">
+                  <label for="team">Team <span class="required">*</span></label>
+                  <select id="team" name="team" required>
+                      <option value="">Select your team</option>
+                      <option value="Subsystems" {% if user and user.team == 'Subsystems' %}selected{% endif %}>Subsystems</option>
+                      <option value="Operations" {% if user and user.team == 'Operations' %}selected{% endif %}>Operations</option>
+                      <option value="Business" {% if user and user.team == 'Business' %}selected{% endif %}>Business</option>
+                      <option value="Outreach" {% if user and user.team == 'Outreach' %}selected{% endif %}>Outreach</option>
+                      <option value="Admin" {% if user and user.team == 'Admin' %}selected{% endif %}>Admin</option>
+                  </select>
+              </div>
+  
+              <div class="edit-profile-form-group">
+                  <label for="address">Address <span class="required">*</span></label>
+                  <textarea id="address" name="address" placeholder="Start typing your address..." required>{{ user.address if user else '' }}</textarea>
+                  <small class="address-help" style="color: #666;">Start typing and select from suggestions for accurate address</small>
+              </div>
+  
+              <div class="edit-profile-form-group">
                 <label for="signature">Digital Signature {% if not user or not user.signature_data %}<span class="required">*</span>{% endif %}</label>
                 <div class="file-input-wrapper">
                                          <div class="file-input">

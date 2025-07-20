@@ -1,5 +1,11 @@
 /* Main styles for Purchase Request Site */
-body {
+/* Global reset and base styles */
+* {
+    box-sizing: border-box;
+}
+
+/* Default body styles (for general pages) */
+body:not(.login-body):not(.dashboard-body):not(.edit-profile-body):not(.success-body) {
     font-family: Arial, sans-serif;
     max-width: 1200px;
     margin: 0 auto;
@@ -651,4 +657,756 @@ h1 {
     color: #856404;
     font-size: 12px;
     font-style: italic;
+} 
+
+/* =================================================================
+   DASHBOARD STYLES
+   ================================================================= */
+
+.dashboard-body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 40px 20px;
+    background-color: #f5f5f5;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+    color: #333;
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.dashboard-user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.dashboard-user-info span {
+    color: #666;
+    font-weight: 500;
+}
+
+.edit-profile-btn {
+    background: #28a745;
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.edit-profile-btn:hover {
+    background: #218838;
+    text-decoration: none;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.logout-btn {
+    background: #dc3545;
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+    background: #c82333;
+    text-decoration: none;
+    color: white;
+}
+
+.dashboard-success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #c3e6cb;
+    font-weight: bold;
+}
+
+.dashboard-error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #f5c6cb;
+}
+
+.header-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 2rem;
+}
+
+.header-nav h1 {
+    margin: 0;
+    color: #333;
+    font-size: 1.5rem;
+}
+
+.logout-link {
+    background-color: #dc3545;
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: background-color 0.3s;
+}
+
+.logout-link:hover {
+    background-color: #c82333;
+    text-decoration: none;
+    color: white;
+}
+
+/* =================================================================
+   LOGIN STYLES
+   ================================================================= */
+
+.login-body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-container {
+    max-width: 400px;
+    width: 90%;
+    padding: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header h1 {
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.login-header p {
+    color: #666;
+    margin: 0;
+}
+
+.login-error-message {
+    background-color: #fee;
+    border: 1px solid #fcc;
+    color: #c33;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.login-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.login-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.login-form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+.login-form-group input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.login-btn:hover {
+    background-color: #0056b3;
+}
+
+.login-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* =================================================================
+   EDIT PROFILE STYLES
+   ================================================================= */
+
+.edit-profile-body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.edit-profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    padding: 2rem;
+    position: relative;
+}
+
+.edit-profile-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.edit-profile-header h1 {
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+}
+
+.edit-profile-header p {
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    background: #545b62;
+    text-decoration: none;
+    color: white;
+}
+
+.current-info {
+    background: #e3f2fd;
+    border: 1px solid #2196f3;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.current-info h3 {
+    color: #1976d2;
+    margin-bottom: 1rem;
+}
+
+.current-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.current-info-item {
+    background: white;
+    padding: 0.75rem;
+    border-radius: 4px;
+    border-left: 3px solid #2196f3;
+}
+
+.current-info-item strong {
+    color: #333;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.current-info-item span {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.edit-profile-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.edit-profile-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.edit-profile-form-group input[type="text"], 
+.edit-profile-form-group input[type="email"], 
+.edit-profile-form-group select, 
+.edit-profile-form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+}
+
+.edit-profile-form-group input[type="text"]:focus, 
+.edit-profile-form-group input[type="email"]:focus, 
+.edit-profile-form-group select:focus, 
+.edit-profile-form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.edit-profile-form-group textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.file-input-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.file-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    text-align: center;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-input:hover {
+    border-color: #667eea;
+    background: #f0f2ff;
+}
+
+.file-input input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-name {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.current-signature {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.current-signature img {
+    max-width: 200px;
+    max-height: 100px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    padding: 0.5rem;
+}
+
+.submit-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+.edit-profile-note {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+}
+
+.required {
+    color: #dc3545;
+}
+
+/* Google Places Autocomplete styling for edit profile */
+.pac-container {
+    z-index: 9999 !important;
+    border-radius: 6px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid #ddd;
+    margin-top: 1px;
+}
+
+.pac-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.pac-item:hover {
+    background-color: #f8f9fa;
+}
+
+.pac-item-selected {
+    background-color: #667eea !important;
+    color: white;
+}
+
+.pac-matched {
+    font-weight: 600;
+}
+
+/* =================================================================
+   USER PROFILE STYLES
+   ================================================================= */
+
+.profile-body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f5f5f5;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.profile-container {
+    max-width: 600px;
+    margin: 50px auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    padding: 2.5rem;
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.profile-header h1 {
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+}
+
+.profile-header p {
+    color: #666;
+    margin: 0;
+}
+
+.profile-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.profile-field strong {
+    color: #333;
+    font-weight: 600;
+    min-width: 140px;
+}
+
+.profile-field span {
+    color: #555;
+    flex: 1;
+    text-align: right;
+}
+
+.signature-preview {
+    max-width: 150px;
+    max-height: 75px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    padding: 0.25rem;
+}
+
+.profile-actions {
+    margin-top: 2rem;
+    text-align: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.profile-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.profile-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    text-decoration: none;
+    color: white;
+}
+
+.profile-btn-secondary {
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.profile-btn-secondary:hover {
+    background: #545b62;
+    text-decoration: none;
+    color: white;
+}
+
+/* =================================================================
+   SUCCESS PAGE STYLES
+   ================================================================= */
+
+.success-body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.success-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    padding: 3rem;
+    text-align: center;
+}
+
+.success-header {
+    margin-bottom: 2rem;
+}
+
+.success-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.success-header h1 {
+    color: #28a745;
+    margin-bottom: 1rem;
+    font-size: 2.5rem;
+}
+
+.success-header p {
+    color: #666;
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.download-card {
+    background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+    border: 2px solid #28a745;
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 2rem 0;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.1);
+}
+
+.download-card h3 {
+    color: #155724;
+    margin-bottom: 1rem;
+}
+
+.download-card p {
+    color: #555;
+    margin-bottom: 1.5rem;
+}
+
+.session-info {
+    background: white;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #333;
+    text-align: left;
+}
+
+.download-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    text-decoration: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    display: inline-block;
+    margin-top: 1rem;
+}
+
+.download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+    text-decoration: none;
+    color: white;
+}
+
+.next-steps {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 2rem;
+    margin: 2rem 0;
+    text-align: left;
+}
+
+.next-steps h4 {
+    color: #333;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.next-steps ul {
+    list-style: none;
+    padding: 0;
+}
+
+.next-steps li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.next-steps li:last-child {
+    border-bottom: none;
+}
+
+.next-steps strong {
+    color: #28a745;
+}
+
+.success-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.success-actions h3 {
+    width: 100%;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.success-btn-secondary {
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.success-btn-secondary:hover {
+    background: #545b62;
+    transform: translateY(-1px);
+    text-decoration: none;
+    color: white;
 } 

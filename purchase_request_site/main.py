@@ -1,5 +1,4 @@
 import os
-import shutil
 from datetime import datetime
 from contextlib import asynccontextmanager
 from fastapi import (
@@ -19,7 +18,6 @@ from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from data_processing import create_excel_report, copy_expense_report_template
-from image_processing import convert_signature_to_png, detect_and_crop_signature
 from logging_utils import setup_logger
 from google_sheets import log_purchase_request_to_sheets
 from google_drive import (
@@ -28,7 +26,6 @@ from google_drive import (
 )
 from database import get_db, init_database
 from user_service import (
-    create_or_update_user,
     get_user_by_email,
     get_user_signature_as_data_url,
     is_user_profile_complete,
@@ -209,9 +206,6 @@ def create_session_folder(name):
     os.makedirs(session_folder, exist_ok=True)
 
     return session_folder
-
-
-
 
 
 @app.get("/dashboard")

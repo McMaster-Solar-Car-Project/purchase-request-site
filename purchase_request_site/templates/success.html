@@ -4,100 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purchase Request Submitted - Success</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
-    <style>
-        .success-container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 2rem;
-            text-align: center;
-        }
-        
-        .success-header {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            padding: 3rem 2rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
-        }
-        
-        .success-header h1 {
-            margin: 0;
-            font-size: 2.5rem;
-            font-weight: bold;
-        }
-        
-        .success-header p {
-            margin: 1rem 0 0 0;
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-        
-        .success-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-        
-        .download-card {
-            background: white;
-            border: 2px solid #28a745;
-            border-radius: 12px;
-            padding: 2rem;
-            margin: 2rem 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .download-card h3 {
-            color: #28a745;
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-        }
-        
-        .download-btn {
-            display: inline-block;
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
-            text-decoration: none;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin: 1rem 0.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
-        }
-        
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
-            text-decoration: none;
-            color: white;
-        }
-        
-        .session-info {
-            background: #f8f9fa;
-            border-left: 4px solid #007bff;
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: 4px;
-            text-align: left;
-        }
-        
-        .session-info strong {
-            color: #495057;
-        }
-        
-        .actions {
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(135deg, #6c757d, #545b62);
-            color: white;
-            text-decoration: none;
+    <link rel="stylesheet" href="/static/css/styles.css">
             padding: 0.75rem 1.5rem;
             border-radius: 6px;
             margin: 0 0.5rem;
@@ -134,9 +41,9 @@
             color: #333;
         }
     </style>
-</head>
-<body>
-    <div class="success-container">
+  </head>
+  <body class="success-body">
+      <div class="success-container">
         <div class="success-header">
             <div class="success-icon">🎉</div>
             <h1>Purchase Request Submitted Successfully!</h1>
@@ -170,11 +77,11 @@
             </ul>
         </div>
 
-        <div class="actions">
+        <div class="success-actions">
             <h3>What would you like to do next?</h3>
-            <a href="/dashboard?user_email={{ user_email if user_email else '' }}&use_saved=true" class="btn-secondary">🏠 Return to Dashboard</a>
-            <a href="/profile?user_email={{ user_email if user_email else '' }}" class="btn-secondary">👤 View Profile</a>
-            <a href="/logout" class="btn-secondary">🚪 Logout</a>
+            <a href="/dashboard?user_email={{ user_email if user_email else '' }}&use_saved=true" class="success-btn-secondary">🏠 Return to Dashboard</a>
+            <a href="/profile?user_email={{ user_email if user_email else '' }}" class="success-btn-secondary">👤 View Profile</a>
+            <a href="/logout" class="success-btn-secondary">🚪 Logout</a>
         </div>
 
         <div style="margin-top: 3rem; padding: 1rem; background: #f8f9fa; border-radius: 6px; font-size: 0.9rem; color: #6c757d;">
