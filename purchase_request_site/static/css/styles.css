@@ -1114,6 +1114,136 @@ h1 {
     color: #dc3545;
 }
 
+/* Password Change Section Styles */
+.password-change-section {
+    border-top: 2px solid #e9ecef;
+    margin: 2rem 0;
+    padding-top: 2rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #dee2e6;
+}
+
+.password-change-section h3 {
+    color: #495057;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.password-change-section h3::before {
+    content: "🔒";
+    font-size: 1.1rem;
+}
+
+.password-change-note {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.password-field-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.password-field-group input[type="password"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.password-field-group input[type="password"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: #fafbff;
+}
+
+.password-field-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.95rem;
+}
+
+.password-field-group small {
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    display: block;
+    font-style: italic;
+}
+
+.password-requirements {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+}
+
+.password-requirements h4 {
+    margin: 0 0 0.5rem 0;
+    color: #1976d2;
+    font-size: 0.9rem;
+}
+
+.password-requirements ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: #1565c0;
+}
+
+.password-requirements li {
+    margin-bottom: 0.25rem;
+}
+
+/* Password strength indicator */
+.password-strength {
+    margin-top: 0.5rem;
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.password-strength-bar {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.password-strength-weak .password-strength-bar {
+    width: 33%;
+    background: #dc3545;
+}
+
+.password-strength-medium .password-strength-bar {
+    width: 66%;
+    background: #ffc107;
+}
+
+.password-strength-strong .password-strength-bar {
+    width: 100%;
+    background: #28a745;
+}
+
 /* Google Places Autocomplete styling for edit profile */
 .pac-container {
     z-index: 9999 !important;

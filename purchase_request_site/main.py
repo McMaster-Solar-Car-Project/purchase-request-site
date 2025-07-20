@@ -589,6 +589,9 @@ async def edit_profile_post(
     personal_email: str = Form(...),
     team: str = Form(...),
     address: str = Form(...),
+    current_password: str = Form(""),
+    new_password: str = Form(""),
+    confirm_password: str = Form(""),
     signature: UploadFile = File(None),
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
@@ -606,6 +609,29 @@ async def edit_profile_post(
         user.team = team
         user.address = address
 
+        # Handle password change if provided
+        password_error = None
+        if new_password or current_password:
+            if not current_password:
+                password_error = "Current password is required to change password"
+            elif not new_password:
+                password_error = "New password cannot be empty"
+            elif len(new_password) < 5:
+                password_error = "New password must be at least 5 characters"
+            elif new_password != confirm_password:
+                password_error = "New password and confirmation do not match"
+            elif user.password != current_password:
+                password_error = "Current password is incorrect"
+            else:
+                # All validations passed, update password
+                user.password = new_password
+                logger.info(f"Password updated for user: {email}")
+
+        if password_error:
+            logger.warning(f"Password change failed for {email}: {password_error}")
+            # You could redirect with error, but for now we'll continue with other updates
+            # and show the error in logs
+
         # Handle signature update if provided
         if signature and signature.filename:
             # Read the signature file content
@@ -619,10 +645,8 @@ async def edit_profile_post(
         logger.info(f"Profile updated for user: {email}")
 
         # Redirect back to dashboard with success message
-        return RedirectResponse(
-            url=f"/dashboard?user_email={email}&use_saved=true&updated=true",
-            status_code=303,
-        )
+        redirect_url = f"/dashboard?user_email={email}&use_saved=true&updated=true"
+        return RedirectResponse(url=redirect_url, status_code=303)
 
     except Exception as e:
         logger.error(f"Error updating profile for {user_email}: {str(e)}")

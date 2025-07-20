@@ -106,6 +106,47 @@
                 {% endif %}
             </div>
 
+            <!-- Password Change Section -->
+            <div class="password-change-section">
+                <h3>Change Password</h3>
+                <div class="password-change-note">
+                    <strong>Optional:</strong> Leave password fields blank to keep your current password.
+                </div>
+                
+                <div class="password-field-group">
+                    <label for="current_password">Current Password</label>
+                    <input type="password" id="current_password" name="current_password" 
+                           placeholder="Enter your current password">
+                    <small>Required only if changing password</small>
+                </div>
+                
+                <div class="password-field-group">
+                    <label for="new_password">New Password</label>
+                    <input type="password" id="new_password" name="new_password" 
+                           placeholder="Enter new password" minlength="5" oninput="checkPasswordStrength()">
+                    <small>Minimum 5 characters</small>
+                    <div class="password-strength" id="password-strength">
+                        <div class="password-strength-bar"></div>
+                    </div>
+                </div>
+                
+                <div class="password-field-group">
+                    <label for="confirm_password">Confirm New Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" 
+                           placeholder="Confirm new password" oninput="checkPasswordMatch()">
+                    <small id="password-match-message">Must match new password</small>
+                </div>
+
+                <div class="password-requirements">
+                    <h4>Password Requirements:</h4>
+                    <ul>
+                        <li>At least 5 characters long</li>
+                        <li>Mix of letters and numbers recommended</li>
+                        <li>Avoid using personal information</li>
+                    </ul>
+                </div>
+            </div>
+
             <button type="submit" class="submit-btn">💾 Update Information</button>
         </form>
     </div>
@@ -120,6 +161,93 @@
                 display.textContent = '';
             }
         }
+
+        // Password strength checker
+        function checkPasswordStrength() {
+            const password = document.getElementById('new_password').value;
+            const strengthDiv = document.getElementById('password-strength');
+            
+            if (!password) {
+                strengthDiv.className = 'password-strength';
+                return;
+            }
+            
+            let strength = 0;
+            if (password.length >= 5) strength++;
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            if (strength <= 2) {
+                strengthDiv.className = 'password-strength password-strength-weak';
+            } else if (strength <= 3) {
+                strengthDiv.className = 'password-strength password-strength-medium';
+            } else {
+                strengthDiv.className = 'password-strength password-strength-strong';
+            }
+        }
+
+        // Password match checker
+        function checkPasswordMatch() {
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            const messageElement = document.getElementById('password-match-message');
+            
+            if (!confirmPassword) {
+                messageElement.textContent = 'Must match new password';
+                messageElement.style.color = '#6c757d';
+                return;
+            }
+            
+            if (newPassword === confirmPassword) {
+                messageElement.textContent = '✓ Passwords match';
+                messageElement.style.color = '#28a745';
+            } else {
+                messageElement.textContent = '✗ Passwords do not match';
+                messageElement.style.color = '#dc3545';
+            }
+        }
+
+        // Password validation
+        function validatePasswords() {
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            const currentPassword = document.getElementById('current_password').value;
+
+            // If any password field is filled, validate all
+            if (newPassword || confirmPassword || currentPassword) {
+                if (!currentPassword) {
+                    alert('Current password is required to change password');
+                    return false;
+                }
+                if (!newPassword) {
+                    alert('New password cannot be empty');
+                    return false;
+                }
+                if (newPassword.length < 5) {
+                    alert('New password must be at least 5 characters');
+                    return false;
+                }
+                if (newPassword !== confirmPassword) {
+                    alert('New password and confirmation do not match');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Add validation to form submit
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    if (!validatePasswords()) {
+                        e.preventDefault();
+                    }
+                });
+            }
+        });
     </script>
 
     <!-- Google Places API for address autocomplete -->

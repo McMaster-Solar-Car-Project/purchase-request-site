@@ -123,7 +123,7 @@ uv run python main.py
 
 The application will start on `http://localhost:8000` with login authentication enabled.
 
-**Note:** The FastAPI app runs from the `purchase_request_site` directory, where the database file `purchase_requests.db` is located.
+**Note:** The FastAPI app runs from the `purchase_request_site` directory, where the database file `user_info.db` is located.
 
 ### 4. Application Flow
 
