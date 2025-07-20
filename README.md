@@ -13,12 +13,12 @@ A FastAPI web application for managing purchase requests and expense reports. Us
 ## Setup
 
 ### 1. Install Dependencies
-```bash
-# Install uv (if not already installed)
-brew install uv
 
+These setup instructions are for macOS, if you are using windows, download the dependencies by visiting their website and following their instructions
+
+```bash
 # Install system dependencies (macOS)
-brew install poppler
+brew install uv poppler gitleaks lefthook
 
 # Install project dependencies
 uv sync
@@ -32,6 +32,7 @@ lefthook install
 Reach out to Raj for environment variables.
 
 ### 3. Run the Application
+
 ```bash
 # From project root
 uv run run.py

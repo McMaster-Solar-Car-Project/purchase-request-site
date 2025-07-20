@@ -237,8 +237,8 @@ def create_excel_report(user_info, submitted_forms, session_folder):
         # B24: Home address
         ws["B24"] = user_info["address"]
 
-        # Populate items starting from row 9
-        for i, item in enumerate(form["items"]):
+        # Populate items starting from row 9 (limit to first 15 items)
+        for i, item in enumerate(form["items"][:15]):  # Only process first 15 items
             row = 9 + i  # Start from row 9, increment for each item
 
             # B9, B10, B11, etc: Item name
@@ -256,30 +256,23 @@ def create_excel_report(user_info, submitted_forms, session_folder):
             # F9, F10, F11, etc: Total price
             ws[f"F{row}"] = item["total"]
 
-        # Financial summary
-        # F16: Subtotal (different logic for USD vs CAD)
+        # Financial summary (updated row numbers)
+        # Note: F24 is NOT the subtotal according to user feedback
+        
+        # E25: Tax label (depends on currency)
         if form["currency"] == "USD":
-            # For USD: Calculate subtotal from item totals (excluding taxes)
-            usd_subtotal = sum(item["total"] for item in form["items"])
-            ws["F16"] = usd_subtotal
+            ws["E25"] = "Taxes"
         else:
-            # For CAD: Use the calculated subtotal amount
-            ws["F16"] = form["subtotal_amount"]
+            ws["E25"] = "HST/GST"
 
-        # E17: Tax label (depends on currency)
-        if form["currency"] == "USD":
-            ws["E17"] = "Taxes"
-        else:
-            ws["E17"] = "HST/GST"
+        # F25: Tax amount (HST/GST for CAD, Taxes for USD)
+        ws["F25"] = form["hst_gst_amount"]
 
-        # F17: Tax amount (HST/GST for CAD, Taxes for USD)
-        ws["F17"] = form["hst_gst_amount"]
+        # F26: Shipping
+        ws["F26"] = form["shipping_amount"]
 
-        # F18: Shipping
-        ws["F18"] = form["shipping_amount"]
-
-        # F19: Total
-        ws["F19"] = form["total_amount"]
+        # F27: Total
+        ws["F27"] = form["total_amount"]
 
         # C7 & D7: Conversion Rate (only for USD)
         if form["currency"] == "USD":
@@ -287,7 +280,7 @@ def create_excel_report(user_info, submitted_forms, session_folder):
             ws["C7"] = "Conversion Rate"
 
             # D7: Calculate conversion rate = Canadian Total / (USD Subtotal + USD Taxes)
-            usd_subtotal = sum(item["total"] for item in form["items"])
+            usd_subtotal = sum(item["total"] for item in form["items"][:15])  # Only use first 15 items
             usd_taxes = form["hst_gst_amount"]  # This contains USD taxes for USD forms
             usd_total = usd_subtotal + usd_taxes
             canadian_total = form["total_amount"]  # This is the Canadian equivalent
