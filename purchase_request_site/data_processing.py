@@ -267,16 +267,12 @@ def create_excel_report(user_info, submitted_forms, session_folder):
             # C7: Conversion Rate label
             ws["C7"] = "Conversion Rate"
 
-            # D7: Calculate conversion rate = Canadian Total / (USD Subtotal + USD Taxes)
-            usd_subtotal = sum(
-                item["total"] for item in form["items"][:15]
-            )  # Only use first 15 items
-            usd_taxes = form["hst_gst_amount"]  # This contains USD taxes for USD forms
-            usd_total = usd_subtotal + usd_taxes
-            canadian_total = form["total_amount"]  # This is the Canadian equivalent
+            # D7: Calculate conversion rate using expense report method = Canadian Amount / US Total
+            us_total = form.get("us_total", 0)  # Direct from form (same as expense report)
+            canadian_amount = form.get("canadian_amount", 0)  # Direct from form (same as expense report)
 
-            if usd_total > 0:  # Avoid division by zero
-                conversion_rate = canadian_total / usd_total
+            if us_total > 0 and canadian_amount > 0:  # Avoid division by zero
+                conversion_rate = canadian_amount / us_total
                 ws["D7"] = round(conversion_rate, 4)  # Round to 4 decimal places
             else:
                 ws["D7"] = 0

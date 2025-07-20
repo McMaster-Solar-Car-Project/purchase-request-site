@@ -214,6 +214,34 @@
         .required {
             color: #dc3545;
         }
+
+        /* Google Places Autocomplete styling */
+        .pac-container {
+            z-index: 9999 !important;
+            border-radius: 6px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid #ddd;
+            margin-top: 1px;
+        }
+
+        .pac-item {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+
+        .pac-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .pac-item-selected {
+            background-color: #667eea !important;
+            color: white;
+        }
+
+        .pac-matched {
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -298,7 +326,8 @@
 
             <div class="form-group">
                 <label for="address">Address <span class="required">*</span></label>
-                <textarea id="address" name="address" placeholder="Enter your full address" required>{{ user.address if user else '' }}</textarea>
+                <textarea id="address" name="address" placeholder="Start typing your address..." required>{{ user.address if user else '' }}</textarea>
+                <small class="address-help" style="color: #666;">Start typing and select from suggestions for accurate address</small>
             </div>
 
             <div class="form-group">
@@ -330,5 +359,91 @@
             }
         }
     </script>
+
+    <!-- Google Places API for address autocomplete -->
+    {% if google_api_key %}
+    <script>
+        // Address Autocomplete using Google Places API
+        let autocomplete;
+
+        function initAutocomplete() {
+            console.log('Initializing Google Places Autocomplete...');
+            
+            // Check if Google Maps API is loaded
+            if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                console.error('Google Maps API not loaded');
+                showFallback();
+                return;
+            }
+            
+            // Check if the address input exists
+            const addressInput = document.getElementById('address');
+            if (!addressInput) {
+                console.error('Address input field not found');
+                return;
+            }
+            
+            try {
+                // Create the autocomplete object
+                autocomplete = new google.maps.places.Autocomplete(
+                    addressInput,
+                    {
+                        types: ['address'],
+                        componentRestrictions: {'country': ['ca', 'us']}, // Restrict to Canada and US
+                        fields: ['formatted_address', 'geometry', 'address_components']
+                    }
+                );
+                
+                // When the user selects an address from the dropdown, populate the address field
+                autocomplete.addListener('place_changed', function() {
+                    const place = autocomplete.getPlace();
+                    
+                    if (!place.geometry) {
+                        console.log("No details available for input: '" + place.name + "'");
+                        return;
+                    }
+                    
+                    // Get the formatted address
+                    addressInput.value = place.formatted_address;
+                    console.log('Address selected:', place.formatted_address);
+                });
+                
+                console.log('Google Places Autocomplete initialized successfully');
+                
+            } catch (error) {
+                console.error('Error initializing autocomplete:', error);
+                showFallback();
+            }
+        }
+
+        function showFallback() {
+            const helpText = document.querySelector('.address-help');
+            if (helpText) {
+                helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
+                helpText.style.color = '#dc3545';
+            }
+        }
+
+        // Fallback if Google Maps API fails to load within 10 seconds
+        window.setTimeout(function() {
+            if (typeof google === 'undefined') {
+                console.log('Google Maps API failed to load within 10 seconds. Address autocomplete disabled.');
+                showFallback();
+            }
+        }, 10000);
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_api_key }}&libraries=places&callback=initAutocomplete" async defer></script>
+    {% else %}
+    <script>
+        // No Google API key available - show fallback message
+        document.addEventListener('DOMContentLoaded', function() {
+            const helpText = document.querySelector('.address-help');
+            if (helpText) {
+                helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
+                helpText.style.color = '#dc3545';
+            }
+        });
+    </script>
+    {% endif %}
 </body>
 </html> 

@@ -145,7 +145,9 @@ async def login(
                 )
 
         # If profile incomplete, go to edit profile page
-        return RedirectResponse(url=f"/edit-profile?user_email={email}", status_code=303)
+        return RedirectResponse(
+            url=f"/edit-profile?user_email={email}", status_code=303
+        )
     else:
         return templates.TemplateResponse(
             "login.html",
@@ -209,123 +211,7 @@ def create_session_folder(name):
     return session_folder
 
 
-@app.post("/submit-request")
-async def submit_request(
-    request: Request,
-    name: str = Form(...),
-    email: str = Form(...),
-    e_transfer_email: str = Form(...),
-    address: str = Form(...),
-    team: str = Form(...),
-    signature: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    _: None = Depends(require_auth),
-):
-    try:
-        # Read signature file content once at the beginning
-        signature_content = await signature.read()
-        if not signature_content:
-            raise HTTPException(
-                status_code=400, detail="Uploaded signature file is empty"
-            )
 
-        # Create session folder for this user
-        session_folder = create_session_folder(name)
-
-        # Save signature file in session folder first
-        signature_extension = (
-            signature.filename.split(".")[-1] if "." in signature.filename else "png"
-        )
-        signature_filename = f"signature.{signature_extension}"
-        signature_location = f"{session_folder}/{signature_filename}"
-
-        # Save the signature file
-        with open(signature_location, "wb") as file_object:
-            file_object.write(signature_content)
-
-        # Create a new UploadFile-like object for database storage
-        from user_service import FileUploadFromPath
-
-        signature_for_db = FileUploadFromPath(signature_location)
-
-        # Check if user exists in database, if not create with default password
-        existing_user = get_user_by_email(db, email)
-        if existing_user:
-            # Update existing user info (keep existing password)
-            create_or_update_user(
-                db=db,
-                name=name,
-                email=email,
-                personal_email=e_transfer_email,
-                address=address,
-                team=team,
-                password=existing_user.password,  # Keep existing password
-                signature_file=signature_for_db,
-            )
-        else:
-            # Create new user with default password
-            create_or_update_user(
-                db=db,
-                name=name,
-                email=email,
-                personal_email=e_transfer_email,
-                address=address,
-                team=team,
-                password="default123",  # Default password for new users
-                signature_file=signature_for_db,
-            )
-
-    except Exception as e:
-        logger.error(f"Error processing user submission: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error processing your submission")
-
-    # Convert signature to PNG format first (save as original for records)
-    original_png_filename = "signature_original.png"
-    original_png_location = f"{session_folder}/{original_png_filename}"
-
-    conversion_success = convert_signature_to_png(
-        signature_location, original_png_location
-    )
-
-    if conversion_success:
-        # Now crop the original PNG to create the processed version for Excel
-        final_signature_filename = "signature.png"
-        final_signature_location = f"{session_folder}/{final_signature_filename}"
-
-        cropping_success = detect_and_crop_signature(
-            original_png_location, final_signature_location
-        )
-
-        if not cropping_success:
-            # Cropping failed - copy the original PNG as the final version
-            try:
-                shutil.copy2(original_png_location, final_signature_location)
-                logger.warning(
-                    f"Signature cropping failed, using original PNG: {final_signature_location}"
-                )
-            except Exception as e:
-                logger.error(f"Could not copy original PNG: {e}")
-                final_signature_filename = original_png_filename
-
-        # Remove the original file if conversion was successful and it's not PNG
-        if signature_extension.lower() != "png":
-            try:
-                os.remove(signature_location)
-            except Exception as e:
-                logger.warning(f"Could not remove original signature file: {e}")
-
-    else:
-        # Conversion failed - fall back to original file
-        final_signature_filename = signature_filename
-        logger.error(
-            f"Signature conversion failed, using original: {signature_location}"
-        )
-
-    # Redirect to dashboard with user email and session info
-    return RedirectResponse(
-        url=f"/dashboard?user_email={email}&session_folder={session_folder}&signature={final_signature_filename}",
-        status_code=303,
-    )
 
 
 @app.get("/dashboard")
@@ -695,6 +581,7 @@ async def edit_profile_get(
             "title": "Edit Profile - Purchase Request Site",
             "user": user,
             "signature_data_url": signature_data_url,
+            "google_api_key": os.getenv("GOOGLE_PLACES_API_KEY"),
         },
     )
 
