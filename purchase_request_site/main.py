@@ -2,7 +2,16 @@ import os
 import shutil
 from datetime import datetime
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException, Depends, status
+from fastapi import (
+    FastAPI,
+    Request,
+    Form,
+    File,
+    UploadFile,
+    HTTPException,
+    Depends,
+    status,
+)
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, FileResponse
@@ -18,7 +27,7 @@ from google_drive import (
     create_drive_folder_and_get_url,
 )
 from database import get_db, init_database
-from user_service import get_user_by_email, get_user_signature_as_data_url
+from user_service import create_or_update_user, get_user_by_email, get_user_signature_as_data_url
 
 # Load environment variables
 load_dotenv()
@@ -48,7 +57,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
 
 # Add session middleware for authentication
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET_KEY", "your-secret-key-change-this"))
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SESSION_SECRET_KEY", "your-secret-key-change-this"),
+)
 
 # Mount static files (directories are guaranteed to exist now)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -71,8 +83,7 @@ def require_auth(request: Request):
     """Dependency to require authentication"""
     if not is_authenticated(request):
         raise HTTPException(
-            status_code=status.HTTP_302_FOUND,
-            headers={"Location": "/login"}
+            status_code=status.HTTP_302_FOUND, headers={"Location": "/login"}
         )
 
 
@@ -83,13 +94,20 @@ async def login_page(request: Request, error: str = None):
         "login.html",
         {
             "request": request,
-            "error_message": "Invalid email or password" if error == "invalid" else None,
+            "error_message": "Invalid email or password"
+            if error == "invalid"
+            else None,
         },
     )
 
 
 @app.post("/login")
-async def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+async def login(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db),
+):
     """Handle login form submission"""
     # Check if it's the admin login
     if email == LOGIN_EMAIL and password == LOGIN_PASSWORD:
@@ -97,7 +115,7 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
         request.session["user_email"] = email
         request.session["is_admin"] = True
         return RedirectResponse(url="/", status_code=303)
-    
+
     # Check user database
     user = get_user_by_email(db, email)
     if user and user.password == password:
@@ -159,7 +177,12 @@ async def home(
 
 
 @app.get("/download-excel")
-async def download_excel(request: Request, session_folder: str, excel_file: str, _: None = Depends(require_auth)):
+async def download_excel(
+    request: Request,
+    session_folder: str,
+    excel_file: str,
+    _: None = Depends(require_auth),
+):
     """Download the generated Excel file for a session"""
     file_path = f"{session_folder}/{excel_file}"
 
@@ -200,30 +223,64 @@ async def submit_request(
     e_transfer_email: str = Form(...),
     address: str = Form(...),
     team: str = Form(...),
-    password: str = Form(...),
     signature: UploadFile = File(...),
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
 ):
     try:
+        # Read signature file content once at the beginning
+        signature_content = await signature.read()
+        if not signature_content:
+            raise HTTPException(status_code=400, detail="Uploaded signature file is empty")
+        
+        # Create session folder for this user
         session_folder = create_session_folder(name)
         
-        # Continue with the rest of the function...
+        # Save signature file in session folder first
+        signature_extension = (
+            signature.filename.split(".")[-1] if "." in signature.filename else "png"
+        )
+        signature_filename = f"signature.{signature_extension}"
+        signature_location = f"{session_folder}/{signature_filename}"
+
+        # Save the signature file
+        with open(signature_location, "wb") as file_object:
+            file_object.write(signature_content)
+        
+        # Create a new UploadFile-like object for database storage
+        from user_service import FileUploadFromPath
+        signature_for_db = FileUploadFromPath(signature_location)
+        
+        # Check if user exists in database, if not create with default password
+        existing_user = get_user_by_email(db, email)
+        if existing_user:
+            # Update existing user info (keep existing password)
+            create_or_update_user(
+                db=db,
+                name=name,
+                email=email,
+                personal_email=e_transfer_email,
+                address=address,
+                team=team,
+                password=existing_user.password,  # Keep existing password
+                signature_file=signature_for_db
+            )
+        else:
+            # Create new user with default password
+            create_or_update_user(
+                db=db,
+                name=name,
+                email=email,
+                personal_email=e_transfer_email,
+                address=address,
+                team=team,
+                password="default123",  # Default password for new users
+                signature_file=signature_for_db
+            )
+        
     except Exception as e:
         logger.error(f"Error processing user submission: {str(e)}")
         raise HTTPException(status_code=500, detail="Error processing your submission")
-
-    # Save signature file in session folder
-    signature_extension = (
-        signature.filename.split(".")[-1] if "." in signature.filename else "png"
-    )
-    signature_filename = f"signature.{signature_extension}"
-    signature_location = f"{session_folder}/{signature_filename}"
-
-    # Save the original signature file first
-    with open(signature_location, "wb") as file_object:
-        content = await signature.read()
-        file_object.write(content)
 
     # Convert signature to PNG format first (save as original for records)
     original_png_filename = "signature_original.png"
@@ -267,9 +324,9 @@ async def submit_request(
             f"Signature conversion failed, using original: {signature_location}"
         )
 
-    # Redirect to dashboard with user information including session folder
+    # Redirect to dashboard with user email and session info
     return RedirectResponse(
-        url=f"/dashboard?name={name}&email={email}&e_transfer_email={e_transfer_email}&address={address}&team={team}&session_folder={session_folder}&signature={final_signature_filename}",
+        url=f"/dashboard?user_email={email}&session_folder={session_folder}&signature={final_signature_filename}",
         status_code=303,
     )
 
@@ -289,7 +346,7 @@ async def dashboard(
     if not user:
         logger.error(f"User not found in database: {user_email}")
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     error_message = None
     if error == "no_forms":
         error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, upload an invoice file, and add at least one item."
@@ -552,14 +609,14 @@ async def user_profile(
     if not user_email:
         # If no email provided, redirect to home
         return RedirectResponse(url="/", status_code=303)
-    
+
     user = get_user_by_email(db, user_email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Get signature as data URL for display
     signature_data_url = get_user_signature_as_data_url(user)
-    
+
     return templates.TemplateResponse(
         "user_profile.html",
         {

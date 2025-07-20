@@ -68,12 +68,14 @@ SESSION_SECRET_KEY=your-very-long-random-secret-key-here
 #### User Profile Storage
 
 The system automatically stores user profiles in a SQLite database (`purchase_request_site/purchase_requests.db`) including:
-- Name, email addresses, address, team information
-- User passwords (stored as plain text for admin access)
+- Name, email addresses, address, team information  
+- User passwords (for login authentication only)
 - Digital signatures (stored as binary data)
 - Creation and update timestamps
 
-User data is automatically saved when submitting purchase requests and can be viewed at `/profile?user_email=user@domain.com`.
+User data is automatically saved when submitting purchase requests. Passwords are only used for login authentication and are not collected during the purchase request process.
+
+User data can be viewed at `/profile?user_email=user@domain.com`.
 
 #### Creating Users Programmatically
 

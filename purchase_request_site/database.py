@@ -1,7 +1,15 @@
 import os
 import base64
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Text, LargeBinary, DateTime
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    Text,
+    LargeBinary,
+    DateTime,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -20,16 +28,21 @@ Base = declarative_base()
 
 class User(Base):
     """User model for storing user profiles"""
+
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
-    email = Column(String(255), nullable=False, unique=True, index=True)  # McMaster email
+    email = Column(
+        String(255), nullable=False, unique=True, index=True
+    )  # McMaster email
     personal_email = Column(String(255), nullable=False)  # E-transfer email
     address = Column(Text, nullable=False)
     team = Column(String(100), nullable=False)
     password = Column(String(255), nullable=False)  # User password
-    signature_data = Column(LargeBinary, nullable=True)  # Store signature image as binary
+    signature_data = Column(
+        LargeBinary, nullable=True
+    )  # Store signature image as binary
     signature_filename = Column(String(255), nullable=True)
     signature_content_type = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -41,7 +54,7 @@ class User(Base):
     def get_signature_as_base64(self) -> str:
         """Convert signature binary data to base64 string for display"""
         if self.signature_data:
-            return base64.b64encode(self.signature_data).decode('utf-8')
+            return base64.b64encode(self.signature_data).decode("utf-8")
         return None
 
     def set_signature_from_base64(self, base64_data: str):
@@ -67,4 +80,4 @@ def get_db():
 def init_database():
     """Initialize database - create tables if they don't exist"""
     create_tables()
-    print("✅ Database initialized successfully") 
+    print("✅ Database initialized successfully")
