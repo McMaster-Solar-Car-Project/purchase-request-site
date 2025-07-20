@@ -11,6 +11,7 @@ from data_processing import create_excel_report
 from image_processing import convert_signature_to_png, detect_and_crop_signature
 from logging_utils import setup_logger
 from google_sheets import log_purchase_request_to_sheets
+from google_drive import upload_session_to_drive
 
 # Load environment variables
 load_dotenv()
@@ -519,6 +520,13 @@ async def submit_all_requests(request: Request):
             log_purchase_request_to_sheets(user_info, submitted_forms, session_folder)
         except Exception as e:
             logger.error(f"Failed to log to Google Sheets (continuing anyway): {e}")
+
+        # Upload to Google Drive
+        try:
+            logger.info("Uploading session data to Google Drive...")
+            upload_session_to_drive(session_folder, user_info)
+        except Exception as e:
+            logger.error(f"Failed to upload to Google Drive (continuing anyway): {e}")
 
     else:
         logger.warning("No forms were submitted (all forms were empty)")
