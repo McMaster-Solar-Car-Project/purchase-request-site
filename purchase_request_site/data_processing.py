@@ -25,11 +25,11 @@ def copy_expense_report_template(session_folder, user_info, submitted_forms):
         month_name = current_date.strftime("%B")  # Full month name (e.g., "July")
         day = current_date.strftime("%d").lstrip("0")  # Day without leading zero
         year = current_date.strftime("%Y")  # YYYY format
-        
+
         # Convert full name to Pascal case (remove spaces, capitalize each word)
         full_name = user_info.get("name", "UnknownUser")
         pascal_name = "".join(word.capitalize() for word in full_name.split())
-        
+
         output_filename = f"{month_name}{day}-{year}-ExpenseReport-{pascal_name}.xlsx"
         output_path = f"{session_folder}/{output_filename}"
 

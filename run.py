@@ -12,7 +12,7 @@ import subprocess
 def main():
     # Change to the purchase_request-site directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    app_dir = os.path.join(script_dir, "purchase_request-site")
+    app_dir = os.path.join(script_dir, "purchase_request_site")
 
     if not os.path.exists(app_dir):
         print("Error: purchase_request-site directory not found!")
