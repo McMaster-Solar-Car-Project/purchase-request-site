@@ -178,12 +178,13 @@ if __name__ == "__main__":
         # Example: Create a user with a signature file
         user = create_user_from_cli(
             db=db,
-            name="John Doe",
-            email="john.doe@mcmaster.ca",
-            personal_email="john.doe@gmail.com",
+            name="test_user",
+            email="test@mcmaster.ca ",
+            personal_email="test@gmail.com",
             address="123 Main St, Hamilton, ON, Canada",
-            team="Engineering",
-            signature_path="path/to/signature.png",  # Replace with actual path
+            team="Battery",
+            password="password",
+            signature_path="static/img/default_signature.png", 
         )
 
         print(f"✅ User created: {user.name} ({user.email})")
