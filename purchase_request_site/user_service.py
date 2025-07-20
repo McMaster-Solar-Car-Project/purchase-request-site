@@ -134,9 +134,9 @@ def save_signature_to_file(user: User, file_path: str) -> bool:
     """Save user's signature from database to a file"""
     if not user or not user.signature_data:
         return False
-    
+
     try:
-        with open(file_path, 'wb') as f:
+        with open(file_path, "wb") as f:
             f.write(user.signature_data)
         return True
     except Exception as e:

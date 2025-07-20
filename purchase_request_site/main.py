@@ -1,5 +1,4 @@
 import os
-import io
 import shutil
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -145,8 +144,8 @@ async def login(
                     status_code=303,
                 )
 
-        # If profile incomplete, go to user info form
-        return RedirectResponse(url="/", status_code=303)
+        # If profile incomplete, go to edit profile page
+        return RedirectResponse(url=f"/edit-profile?user_email={email}", status_code=303)
     else:
         return templates.TemplateResponse(
             "login.html",
@@ -166,33 +165,9 @@ async def logout(request: Request):
 
 
 @app.get("/")
-async def home(
-    request: Request,
-    db: Session = Depends(get_db),
-    _: None = Depends(require_auth),
-):
-    # Check if user has a complete profile
-    user_email = request.session.get("user_email")
-    user_profile_complete = False
-    saved_user = None
-
-    if user_email:
-        user = get_user_by_email(db, user_email)
-        if user and is_user_profile_complete(user):
-            user_profile_complete = True
-            saved_user = user
-
-    return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
-            "title": "Purchase Request Site",
-            "heading": "Enter your purchase request information",
-            "google_api_key": os.getenv("GOOGLE_PLACES_API_KEY"),
-            "user_profile_complete": user_profile_complete,
-            "saved_user": saved_user,
-        },
-    )
+async def home(request: Request):
+    """Redirect home page to login"""
+    return RedirectResponse(url="/login", status_code=303)
 
 
 @app.get("/download-excel")
@@ -384,7 +359,7 @@ async def dashboard(
 
     error_message = None
     success_message = None
-    
+
     if error == "no_forms":
         error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, upload an invoice file, and add at least one item."
     elif updated:
@@ -771,7 +746,7 @@ async def edit_profile_post(
     except Exception as e:
         logger.error(f"Error updating profile for {user_email}: {str(e)}")
         db.rollback()
-        
+
         # Redirect back to edit form with error
         return RedirectResponse(
             url=f"/edit-profile?user_email={user_email}&error=update_failed",

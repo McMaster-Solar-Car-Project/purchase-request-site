@@ -172,7 +172,7 @@
 
         <div class="actions">
             <h3>What would you like to do next?</h3>
-            <a href="/" class="btn-secondary">🏠 Return to Home</a>
+            <a href="/dashboard?user_email={{ user_email if user_email else '' }}&use_saved=true" class="btn-secondary">🏠 Return to Dashboard</a>
             <a href="/profile?user_email={{ user_email if user_email else '' }}" class="btn-secondary">👤 View Profile</a>
             <a href="/logout" class="btn-secondary">🚪 Logout</a>
         </div>
