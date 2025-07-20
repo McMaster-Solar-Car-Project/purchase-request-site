@@ -34,7 +34,7 @@ def copy_expense_report_template(session_folder, user_info, submitted_forms):
         output_path = f"{session_folder}/{output_filename}"
 
         shutil.copy2(template_path, output_path)
-        logger.info(f"Copied expense report template to: {output_path}")
+        # Expense report template copied
 
         # Load the copied template and populate with user data
         wb = load_workbook(output_path)
@@ -68,12 +68,6 @@ def copy_expense_report_template(session_folder, user_info, submitted_forms):
         wb.save(output_path)
         wb.close()
 
-        logger.info("Populated expense report with user data:")
-        logger.info(f"  - Name: {user_info.get('name', '')}")
-        logger.info(f"  - Date: {datetime.now().strftime('%Y-%m-%d')}")
-        logger.info(f"  - Email: {user_info.get('email', '')}")
-        logger.info(f"  - Address: {user_info.get('address', '')}")
-
         return True
 
     except Exception as e:
@@ -95,9 +89,7 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
         ]
         us_forms = [form for form in submitted_forms if form.get("currency") == "USD"]
 
-        logger.info(
-            f"Populating expense report with {len(canadian_forms)} Canadian forms and {len(us_forms)} US forms"
-        )
+        # Populating expense report forms
 
         # Process Canadian forms first
         for i, form in enumerate(canadian_forms):
@@ -123,9 +115,7 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
             hst_gst = form.get("hst_gst_amount", 0)
             ws[f"H{row}"] = hst_gst
 
-            logger.info(
-                f"CAD Row {row}: {form.get('vendor_name', '')} - Subtotal: ${subtotal:.2f}, Total: ${total:.2f}, HST: ${hst_gst:.2f}"
-            )
+            # CAD form row populated
 
         # Update current row for US forms
         current_row += len(canadian_forms)
@@ -166,14 +156,10 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
             # H6+, H7+, H8+... - HST amount (0 for US purchases)
             ws[f"H{row}"] = 0
 
-            logger.info(
-                f"USD Row {row}: {form.get('vendor_name', '')} - USD Total: ${us_total:.2f}, Exchange Rate: {exchange_rate:.4f}, CAD Amount: ${canadian_amount:.2f}"
-            )
+            # USD form row populated
 
         total_forms = len(canadian_forms) + len(us_forms)
-        logger.info(
-            f"Successfully populated {total_forms} total expense rows ({len(canadian_forms)} CAD, {len(us_forms)} USD)"
-        )
+        logger.info(f"✅ Populated {total_forms} expense rows ({len(canadian_forms)} CAD, {len(us_forms)} USD)")
         return True
 
     except Exception as e:

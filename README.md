@@ -31,6 +31,22 @@ lefthook install
 
 Reach out to Raj for environment variables.
 
+#### Optional: Email Error Notifications
+
+To receive email notifications when errors occur, add these optional environment variables to your `.env` file:
+
+```env
+# Email notifications for errors (optional)
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+ERROR_EMAIL_FROM=your_email@gmail.com
+ERROR_EMAIL_TO=admin@yourcompany.com,dev@yourcompany.com
+```
+
+**Note:** For Gmail, use an App Password instead of your regular password. Multiple recipient emails can be separated by commas.
+
 ### 3. Run the Application
 
 ```bash

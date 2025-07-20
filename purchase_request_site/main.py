@@ -152,8 +152,6 @@ async def submit_request(
     )
 
     if conversion_success:
-        logger.info(f"Original signature saved as PNG: {original_png_location}")
-
         # Now crop the original PNG to create the processed version for Excel
         final_signature_filename = "signature.png"
         final_signature_location = f"{session_folder}/{final_signature_filename}"
@@ -162,9 +160,7 @@ async def submit_request(
             original_png_location, final_signature_location
         )
 
-        if cropping_success:
-            logger.info(f"Signature processed successfully: {final_signature_location}")
-        else:
+        if not cropping_success:
             # Cropping failed - copy the original PNG as the final version
             try:
                 shutil.copy2(original_png_location, final_signature_location)
@@ -179,7 +175,6 @@ async def submit_request(
         if signature_extension.lower() != "png":
             try:
                 os.remove(signature_location)
-                logger.info(f"Original signature file removed: {signature_location}")
             except Exception as e:
                 logger.warning(f"Could not remove original signature file: {e}")
 
@@ -296,37 +291,6 @@ async def submit_all_requests(request: Request):
             usd_taxes = 0
             canadian_amount = 0
 
-        # Debug logging to see what values we're getting
-        logger.debug(f"Form {form_num} ({currency}) financial data:")
-        logger.debug(
-            f"  Raw subtotal_amount: '{form_data.get(f'subtotal_amount_{form_num}')}'"
-        )
-        logger.debug(
-            f"  Raw total_amount: '{form_data.get(f'total_amount_{form_num}')}'"
-        )
-        logger.debug(
-            f"  Raw hst_gst_amount: '{form_data.get(f'hst_gst_amount_{form_num}')}'"
-        )
-        logger.debug(
-            f"  Raw shipping_amount: '{form_data.get(f'shipping_amount_{form_num}')}'"
-        )
-        if currency == "USD":
-            logger.debug(f"  Raw us_total: '{form_data.get(f'us_total_{form_num}')}'")
-            logger.debug(f"  Raw usd_taxes: '{form_data.get(f'usd_taxes_{form_num}')}'")
-            logger.debug(
-                f"  Raw canadian_amount: '{form_data.get(f'canadian_amount_{form_num}')}'"
-            )
-        logger.debug("  Parsed values:")
-        logger.debug(f"    subtotal_amount: {subtotal_amount}")
-        logger.debug(f"    discount_amount: {discount_amount}")
-        logger.debug(f"    hst_gst_amount: {hst_gst_amount}")
-        logger.debug(f"    shipping_amount: {shipping_amount}")
-        logger.debug(f"    total_amount: {total_amount}")
-        logger.debug(f"    us_total: {us_total}")
-        logger.debug(f"    usd_taxes: {usd_taxes}")
-        logger.debug(f"    canadian_amount: {canadian_amount}")
-        logger.debug("---")
-
         # Extract items for this form
         items = []
         item_num = 1
@@ -340,14 +304,6 @@ async def submit_all_requests(request: Request):
             item_price = form_data.get(f"item_price_{form_num}_{item_num}")
             item_total = form_data.get(f"item_total_{form_num}_{item_num}")
 
-            # Debug logging for item values
-            logger.debug(f"  Item {item_num} raw values:")
-            logger.debug(f"    name: '{item_name}'")
-            logger.debug(f"    usage: '{item_usage}'")
-            logger.debug(f"    quantity: '{item_quantity}'")
-            logger.debug(f"    price: '{item_price}'")
-            logger.debug(f"    total: '{item_total}'")
-
             if item_name and item_usage and item_quantity and item_price:
                 parsed_total = float(item_total) if item_total else 0
                 items.append(
@@ -359,11 +315,6 @@ async def submit_all_requests(request: Request):
                         "total": parsed_total,
                     }
                 )
-                logger.debug(
-                    f"    → Added to items: qty={int(item_quantity)}, price=${float(item_price)}, total=${parsed_total}"
-                )
-            else:
-                logger.debug("    → Skipped (missing required fields)")
 
             item_num += 1
 
@@ -444,82 +395,12 @@ async def submit_all_requests(request: Request):
 
         excel_report = create_excel_report(user_info, submitted_forms, session_folder)
 
-        logger.info("Bulk submission received from:")
-        logger.info(f"Name: {name}")
-        logger.info(f"McMaster Email: {email}")
-        logger.info(f"E-Transfer Email: {e_transfer_email}")
-        logger.info(f"Address: {address}")
-        logger.info(f"Team: {team}")
-        logger.info(f"Session Folder: {session_folder}")
-        logger.info(
-            f"Digital Signature: {signature_filename} (saved to {session_folder}/{signature_filename})"
-        )
-        logger.info(f"Excel Report Generated: {excel_report['filename']}")
-        logger.info(f"  - Forms processed: {excel_report['forms_processed']}")
-        logger.info(f"  - Tabs used: {', '.join(excel_report['tabs_used'])}")
-        logger.info(f"  - File location: {excel_report['filepath']}")
-        logger.info("")
-        logger.info(f"Number of forms submitted: {len(submitted_forms)}")
-        logger.info("=" * 60)
-
-        for form in submitted_forms:
-            logger.info(f"Purchase Request #{form['form_number']}:")
-            logger.info(f"  Vendor: {form['vendor_name']}")
-            logger.info(f"  Currency: {form['currency']}")
-            logger.info(
-                f"  Invoice File: {form['invoice_filename']} (saved to {form['invoice_file_location']})"
-            )
-            if form["proof_of_payment_filename"]:
-                logger.info(
-                    f"  Proof of Payment: {form['proof_of_payment_filename']} (saved to {form['proof_of_payment_location']})"
-                )
-            logger.info("  Financial Breakdown:")
-
-            if form["currency"] == "USD":
-                # Show USD breakdown
-                logger.info(f"    US Subtotal: ${form['us_total']:.2f} USD")
-                logger.info(f"    Canadian Amount: ${form['canadian_amount']:.2f} CAD")
-                logger.info(
-                    f"    Reimbursement Total: ${form['canadian_amount']:.2f} CAD"
-                )
-            else:
-                # Show CAD breakdown
-                logger.info(
-                    f"    Subtotal: ${form['subtotal_amount']:.2f} {form['currency']}"
-                )
-                logger.info(
-                    f"    Discount: -${form['discount_amount']:.2f} {form['currency']}"
-                )
-
-                # Use appropriate tax label based on currency
-                tax_label = "Taxes" if form["currency"] == "USD" else "HST/GST"
-                logger.info(
-                    f"    {tax_label}: ${form['hst_gst_amount']:.2f} {form['currency']}"
-                )
-
-                logger.info(
-                    f"    Shipping: ${form['shipping_amount']:.2f} {form['currency']}"
-                )
-                logger.info(
-                    f"    Total Amount: ${form['total_amount']:.2f} {form['currency']}"
-                )
-
-            logger.info("  Items:")
-            for i, item in enumerate(form["items"], 1):
-                logger.info(f"    {i}. {item['name']}")
-                logger.info(f"       Usage: {item['usage']}")
-                logger.info(f"       Quantity: {item['quantity']}")
-                logger.info(
-                    f"       Unit Price: ${item['unit_price']:.2f} {form['currency']}"
-                )
-                logger.info(f"       Total: ${item['total']:.2f} {form['currency']}")
-            logger.info("-" * 40)
-
-        logger.info("=" * 60)
+        logger.info(f"📋 Purchase request submitted by {name} ({email})")
+        logger.info(f"   {len(submitted_forms)} forms processed, session: {session_folder}")
+        logger.info(f"   Excel report: {excel_report['filename']}")
 
         # Copy expense report template to session folder
         try:
-            logger.info("Copying and populating expense report template...")
             copy_expense_report_template(session_folder, user_info, submitted_forms)
         except Exception as e:
             logger.error(
@@ -530,7 +411,6 @@ async def submit_all_requests(request: Request):
         drive_folder_url = ""
         drive_folder_id = ""
         try:
-            logger.info("Creating Google Drive folder structure...")
             drive_folder_url, drive_folder_id = create_drive_folder_and_get_url(
                 session_folder, user_info
             )
@@ -541,7 +421,6 @@ async def submit_all_requests(request: Request):
 
         # Log to Google Sheets (with Drive folder URL)
         try:
-            logger.info("Logging session data to Google Sheets...")
             log_purchase_request_to_sheets(
                 user_info, submitted_forms, session_folder, drive_folder_url
             )
@@ -550,10 +429,10 @@ async def submit_all_requests(request: Request):
 
         # Upload files to Google Drive (in background)
         try:
-            logger.info("Starting background file upload to Google Drive...")
             upload_session_to_drive_background(
                 session_folder, user_info, drive_folder_id
             )
+            logger.info("🚀 Background upload to Google Drive started")
         except Exception as e:
             logger.error(
                 f"Failed to start Google Drive upload (continuing anyway): {e}"

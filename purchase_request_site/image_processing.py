@@ -29,9 +29,6 @@ def detect_and_crop_signature(input_path, output_path):
             logger.error(f"Could not read image: {input_path}")
             return False
 
-        logger.info(f"Processing image: {input_path}")
-        logger.debug(f"Original image dimensions: {img.shape}")
-
         # Convert to grayscale
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -67,7 +64,7 @@ def detect_and_crop_signature(input_path, output_path):
         if output_path:
             cv2.imwrite(output_path, final_result)
             trim_whitespace(output_path, output_path)
-            logger.info(f"Processed image saved to: {output_path}")
+            # Signature processed and saved
 
         return True
 
@@ -167,7 +164,7 @@ def convert_signature_to_png(signature_path, output_path):
         True if conversion successful, False otherwise
     """
     try:
-        logger.info(f"Converting signature to PNG: {signature_path}")
+        # Converting signature to PNG
 
         # Check if it's a PDF file first
         if signature_path.lower().endswith(".pdf"):
@@ -176,7 +173,7 @@ def convert_signature_to_png(signature_path, output_path):
                 pages = convert_from_path(signature_path, first_page=1, last_page=1)
                 if pages:
                     img = pages[0]
-                    logger.info("PDF converted to image successfully")
+                    # PDF converted successfully
                 else:
                     logger.warning(f"No pages found in PDF: {signature_path}")
                     return False

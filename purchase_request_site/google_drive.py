@@ -96,9 +96,7 @@ class GoogleDriveClient:
                 service_account_info, scopes=DRIVE_SCOPES
             )
             self.service = build("drive", "v3", credentials=credentials)
-            logger.info(
-                "Successfully authenticated with Google Drive API using environment variables"
-            )
+            # Authentication successful
             return True
         except ValueError as e:
             logger.error(f"Environment variable error: {e}")
@@ -168,7 +166,7 @@ class GoogleDriveClient:
             )
 
             folder_id = folder.get("id")
-            logger.info(f"Created session folder: {session_name} (ID: {folder_id})")
+            # Session folder created
             return folder_id
 
         except HttpError as e:
@@ -298,7 +296,7 @@ class GoogleDriveClient:
                 )
 
                 file_id = file_obj.get("id")
-                logger.debug(f"Uploaded file: {file_name} (ID: {file_id})")
+                # File uploaded successfully
                 return file_id
 
             except (HttpError, Exception) as e:
@@ -348,8 +346,7 @@ class GoogleDriveClient:
             # Construct Google Drive folder URL
             folder_url = f"https://drive.google.com/drive/folders/{session_folder_id}"
 
-            logger.info(f"Created Google Drive folder: {drive_folder_name}")
-            logger.info(f"Folder URL: {folder_url}")
+            # Google Drive folder created
 
             return True, folder_url, session_folder_id
 
@@ -384,13 +381,8 @@ class GoogleDriveClient:
             drive_folder_name = f"{session_name}_{user_name}"
 
             # Use provided folder ID or create new folder structure
-            if session_folder_id:
-                logger.info(f"Using existing session folder ID: {session_folder_id}")
-            else:
+            if not session_folder_id:
                 # Fallback: create folder structure if no ID provided
-                logger.info(
-                    "No session folder ID provided, creating new folder structure"
-                )
                 # Ensure parent folder exists (Test_automation)
                 parent_folder_id = self._ensure_parent_folder()
 
