@@ -306,13 +306,15 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
         return False
 
 
-def insert_signature_at_cell(ws, session_folder, cell_location="A19", width=200, height=60):
+def insert_signature_at_cell(
+    ws, session_folder, cell_location="A19", width=200, height=60
+):
     """Insert signature image into Excel worksheet at specified cell location"""
-    
+
     # Look for signature files in order of preference:
     # 1. signature.png (cropped/processed version)
     # 2. signature_original.png (original PNG without cropping)
-    
+
     processed_signature_path = f"{session_folder}/signature.png"
     original_png_signature_path = f"{session_folder}/signature_original.png"
 
@@ -343,7 +345,9 @@ def insert_signature_at_cell(ws, session_folder, cell_location="A19", width=200,
             img.width = width
             img.height = height
             ws.add_image(img)
-            logger.info(f"Signature inserted at {cell_location} (using {signature_type})")
+            logger.info(
+                f"Signature inserted at {cell_location} (using {signature_type})"
+            )
             return True
         except Exception as e:
             logger.error(f"Error inserting signature at {cell_location}: {e}")

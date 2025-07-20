@@ -107,10 +107,10 @@ async def download_excel(session_folder: str, excel_file: str):
 
 
 def create_session_folder(name):
-    """Create a unique session folder name with timestamp and user name"""
+    """Create a unique session folder name with user name and timestamp"""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe_name = name.replace(" ", "_").lower()
-    session_folder = f"sessions/{timestamp}_{safe_name}"
+    session_folder = f"sessions/{safe_name}_{timestamp}"
 
     # Create the session directory if it doesn't exist
     os.makedirs(session_folder, exist_ok=True)
@@ -522,7 +522,9 @@ async def submit_all_requests(request: Request):
             logger.info("Copying and populating expense report template...")
             copy_expense_report_template(session_folder, user_info, submitted_forms)
         except Exception as e:
-            logger.error(f"Failed to copy and populate expense report template (continuing anyway): {e}")
+            logger.error(
+                f"Failed to copy and populate expense report template (continuing anyway): {e}"
+            )
 
         # Create Google Drive folder and get URL
         drive_folder_url = ""
