@@ -1,0 +1,36 @@
+name: Deploy to Ubuntu Server
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.PORT || 22 }}
+        script: |
+          cd /home/ubuntu/Purchase_Request_Site
+          
+          # Pull latest changes
+          git pull origin main
+          
+          # Install/update dependencies
+          uv sync
+          
+          # Restart the application service
+          sudo systemctl restart purchase-request-site
+          
+          # Check if service is running
+          sudo systemctl status purchase-request-site --no-pager 
