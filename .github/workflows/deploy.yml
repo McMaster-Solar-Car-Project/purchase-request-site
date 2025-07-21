@@ -16,10 +16,10 @@ jobs:
     - name: Deploy to server
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
+        host: 140.238.134.170
+        username: ubuntu
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.APP_PORT || 22 }}
+        port: 22
         script: |
           echo "🔗 Connection successful!"
           whoami
