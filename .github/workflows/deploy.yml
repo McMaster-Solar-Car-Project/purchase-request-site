@@ -17,20 +17,46 @@ jobs:
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
+        username: ubuntu
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.PORT || 22 }}
+        port: 22
         script: |
           cd /home/ubuntu/Purchase_Request_Site
           
+          echo "🔄 Deploying Purchase Request Site..."
+          
           # Pull latest changes
+          echo "📥 Pulling latest code..."
           git pull origin main
           
           # Install/update dependencies
+          echo "📦 Installing dependencies..."
           uv sync
           
-          # Restart the application service
-          sudo systemctl restart purchase-request-site
+          # Stop existing application process
+          echo "🛑 Stopping existing application..."
+          pkill -f "uv run run.py" || echo "No existing process found"
+          pkill -f "python.*run.py" || echo "No Python process found"
+          sleep 3
           
-          # Check if service is running
-          sudo systemctl status purchase-request-site --no-pager 
+          # Start the application in background
+          echo "🚀 Starting application..."
+          nohup uv run run.py > app.log 2>&1 &
+          
+          # Wait a moment for startup
+          sleep 5
+          
+          # Health check
+          echo "🔍 Checking application health..."
+          if curl -f http://localhost:8000 > /dev/null 2>&1; then
+            echo "✅ Application is running successfully!"
+            echo "📊 Process info:"
+            ps aux | grep -E "(uv run|python.*run.py)" | grep -v grep || echo "Process not found in ps"
+          else
+            echo "❌ Application health check failed!"
+            echo "📄 Last 20 lines of log:"
+            tail -20 app.log || echo "No log file found"
+            exit 1
+          fi
+          
+          echo "🎉 Deployment completed successfully!" 
