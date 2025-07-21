@@ -20,6 +20,12 @@ These setup instructions are for macOS, if you are using windows, download the d
 # Install system dependencies (macOS)
 brew install uv gitleaks lefthook
 
+# Create a venv
+uv venv
+
+# Activate the venv
+source .venv/bin/activate
+
 # Install project dependencies
 uv sync
 
@@ -66,8 +72,9 @@ sudo apt update && sudo apt upgrade -y
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
 sudo apt install -y build-essential git curl wget htop net-tools python3.11 python3.11-venv python3.11-dev python3-pip
+sudo snap install astral-uv --classic
 ```
 
-Then, generate a new SSH key on the server and add it to a Github profile that has access to this repo, clone the repo and ensure you can run `git pull`.
+Then, generate a new SSH key on the server and add it to a Github profile that has access to this repo, clone the repo and ensure you can run the project by creating a venv, 
 
 

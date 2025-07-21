@@ -31,6 +31,8 @@ jobs:
           # Pull latest changes
           echo "📥 Pulling latest code..."
           git pull origin main
+
+          source .venv/bin/activate
           
           # Install/update dependencies
           echo "📦 Installing dependencies..."
