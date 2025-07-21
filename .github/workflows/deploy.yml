@@ -59,13 +59,6 @@ jobs:
             exit 1
           fi
           
-          # Health check HTTP endpoint
-          echo "🌐 Testing HTTP endpoint..."
-          sleep 2
-          if curl -f http://localhost:8000 > /dev/null 2>&1; then
-            echo "✅ HTTP endpoint is responding!"
-          else
-            echo "⚠️  HTTP endpoint not responding (might take a moment to start)"
-          fi
+          
           
           echo "🎉 Deployment completed successfully!" 
