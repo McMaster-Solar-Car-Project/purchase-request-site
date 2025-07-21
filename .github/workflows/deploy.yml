@@ -20,6 +20,8 @@ jobs:
         username: ubuntu
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
+        timeout: 60s
+        command_timeout: 10m
         script: |
           echo "🔗 Connection successful!"
           whoami
@@ -38,9 +40,8 @@ jobs:
           
           # Stop existing application process
           echo "🛑 Stopping existing application..."
-          pkill -f "uv run run.py" || echo "No existing process found"
-          pkill -f "python.*run.py" || echo "No Python process found"
-          sleep 3
+          pkill -f "run.py" 2>/dev/null || echo "No existing process found"
+          sleep 2
           
           # Start the application in background
           echo "🚀 Starting application..."
