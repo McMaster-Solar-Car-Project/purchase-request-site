@@ -34,33 +34,38 @@ jobs:
           echo "📥 Pulling latest code..."
           git pull origin main
           
-          # Install/update dependencies (uv handles venv automatically)
+          # Install/update dependencies
           echo "📦 Installing dependencies..."
           uv sync
           
-          # Stop existing application process
-          echo "🛑 Stopping existing application..."
-          pkill -f "run.py" 2>/dev/null || echo "No existing process found"
-          sleep 2
+          # Restart systemd service
+          echo "🔄 Restarting purchase-request-site service..."
+          systemctl restart purchase-request-site
           
-          # Start the application in background
-          echo "🚀 Starting application..."
-          nohup uv run run.py > app.log 2>&1 &
+          # Wait for service to start
+          echo "⏳ Waiting for service to start..."
+          sleep 3
           
-          # Wait a moment for startup
-          sleep 5
-          
-          # Health check
-          echo "🔍 Checking application health..."
-          if curl -f http://localhost:8000 > /dev/null 2>&1; then
-            echo "✅ Application is running successfully!"
-            echo "📊 Process info:"
-            ps aux | grep -E "(uv run|python.*run.py)" | grep -v grep || echo "Process not found in ps"
+          # Check service status
+          echo "🔍 Checking service status..."
+          if systemctl is-active --quiet purchase-request-site; then
+            echo "✅ Service is running successfully!"
+            echo "📊 Service status:"
+            systemctl status purchase-request-site --no-pager -l
           else
-            echo "❌ Application health check failed!"
-            echo "📄 Last 20 lines of log:"
-            tail -20 app.log || echo "No log file found"
+            echo "❌ Service failed to start!"
+            echo "📄 Service logs:"
+            journalctl -u purchase-request-site --no-pager -n 20
             exit 1
+          fi
+          
+          # Health check HTTP endpoint
+          echo "🌐 Testing HTTP endpoint..."
+          sleep 2
+          if curl -f http://localhost:8000 > /dev/null 2>&1; then
+            echo "✅ HTTP endpoint is responding!"
+          else
+            echo "⚠️  HTTP endpoint not responding (might take a moment to start)"
           fi
           
           echo "🎉 Deployment completed successfully!" 
