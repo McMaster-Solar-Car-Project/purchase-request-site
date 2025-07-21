@@ -31,10 +31,8 @@ jobs:
           # Pull latest changes
           echo "📥 Pulling latest code..."
           git pull origin main
-
-          source .venv/bin/activate
           
-          # Install/update dependencies
+          # Install/update dependencies (uv handles venv automatically)
           echo "📦 Installing dependencies..."
           uv sync
           
