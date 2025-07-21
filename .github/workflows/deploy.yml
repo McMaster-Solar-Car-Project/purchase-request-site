@@ -14,10 +14,10 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Deploy to server
-      uses: appleboy/ssh-action@v1.0.3
+      uses: appleboy/ssh-action@v1.2.2
       with:
         host: 134.122.41.229
-        username: ubuntu
+        username: root
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
         timeout: 60s
