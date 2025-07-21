@@ -56,7 +56,10 @@ This project relies of a few key API's and Services.
 
 ### 5. Setting up a new Server
 
-In case a new server is used, these are the commands run for the current one:
+In case this needs to be migrated, these are the steps to work on a new server:
+
+Ensure Github actions can be used to access this server, different for every service, just ask ChatGPT
+
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -65,4 +68,6 @@ sudo apt update
 sudo apt install -y build-essential git curl wget htop net-tools python3.11 python3.11-venv python3.11-dev python3-pip
 ```
 
-The generate a new SSH key on the server and add it to a Github profile that has access to this repo.
+Then, generate a new SSH key on the server and add it to a Github profile that has access to this repo, clone the repo and ensure you can run `git pull`.
+
+

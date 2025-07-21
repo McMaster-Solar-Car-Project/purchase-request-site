@@ -21,6 +21,9 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
         script: |
+          echo "🔗 Connection successful!"
+          whoami
+          pwd
           cd /home/ubuntu/Purchase_Request_Site
           
           echo "🔄 Deploying Purchase Request Site..."
