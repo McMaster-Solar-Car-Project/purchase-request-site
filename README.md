@@ -41,3 +41,28 @@ uv run run.py
 ```
 
 The application will start on `http://localhost:8000` with login authentication enabled.
+
+### 4. Long Term Maintainance
+
+This project relies of a few key API's and Services.
+
+- Google API's
+  - Drive API (Access, update, and modify files in Google Drive)
+  - Sheets API (Access, update, and modify values in Google Sheets)
+  - Place API (Address Autocomplete, not needed but nice to have)
+- Google Service Account (Accessing Drive files)
+- Gmail Account (Emailing warnings)
+- Oracle Access (Cloud Hosting Service)
+
+### 5. Setting up a new Server
+
+In case a new server is used, these are the commands run for the current one:
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y build-essential git curl wget htop net-tools python3.11 python3.11-venv python3.11-dev python3-pip
+```
+
+The generate a new SSH key on the server and add it to a Github profile that has access to this repo.

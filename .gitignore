@@ -49,3 +49,6 @@ Thumbs.db
 
 # Generated files
 sessions/
+
+# SSH Key
+ssh.key
