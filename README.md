@@ -64,17 +64,23 @@ This project relies of a few key API's and Services.
 
 In case this needs to be migrated, these are the steps to work on a new server:
 
-Ensure Github actions can be used to access this server, different for every service, just ask ChatGPT
+Configure the servers firewall to be able to handle ports 22 (for SSH), 80, and 8000 (for deployment)
 
 
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
-sudo apt install -y build-essential git curl wget htop net-tools python3.11 python3.11-venv python3.11-dev python3-pip
+sudo apt install -y build-essential git curl wget htop net-tools python
 sudo snap install astral-uv --classic
 ```
 
-Then, generate a new SSH key on the server and add it to a Github profile that has access to this repo, clone the repo and ensure you can run the project by creating a venv, 
+Then, generate a new SSH key on the server and add it to a Github profile that has access to this repo, clone the repo and ensure you can run the project by doing
 
+```bash
+uv sync
+uv run run.py
+```
+
+This should now be accessable. Push a random commit to Github and see if it updates on the server.
 
