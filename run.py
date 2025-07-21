@@ -22,21 +22,39 @@ def main():
     os.chdir(app_dir)
 
     # Run the application using uvicorn
+    # Check if we're in production (no --reload, use port 8000)
+    is_production = os.getenv("ENVIRONMENT") == "production"
+    
     try:
-        subprocess.run(
-            [
-                "uv",
-                "run",
-                "uvicorn",
-                "main:app",
-                "--reload",
-                "--host",
-                "0.0.0.0",
-                "--port",
-                "80",
-            ],
-            check=True,
-        )
+        if is_production:
+            # Production: No reload, port 8000, use direct uvicorn
+            subprocess.run(
+                [
+                    "python",
+                    "-m", "uvicorn",
+                    "main:app",
+                    "--host", "0.0.0.0",
+                    "--port", "8000",
+                    "--workers", "2"
+                ],
+                check=True,
+            )
+        else:
+            # Development: Keep reload, use uv
+            subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "uvicorn",
+                    "main:app",
+                    "--reload",
+                    "--host",
+                    "0.0.0.0",
+                    "--port",
+                    "8000",
+                ],
+                check=True,
+            )
     except subprocess.CalledProcessError as e:
         print(f"Error running the application: {e}")
         sys.exit(1)
