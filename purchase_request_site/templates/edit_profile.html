@@ -1,22 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
 </head>
-  <body class="edit-profile-body">
-      <div class="edit-profile-container">
-          <div class="edit-profile-header">
-            <a href="/dashboard?user_email={{ user.email }}&use_saved=true" class="back-link">← Back to Dashboard</a>
+
+<body class="edit-profile-body">
+    <div class="edit-profile-container">
+        <div class="edit-profile-header">
+            <a href="/dashboard?user_email={{ user.email }}&use_saved=true" class="back-link">← Back</a>
             <h1>✏️ Edit Your Information</h1>
             <p>Update your profile details below</p>
         </div>
 
         {% if user %}
         <div class="current-info">
-            <h3>📋 Current Information</h3>
+            <h3 style="text-align: center;">📋 Current Information</h3>
             <div class="current-info-grid">
                 <div class="current-info-item">
                     <strong>Name:</strong>
@@ -43,7 +45,7 @@
                     <span>{% if user.signature_data %}On file ✓{% else %}Not uploaded{% endif %}</span>
                 </div>
             </div>
-            
+
             {% if signature_data_url %}
             <div class="current-signature">
                 <h4>Current Signature:</h4>
@@ -53,58 +55,71 @@
         </div>
         {% endif %}
 
-                  <div class="edit-profile-note">
-              <strong>Note:</strong> All fields marked with <span class="required">*</span> are required. 
-              Leave signature blank to keep your current signature.
-          </div>
-  
-          <form method="post" enctype="multipart/form-data">
-              <div class="edit-profile-form-group">
-                  <label for="name">Full Name <span class="required">*</span></label>
-                  <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required>
-              </div>
-  
-              <div class="edit-profile-form-group">
-                  <label for="email">McMaster Email <span class="required">*</span></label>
-                  <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required>
-              </div>
-  
-              <div class="edit-profile-form-group">
-                  <label for="personal_email">Personal/E-Transfer Email <span class="required">*</span></label>
-                  <input type="email" id="personal_email" name="personal_email" value="{{ user.personal_email if user else '' }}" required>
-              </div>
-  
-              <div class="edit-profile-form-group">
-                  <label for="team">Team <span class="required">*</span></label>
-                  <select id="team" name="team" required>
-                      <option value="">Select your team</option>
-                      <option value="Aeroshell" {% if user and user.team == 'Aeroshell' %}selected{% endif %}>Aeroshell</option>
-                      <option value="Battery" {% if user and user.team == 'Battery' %}selected{% endif %}>Battery</option>
-                      <option value="Chassis" {% if user and user.team == 'Chassis' %}selected{% endif %}>Chassis</option>
-                      <option value="Data Acquisition" {% if user and user.team == 'Data Acquisition' %}selected{% endif %}>Data Acquisition</option>
-                      <option value="Firmware" {% if user and user.team == 'Firmware' %}selected{% endif %}>Firmware</option>
-                      <option value="Management" {% if user and user.team == 'Management' %}selected{% endif %}>Management</option>
-                      <option value="Media" {% if user and user.team == 'Media' %}selected{% endif %}>Media</option>
-                      <option value="Power Management Systems" {% if user and user.team == 'Power Management Systems' %}selected{% endif %}>Power Management Systems</option>
-                      <option value="Solar Cells" {% if user and user.team == 'Solar Cells' %}selected{% endif %}>Solar Cells</option>
-                      <option value="Strategies" {% if user and user.team == 'Strategies' %}selected{% endif %}>Strategies</option>
-                      <option value="Suspension" {% if user and user.team == 'Suspension' %}selected{% endif %}>Suspension</option>
-                  </select>
-              </div>
-  
-              <div class="edit-profile-form-group">
-                  <label for="address">Address <span class="required">*</span></label>
-                  <textarea id="address" name="address" placeholder="Start typing your address..." required>{{ user.address if user else '' }}</textarea>
-                  <small class="address-help" style="color: #666;">Start typing and select from suggestions for accurate address</small>
-              </div>
-  
-              <div class="edit-profile-form-group">
-                <label for="signature">Digital Signature {% if not user or not user.signature_data %}<span class="required">*</span>{% endif %}</label>
+        <div class="edit-profile-note">
+            <strong>Note:</strong> All fields marked with <span class="required">*</span> are required.
+            Leave signature blank to keep your current signature.
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            <div class="edit-profile-form-group">
+                <label for="name">Full Name <span class="required">*</span></label>
+                <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required>
+            </div>
+
+            <div class="edit-profile-form-group">
+                <label for="email">McMaster Email <span class="required">*</span></label>
+                <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required>
+            </div>
+
+            <div class="edit-profile-form-group">
+                <label for="personal_email">Personal/E-Transfer Email <span class="required">*</span></label>
+                <input type="email" id="personal_email" name="personal_email"
+                    value="{{ user.personal_email if user else '' }}" required>
+            </div>
+
+            <div class="edit-profile-form-group">
+                <label for="team">Team <span class="required">*</span></label>
+                <select id="team" name="team" required>
+                    <option value="">Select your team</option>
+                    <option value="Aeroshell" {% if user and user.team=='Aeroshell' %}selected{% endif %}>Aeroshell
+                    </option>
+                    <option value="Battery" {% if user and user.team=='Battery' %}selected{% endif %}>Battery</option>
+                    <option value="Chassis" {% if user and user.team=='Chassis' %}selected{% endif %}>Chassis</option>
+                    <option value="Data Acquisition" {% if user and user.team=='Data Acquisition' %}selected{% endif %}>
+                        Data Acquisition</option>
+                    <option value="Firmware" {% if user and user.team=='Firmware' %}selected{% endif %}>Firmware
+                    </option>
+                    <option value="Management" {% if user and user.team=='Management' %}selected{% endif %}>Management
+                    </option>
+                    <option value="Media" {% if user and user.team=='Media' %}selected{% endif %}>Media</option>
+                    <option value="Power Management Systems" {% if user and user.team=='Power Management Systems'
+                        %}selected{% endif %}>Power Management Systems</option>
+                    <option value="Solar Cells" {% if user and user.team=='Solar Cells' %}selected{% endif %}>Solar
+                        Cells</option>
+                    <option value="Strategies" {% if user and user.team=='Strategies' %}selected{% endif %}>Strategies
+                    </option>
+                    <option value="Suspension" {% if user and user.team=='Suspension' %}selected{% endif %}>Suspension
+                    </option>
+                </select>
+            </div>
+
+            <div class="edit-profile-form-group">
+                <label for="address">Address <span class="required">*</span></label>
+                <textarea id="address" name="address" placeholder="Start typing your address..."
+                    required>{{ user.address if user else '' }}</textarea>
+                <small class="address-help" style="color: #666;">Start typing and select from suggestions for accurate
+                    address</small>
+            </div>
+
+            <div class="edit-profile-form-group">
+                <label for="signature">Digital Signature {% if not user or not user.signature_data %}<span
+                        class="required">*</span>{% endif %}</label>
                 <div class="file-input-wrapper">
-                                         <div class="file-input">
-                         <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg" onchange="updateFileName(this, 'signature-name')">
-                         <span>Click to upload signature image (PNG, JPG, JPEG)</span>
-                     </div>
+                    <div class="file-input">
+                        <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg"
+                            onchange="updateFileName(this, 'signature-name')">
+                        <span>Click to upload signature image (PNG, JPG, JPEG)</span>
+                    </div>
                     <div id="signature-name" class="file-name"></div>
                 </div>
                 {% if user and user.signature_data %}
@@ -118,28 +133,28 @@
                 <div class="password-change-note">
                     <strong>Optional:</strong> Leave password fields blank to keep your current password.
                 </div>
-                
+
                 <div class="password-field-group">
                     <label for="current_password">Current Password</label>
-                    <input type="password" id="current_password" name="current_password" 
-                           placeholder="Enter your current password">
+                    <input type="password" id="current_password" name="current_password"
+                        placeholder="Enter your current password">
                     <small>Required only if changing password</small>
                 </div>
-                
+
                 <div class="password-field-group">
                     <label for="new_password">New Password</label>
-                    <input type="password" id="new_password" name="new_password" 
-                           placeholder="Enter new password" minlength="5" oninput="checkPasswordStrength()">
+                    <input type="password" id="new_password" name="new_password" placeholder="Enter new password"
+                        minlength="5" oninput="checkPasswordStrength()">
                     <small>Minimum 5 characters</small>
                     <div class="password-strength" id="password-strength">
                         <div class="password-strength-bar"></div>
                     </div>
                 </div>
-                
+
                 <div class="password-field-group">
                     <label for="confirm_password">Confirm New Password</label>
-                    <input type="password" id="confirm_password" name="confirm_password" 
-                           placeholder="Confirm new password" oninput="checkPasswordMatch()">
+                    <input type="password" id="confirm_password" name="confirm_password"
+                        placeholder="Confirm new password" oninput="checkPasswordMatch()">
                     <small id="password-match-message">Must match new password</small>
                 </div>
 
@@ -167,48 +182,48 @@
 
         function initAutocomplete() {
             console.log('Initializing Google Places Autocomplete...');
-            
+
             // Check if Google Maps API is loaded
             if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
                 console.error('Google Maps API not loaded');
                 showFallback();
                 return;
             }
-            
+
             // Check if the address input exists
             const addressInput = document.getElementById('address');
             if (!addressInput) {
                 console.error('Address input field not found');
                 return;
             }
-            
+
             try {
                 // Create the autocomplete object
                 autocomplete = new google.maps.places.Autocomplete(
                     addressInput,
                     {
                         types: ['address'],
-                        componentRestrictions: {'country': ['ca', 'us']}, // Restrict to Canada and US
+                        componentRestrictions: { 'country': ['ca', 'us'] }, // Restrict to Canada and US
                         fields: ['formatted_address', 'geometry', 'address_components']
                     }
                 );
-                
+
                 // When the user selects an address from the dropdown, populate the address field
-                autocomplete.addListener('place_changed', function() {
+                autocomplete.addListener('place_changed', function () {
                     const place = autocomplete.getPlace();
-                    
+
                     if (!place.geometry) {
                         console.log("No details available for input: '" + place.name + "'");
                         return;
                     }
-                    
+
                     // Get the formatted address
                     addressInput.value = place.formatted_address;
                     console.log('Address selected:', place.formatted_address);
                 });
-                
+
                 console.log('Google Places Autocomplete initialized successfully');
-                
+
             } catch (error) {
                 console.error('Error initializing autocomplete:', error);
                 showFallback();
@@ -224,18 +239,20 @@
         }
 
         // Fallback if Google Maps API fails to load within 10 seconds
-        window.setTimeout(function() {
+        window.setTimeout(function () {
             if (typeof google === 'undefined') {
                 console.log('Google Maps API failed to load within 10 seconds. Address autocomplete disabled.');
                 showFallback();
             }
         }, 10000);
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_api_key }}&libraries=places&callback=initAutocomplete" async defer></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_api_key }}&libraries=places&callback=initAutocomplete"
+        async defer></script>
     {% else %}
     <script>
         // No Google API key available - show fallback message
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const helpText = document.querySelector('.address-help');
             if (helpText) {
                 helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
@@ -245,4 +262,5 @@
     </script>
     {% endif %}
 </body>
-</html> 
+
+</html>

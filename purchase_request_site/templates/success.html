@@ -1,52 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Request Submitted - Success</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Purchase Request Submitted - Success</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
 </head>
+
 <body class="success-body">
-    <div class="success-container">
-        <div class="success-header">
-            <div class="success-icon">🎉</div>
-            <h1>Purchase Request Submitted Successfully!</h1>
-            <p>Your purchase request has been processed and submitted for approval 🥳</p>
-        </div>
-
-        {% if download_info %}
-        <div class="download-card">
-            <h3>📄 Your Excel Report is Ready!</h3>
-            <p>Your purchase request has been compiled into an Excel report. You can download it below.</p>
-            
-            <div class="session-info">
-                <strong>Generated:</strong> {{ current_time.strftime('%B %d, %Y at %I:%M %p') }}
-            </div>
-            
-            <a href="{{ download_info.download_url }}" class="download-btn" download="{{ download_info.excel_file }}">
-                📥 Download Excel Report
-            </a>
-        </div>
-        {% endif %}
-
-        <div class="next-steps">
-            <h4>📋 What Happens Next?</h4>
-            <ul>
-                <li><strong>Review:</strong> Your purchase request will be reviewed by the appropriate team</li>
-                <li><strong>Approval:</strong> You'll be messaged on Teams if additional information is needed</li>
-            </ul>
-        </div>
-
-        <div class="success-actions">
-            <h3>What would you like to do next?</h3>
-            <a href="/dashboard?user_email={{ user_email if user_email else '' }}&use_saved=true" class="success-btn-secondary">🏠 Return to Dashboard</a>
-            <a href="/logout" class="success-btn-secondary">🚪 Logout</a>
-        </div>
-
-        <div style="margin-top: 3rem; padding: 1rem; background: #f8f9fa; border-radius: 6px; font-size: 0.9rem; color: #6c757d;">
-            <p><strong>Need Help?</strong> If you have any questions about your purchase request, please contact Raj.</p>
-            <p><strong>Keep Your Receipt:</strong> Keep the purchase request for your own records. </p>
-        </div>
+  <div class="success-container">
+    <div class="success-header">
+      <div class="success-icon">🎉</div>
+      <h1>Purchase Request Submitted Successfully!</h1>
+      <p>Your purchase request has been processed and submitted for approval 🥳</p>
     </div>
+
+    {% if download_info %}
+    <div class="download-card">
+      <h3>📄 Your Excel Report is Ready!</h3>
+      <p>Your purchase request has been compiled into an Excel report. You can download it below.</p>
+
+      <div class="session-info">
+        <strong>Generated:</strong> {{ current_time.strftime('%B %d, %Y at %I:%M %p') }}
+      </div>
+
+      <a href="{{ download_info.download_url }}" class="download-btn" download="{{ download_info.excel_file }}">
+        📥 Download Excel Report
+      </a>
+    </div>
+    {% endif %}
+
+    <div class="next-steps">
+      <h4>📋 What Happens Next?</h4>
+      <ul>
+        <li><strong>Review:</strong> Your purchase request will be reviewed by the appropriate team</li>
+        <li><strong>Approval:</strong> You'll be messaged on Teams if additional information is needed</li>
+      </ul>
+    </div>
+
+    <div class="success-actions">
+      <h3>What would you like to do next?</h3>
+      <a href="/dashboard?user_email={{ user_email if user_email else '' }}&use_saved=true"
+        class="success-btn-secondary">🏠 Return to Dashboard</a>
+      <a href="/logout" class="success-btn-secondary">🚪 Logout</a>
+    </div>
+
+    <div
+      style="margin-top: 3rem; padding: 1rem; background: #f8f9fa; border-radius: 6px; font-size: 0.9rem; color: #6c757d;">
+      <p><strong>Need Help?</strong> If you have any questions about your purchase request, please contact Raj.</p>
+      <p><strong>Keep Your Receipt:</strong> Keep the purchase request for your own records. </p>
+    </div>
+  </div>
 </body>
-</html> 
+
+</html>

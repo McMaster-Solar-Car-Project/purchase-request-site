@@ -1,46 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Purchase Request Site</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
 </head>
-  <body class="login-body">
-      <div class="login-container">
+
+<body class="login-body">
+    <div class="login-container">
         <div class="login-header">
             <h1>🔐 Login Required</h1>
             <p>Please enter your credentials to access the Purchase Request Site</p>
         </div>
-        
+
         {% if error_message %}
         <div class="login-error-message">
             {{ error_message }}
         </div>
         {% endif %}
-        
+
         <form method="POST" action="/login">
             <div class="login-form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required 
-                       placeholder="Enter your email address"
-                       value="{{ email or '' }}">
+                <input type="email" id="email" name="email" required placeholder="Enter your email address"
+                    value="{{ email or '' }}">
             </div>
-            
+
             <div class="login-form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required 
-                       placeholder="Enter your password">
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
             </div>
-            
+
             <button type="submit" class="login-btn">
                 🚀 Login to Purchase Request Site
             </button>
         </form>
-        
+
         <div class="login-footer">
-            <p>Secure access to purchase request management system</p>
+            <p>Contact Raj if you would like access to the purchase request site.</p>
         </div>
     </div>
 </body>
-</html> 
+
+</html>

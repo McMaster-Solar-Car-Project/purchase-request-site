@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purchase Request Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
 </head>
-  <body class="dashboard-body">
-      <div class="dashboard-container">
+
+<body class="dashboard-body">
+    <div class="dashboard-container">
         <div class="dashboard-header">
             <h1>Purchase Request Dashboard</h1>
             <div class="dashboard-user-info">
@@ -15,21 +17,21 @@
                 <a href="/logout" class="logout-btn">Logout</a>
             </div>
         </div>
-        
+
         {% if success_message %}
         <div class="dashboard-success-message">
             {{ success_message }}
         </div>
         {% endif %}
-        
+
         {% if error_message %}
         <div class="error-message">
             {{ error_message }}
         </div>
         {% endif %}
-        
+
         <p class="subtitle">Fill out up to 10 separate purchase requests and submit them all together</p>
-        
+
         <div class="user-info">
             <div class="info-summary">
                 <p><strong>Name:</strong> {{ name }}</p>
@@ -41,14 +43,15 @@
                 </div>
             </div>
         </div>
-        
+
         {% if error_message %}
         <div class="error-message">
             <p>{{ error_message }}</p>
         </div>
         {% endif %}
-        
-        <form method="POST" action="/submit-all-requests" enctype="multipart/form-data" onsubmit="return validateSubmission()">
+
+        <form method="POST" action="/submit-all-requests" enctype="multipart/form-data"
+            onsubmit="return validateSubmission()">
             <!-- Hidden fields for user data -->
             <input type="hidden" name="name" value="{{ name }}">
             <input type="hidden" name="email" value="{{ email }}">
@@ -57,18 +60,21 @@
             <input type="hidden" name="team" value="{{ team }}">
             <input type="hidden" name="session_folder" value="{{ session_folder }}">
             <input type="hidden" name="signature" value="{{ signature }}">
-            
+
             <div class="dashboard-section">
                 <h2>Your Purchase Request Forms</h2>
-                <p class="dashboard-help">Fill out any number of the forms below. Empty forms will be ignored when you submit.</p>
-                
+                <p class="dashboard-help">Fill out any number of the forms below. Empty forms will be ignored when you
+                    submit.</p>
+
                 <div class="forms-container">
                     {% for form_num in range(1, 11) %}
                     <div class="form-accordion">
                         <div class="form-accordion-header" onclick="toggleForm({{ form_num }})">
                             <h3>Invoice #{{ form_num }}</h3>
                             <div class="form-header-actions">
-                                <button type="button" class="btn-clear" onclick="event.stopPropagation(); clearForm({{ form_num }})" title="Clear this form">Clear</button>
+                                <button type="button" class="btn-clear"
+                                    onclick="event.stopPropagation(); clearForm({{ form_num }})"
+                                    title="Clear this form">Clear</button>
                                 <span class="form-toggle">▼</span>
                             </div>
                         </div>
@@ -76,144 +82,201 @@
                             <div class="reimbursement-form">
                                 <div class="form-group">
                                     <label for="vendor_name_{{ form_num }}">Vendor/Store Name</label>
-                                    <input type="text" id="vendor_name_{{ form_num }}" name="vendor_name_{{ form_num }}" placeholder="Enter the name of the vendor or store">
+                                    <input type="text" id="vendor_name_{{ form_num }}" name="vendor_name_{{ form_num }}"
+                                        placeholder="Enter the name of the vendor or store">
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="currency_{{ form_num }}">Currency</label>
-                                    <select id="currency_{{ form_num }}" name="currency_{{ form_num }}" onchange="updateCurrencyLabels({{ form_num }})">
+                                    <select id="currency_{{ form_num }}" name="currency_{{ form_num }}"
+                                        onchange="updateCurrencyLabels({{ form_num }})">
                                         <option value="CAD">CAD - Canadian Dollar</option>
                                         <option value="USD">USD - US Dollar</option>
                                     </select>
                                     <small class="file-help">Select the currency used for this purchase</small>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="invoice_file_{{ form_num }}">Upload Invoice/Receipt</label>
                                     <div class="custom-file-upload">
-                                        <input type="file" id="invoice_file_{{ form_num }}" name="invoice_file_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif" onchange="updateFileName(this, 'invoice-filename-{{ form_num }}')">
-                                        <span class="file-upload-btn" onclick="document.getElementById('invoice_file_{{ form_num }}').click()">Choose File</span>
-                                        <span class="file-name" id="invoice-filename-{{ form_num }}">No file chosen</span>
+                                        <input type="file" id="invoice_file_{{ form_num }}"
+                                            name="invoice_file_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif"
+                                            onchange="updateFileName(this, 'invoice-filename-{{ form_num }}')">
+                                        <span class="file-upload-btn"
+                                            onclick="document.getElementById('invoice_file_{{ form_num }}').click()">Choose
+                                            File</span>
+                                        <span class="file-name" id="invoice-filename-{{ form_num }}">No file
+                                            chosen</span>
                                     </div>
-                                    <small class="file-help">Please upload your invoice or receipt (PDF, JPG, PNG, or GIF format)</small>
+                                    <small class="file-help">Please upload your invoice or receipt (PDF, JPG, PNG, or
+                                        GIF format)</small>
                                 </div>
-                                
-                                <div class="form-group proof-of-payment-section proof-of-payment-section-{{ form_num }}" style="display: none;">
-                                    <label for="proof_of_payment_{{ form_num }}">Proof of Payment (Required for USD purchases)</label>
+
+                                <div class="form-group proof-of-payment-section proof-of-payment-section-{{ form_num }}"
+                                    style="display: none;">
+                                    <label for="proof_of_payment_{{ form_num }}">Proof of Payment (Required for USD
+                                        purchases)</label>
                                     <div class="custom-file-upload">
-                                        <input type="file" id="proof_of_payment_{{ form_num }}" name="proof_of_payment_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif" onchange="updateFileName(this, 'payment-filename-{{ form_num }}')">
-                                        <span class="file-upload-btn" onclick="document.getElementById('proof_of_payment_{{ form_num }}').click()">Choose File</span>
-                                        <span class="file-name" id="payment-filename-{{ form_num }}">No file chosen</span>
+                                        <input type="file" id="proof_of_payment_{{ form_num }}"
+                                            name="proof_of_payment_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif"
+                                            onchange="updateFileName(this, 'payment-filename-{{ form_num }}')">
+                                        <span class="file-upload-btn"
+                                            onclick="document.getElementById('proof_of_payment_{{ form_num }}').click()">Choose
+                                            File</span>
+                                        <span class="file-name" id="payment-filename-{{ form_num }}">No file
+                                            chosen</span>
                                     </div>
-                                    <small class="file-help">Upload a screenshot of your bank transaction or payment confirmation (PDF, JPG, PNG, or GIF format)</small>
+                                    <small class="file-help">Upload a screenshot of your bank transaction or payment
+                                        confirmation (PDF, JPG, PNG, or GIF format)</small>
                                 </div>
-                                
+
                                 <div class="items-section">
                                     <h4>Item Details</h4>
                                     <small class="items-help">Add the items you purchased (up to 15 items)</small>
-                                    
+
                                     <div id="items-container-{{ form_num }}">
                                         <div class="item-row">
                                             <div class="item-input-group">
                                                 <label>Item Name</label>
-                                                <input type="text" name="item_name_{{ form_num }}_1" placeholder="Enter item name">
+                                                <input type="text" name="item_name_{{ form_num }}_1"
+                                                    placeholder="Enter item name">
                                             </div>
                                             <div class="item-input-group">
                                                 <label>Usage/Purpose</label>
-                                                <input type="text" name="item_usage_{{ form_num }}_1" placeholder="What is this item for?">
+                                                <input type="text" name="item_usage_{{ form_num }}_1"
+                                                    placeholder="What is this item for?">
                                             </div>
                                             <div class="item-input-group">
                                                 <label>Quantity</label>
-                                                <input type="number" name="item_quantity_{{ form_num }}_1" min="1" value="1" oninput="calculateItemTotal({{ form_num }}, 1)">
+                                                <input type="number" name="item_quantity_{{ form_num }}_1" min="1"
+                                                    value="1" oninput="calculateItemTotal({{ form_num }}, 1)">
                                             </div>
                                             <div class="item-input-group">
                                                 <label>Unit Price</label>
-                                                <input type="number" name="item_price_{{ form_num }}_1" min="0" step="0.01" placeholder="0.00" oninput="calculateItemTotal({{ form_num }}, 1)">
+                                                <input type="number" name="item_price_{{ form_num }}_1" min="0"
+                                                    step="0.01" placeholder="0.00"
+                                                    oninput="calculateItemTotal({{ form_num }}, 1)">
                                             </div>
                                             <div class="item-input-group">
                                                 <label>Total</label>
-                                                <input type="number" name="item_total_{{ form_num }}_1" readonly placeholder="0.00" class="total-field">
+                                                <input type="number" name="item_total_{{ form_num }}_1" readonly
+                                                    placeholder="0.00" class="total-field">
                                             </div>
                                             <div class="item-actions">
-                                                <button type="button" class="btn-remove" onclick="removeItem(this, {{ form_num }})" style="display: none;">Remove</button>
+                                                <button type="button" class="btn-remove"
+                                                    onclick="removeItem(this, {{ form_num }})"
+                                                    style="display: none;">Remove</button>
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="form-group">
-                                        <button type="button" class="btn-secondary" onclick="addItem({{ form_num }})">Add Another Item</button>
+                                        <button type="button" class="btn-secondary"
+                                            onclick="addItem({{ form_num }})">Add Another Item</button>
                                     </div>
                                 </div>
-                                
+
                                 <div class="total-section">
                                     <h4>Financial Summary</h4>
-                                    
+
                                     <!-- CAD Financial Breakdown -->
                                     <div class="financial-breakdown cad-breakdown-{{ form_num }}">
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="subtotal_amount_{{ form_num }}">Subtotal (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="subtotal_amount_{{ form_num }}" name="subtotal_amount_{{ form_num }}" readonly min="0" step="0.01" placeholder="0.00" class="total-field">
-                                                <small class="financial-help">Automatically calculated from item totals above</small>
+                                                <label for="subtotal_amount_{{ form_num }}">Subtotal (<span
+                                                        class="currency-label-{{ form_num }}">CAD</span>)</label>
+                                                <input type="number" id="subtotal_amount_{{ form_num }}"
+                                                    name="subtotal_amount_{{ form_num }}" readonly min="0" step="0.01"
+                                                    placeholder="0.00" class="total-field">
+                                                <small class="financial-help">Automatically calculated from item totals
+                                                    above</small>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="discount_amount_{{ form_num }}">Discount (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="discount_amount_{{ form_num }}" name="discount_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
-                                                <small class="financial-help">Coupons, promotional discounts, or rebates</small>
+                                                <label for="discount_amount_{{ form_num }}">Discount (<span
+                                                        class="currency-label-{{ form_num }}">CAD</span>)</label>
+                                                <input type="number" id="discount_amount_{{ form_num }}"
+                                                    name="discount_amount_{{ form_num }}" min="0" step="0.01"
+                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
+                                                <small class="financial-help">Coupons, promotional discounts, or
+                                                    rebates</small>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="hst_gst_amount_{{ form_num }}"><span class="tax-label-{{ form_num }}">HST/GST</span> (<span class="currency-label-{{ form_num }}">CAD</span>) <span class="required-indicator-{{ form_num }}"></span></label>
-                                                <input type="number" id="hst_gst_amount_{{ form_num }}" name="hst_gst_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
-                                                <small class="financial-help tax-help-{{ form_num }}">Harmonized Sales Tax / Goods and Services Tax</small>
+                                                <label for="hst_gst_amount_{{ form_num }}"><span
+                                                        class="tax-label-{{ form_num }}">HST/GST</span> (<span
+                                                        class="currency-label-{{ form_num }}">CAD</span>) <span
+                                                        class="required-indicator-{{ form_num }}"></span></label>
+                                                <input type="number" id="hst_gst_amount_{{ form_num }}"
+                                                    name="hst_gst_amount_{{ form_num }}" min="0" step="0.01"
+                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
+                                                <small class="financial-help tax-help-{{ form_num }}">Harmonized Sales
+                                                    Tax / Goods and Services Tax</small>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="shipping_amount_{{ form_num }}">Shipping & Handling (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="shipping_amount_{{ form_num }}" name="shipping_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
-                                                <small class="financial-help">Shipping, delivery, and handling fees</small>
+                                                <label for="shipping_amount_{{ form_num }}">Shipping & Handling (<span
+                                                        class="currency-label-{{ form_num }}">CAD</span>)</label>
+                                                <input type="number" id="shipping_amount_{{ form_num }}"
+                                                    name="shipping_amount_{{ form_num }}" min="0" step="0.01"
+                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
+                                                <small class="financial-help">Shipping, delivery, and handling
+                                                    fees</small>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="form-row total-row">
                                             <div class="form-group">
-                                                <label for="total_amount_{{ form_num }}">Total Reimbursement Amount (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="total_amount_{{ form_num }}" name="total_amount_{{ form_num }}" readonly min="0" step="0.01" placeholder="0.00" class="total-field">
-                                                <small class="financial-help">Automatically calculated (Subtotal - Discount + Tax + Shipping)</small>
+                                                <label for="total_amount_{{ form_num }}">Total Reimbursement Amount
+                                                    (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
+                                                <input type="number" id="total_amount_{{ form_num }}"
+                                                    name="total_amount_{{ form_num }}" readonly min="0" step="0.01"
+                                                    placeholder="0.00" class="total-field">
+                                                <small class="financial-help">Automatically calculated (Subtotal -
+                                                    Discount + Tax + Shipping)</small>
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <!-- USD Financial Breakdown -->
-                                    <div class="financial-breakdown usd-breakdown-{{ form_num }}" style="display: none;">
+                                    <div class="financial-breakdown usd-breakdown-{{ form_num }}"
+                                        style="display: none;">
                                         <div class="form-row">
                                             <div class="form-group">
                                                 <label for="us_total_{{ form_num }}">US Subtotal (USD)</label>
-                                                <input type="number" id="us_total_{{ form_num }}" name="us_total_{{ form_num }}" min="0" step="0.01" placeholder="0.00">
+                                                <input type="number" id="us_total_{{ form_num }}"
+                                                    name="us_total_{{ form_num }}" min="0" step="0.01"
+                                                    placeholder="0.00">
                                                 <small class="financial-help">Subtotal in US dollars</small>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="form-row">
                                             <div class="form-group">
                                                 <label for="usd_taxes_{{ form_num }}">Taxes (USD)</label>
-                                                <input type="number" id="usd_taxes_{{ form_num }}" name="usd_taxes_{{ form_num }}" min="0" step="0.01" placeholder="0.00">
-                                                <small class="financial-help">Sales tax, state tax, or other applicable taxes</small>
+                                                <input type="number" id="usd_taxes_{{ form_num }}"
+                                                    name="usd_taxes_{{ form_num }}" min="0" step="0.01"
+                                                    placeholder="0.00">
+                                                <small class="financial-help">Sales tax, state tax, or other applicable
+                                                    taxes</small>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="canadian_amount_{{ form_num }}">Canadian Amount (CAD)</label>
-                                                <input type="number" id="canadian_amount_{{ form_num }}" name="canadian_amount_{{ form_num }}" min="0" step="0.01" placeholder="0.00">
-                                                <small class="financial-help">Equivalent amount in Canadian dollars for reimbursement</small>
+                                                <label for="canadian_amount_{{ form_num }}">Canadian Amount
+                                                    (CAD)</label>
+                                                <input type="number" id="canadian_amount_{{ form_num }}"
+                                                    name="canadian_amount_{{ form_num }}" min="0" step="0.01"
+                                                    placeholder="0.00">
+                                                <small class="financial-help">Equivalent amount in Canadian dollars for
+                                                    reimbursement</small>
                                             </div>
                                         </div>
                                     </div>
@@ -224,7 +287,7 @@
                     {% endfor %}
                 </div>
             </div>
-            
+
             <div class="dashboard-actions">
                 <div class="form-group">
                     <button type="submit" class="btn btn-large">Submit All Purchase Requests</button>
@@ -235,4 +298,5 @@
 
     <script src="{{ url_for('static', path='/js/dashboard.js') }}"></script>
 </body>
-</html> 
+
+</html>
