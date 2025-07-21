@@ -17,9 +17,9 @@ jobs:
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
-        username: ubuntu
+        username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
+        port: ${{ secrets.APP_PORT || 22 }}
         script: |
           echo "🔗 Connection successful!"
           whoami
