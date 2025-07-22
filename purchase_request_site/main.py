@@ -33,6 +33,7 @@ from user_service import (
     is_user_profile_complete,
     save_signature_to_file,
 )
+from request_logging import RequestLoggingMiddleware
 
 # Load environment variables
 load_dotenv()
@@ -88,18 +89,14 @@ async def cleanup_old_sessions():
                     try:
                         shutil.rmtree(folder_path)
                         deleted_count += 1
-                        logger.info(
-                            f"🗑️  Deleted old session folder: {folder_name} (age: {age.total_seconds():.1f}s)"
-                        )
                     except Exception as e:
                         logger.error(
                             f"Failed to delete session folder {folder_name}: {e}"
                         )
 
-            if deleted_count > 0:
-                logger.info(
-                    f"🧹 Cleanup completed: {deleted_count} old session folders deleted"
-                )
+            # Only log if many folders were deleted (indicates potential issue)
+            if deleted_count > 10:
+                logger.info(f"🧹 Deleted {deleted_count} old session folders")
 
         except Exception as e:
             logger.error(f"Error during session cleanup: {e}")
@@ -118,9 +115,6 @@ async def lifespan(app: FastAPI):
 
     # Start background cleanup task
     cleanup_task = asyncio.create_task(cleanup_old_sessions())
-    logger.info(
-        "🚀 Application startup complete - database, directories, and session cleanup ready!"
-    )
 
     yield  # Application runs here
 
@@ -131,12 +125,12 @@ async def lifespan(app: FastAPI):
             await cleanup_task
         except asyncio.CancelledError:
             pass
-        logger.info("🧹 Session cleanup task stopped")
-
-    logger.info("👋 Application shutting down...")
 
 
 app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
+
+# Add request logging middleware
+app.add_middleware(RequestLoggingMiddleware)
 
 # Add session middleware for authentication
 app.add_middleware(
@@ -512,13 +506,7 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             "signature": signature_filename,
         }
 
-        excel_report = create_excel_report(user_info, submitted_forms, session_folder)
-
-        logger.info(f"📋 Purchase request submitted by {name} ({email})")
-        logger.info(
-            f"   {len(submitted_forms)} forms processed, session: {session_folder}"
-        )
-        logger.info(f"   Excel report: {excel_report['filename']}")
+        create_excel_report(user_info, submitted_forms, session_folder)
 
         # Copy expense report template to session folder
         try:
@@ -553,7 +541,6 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             upload_session_to_drive_background(
                 session_folder, user_info, drive_folder_id
             )
-            logger.info("🚀 Background upload to Google Drive started")
         except Exception as e:
             logger.error(
                 f"Failed to start Google Drive upload (continuing anyway): {e}"
@@ -679,7 +666,6 @@ async def edit_profile_post(
             else:
                 # All validations passed, update password
                 user.password = new_password
-                logger.info(f"Password updated for user: {email}")
 
         if password_error:
             logger.warning(f"Password change failed for {email}: {password_error}")
@@ -696,7 +682,6 @@ async def edit_profile_post(
 
         # Save changes to database
         db.commit()
-        logger.info(f"Profile updated for user: {email}")
 
         # Redirect back to dashboard with success message
         redirect_url = f"/dashboard?user_email={email}&use_saved=true&updated=true"

@@ -123,15 +123,10 @@ class GoogleDriveClient:
             self.parent_folder_id = PARENT_FOLDER_ID
 
             # Verify the folder exists and get its name
-            folder_info = (
+            (
                 self.service.files()
                 .get(fileId=self.parent_folder_id, fields="id, name")
                 .execute()
-            )
-
-            folder_name = folder_info.get("name", "Unknown")
-            logger.info(
-                f"Using parent folder: {folder_name} (ID: {self.parent_folder_id})"
             )
 
             return self.parent_folder_id
@@ -414,7 +409,6 @@ class GoogleDriveClient:
                 return True
 
             # Upload files in parallel using ThreadPoolExecutor (with conservative threading)
-            logger.info(f"Starting parallel upload of {len(files_to_upload)} files...")
             with ThreadPoolExecutor(
                 max_workers=min(len(files_to_upload), 3)
             ) as executor:
@@ -436,7 +430,6 @@ class GoogleDriveClient:
                             uploaded_files.append(
                                 {"name": file_path.name, "id": file_id}
                             )
-                            logger.debug(f"✓ Uploaded: {file_path.name}")
                         else:
                             failed_files.append(file_path)
                     except Exception as e:
@@ -464,12 +457,6 @@ class GoogleDriveClient:
                             f"Sequential retry also failed for {file_path.name}: {e}"
                         )
 
-            logger.info("Successfully uploaded session folder to Google Drive:")
-            logger.info(f"  - Drive folder: {drive_folder_name}")
-            logger.info(f"  - Files uploaded: {len(uploaded_files)}")
-            for file_info in uploaded_files:
-                logger.info(f"    • {file_info['name']}")
-
             return True
 
         except Exception as e:
@@ -484,20 +471,12 @@ class GoogleDriveClient:
         try:
             # Try to get Drive storage info
             about = self.service.about().get(fields="storageQuota,user").execute()
-            user_email = about.get("user", {}).get("emailAddress", "Unknown")
 
             storage_quota = about.get("storageQuota", {})
             usage = storage_quota.get("usage", 0)
             limit = storage_quota.get("limit", 0)
 
-            logger.info("Successfully connected to Google Drive")
-            logger.info(f"  - Account: {user_email}")
-            if limit:
-                usage_gb = int(usage) / (1024**3)
-                limit_gb = int(limit) / (1024**3)
-                logger.info(f"  - Storage: {usage_gb:.1f} GB / {limit_gb:.1f} GB used")
-
-            return True
+            return True if usage < limit else False
 
         except HttpError as e:
             logger.error(f"HTTP error testing Google Drive connection: {e}")
@@ -525,11 +504,8 @@ def upload_session_to_drive(
         bool: True if successful, False otherwise
     """
     try:
-        logger.info(f"Uploading session folder to Google Drive: {session_folder_path}")
         success = drive_client.upload_session_folder(session_folder_path, user_info)
-        if success:
-            logger.info("Session folder successfully uploaded to Google Drive")
-        else:
+        if not success:
             logger.warning("Failed to upload session folder to Google Drive")
         return success
     except Exception as e:
@@ -555,7 +531,6 @@ def create_drive_folder_and_get_url(
             session_folder_path, user_info
         )
         if success:
-            logger.info(f"Google Drive folder created: {folder_url}")
             return folder_url, folder_id
         else:
             logger.warning("Failed to create Google Drive folder")
@@ -597,15 +572,11 @@ def upload_session_to_drive_background(
     # Start upload in background thread
     upload_thread = threading.Thread(target=background_upload, daemon=True)
     upload_thread.start()
-    logger.info("🚀 Background upload to Google Drive started")
 
 
 def test_google_drive_connection():
     """Test function to verify Google Drive integration"""
-    logger.info("Testing Google Drive connection...")
-
     if drive_client.test_connection():
-        logger.info("✅ Google Drive connection successful!")
         return True
     else:
         logger.error("❌ Google Drive connection failed")

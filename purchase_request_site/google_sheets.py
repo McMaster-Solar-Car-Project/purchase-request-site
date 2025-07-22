@@ -271,14 +271,9 @@ sheets_client = GoogleSheetsClient()
 
 def test_google_sheets_connection():
     """Test function to verify Google Sheets integration"""
-    logger.info("Testing Google Sheets connection...")
-
     if sheets_client.test_connection():
-        logger.info("✅ Google Sheets connection successful!")
-
         # Try writing test data
         if sheets_client.write_test_data():
-            logger.info("✅ Test data written successfully!")
             return True
         else:
             logger.error("❌ Failed to write test data")
@@ -293,23 +288,21 @@ def log_purchase_request_to_sheets(
     forms: List[Dict[str, Any]],
     session_folder: str,
     drive_folder_url: str = "",
-):
+) -> None:
     """
-    Convenience function to log session data to Google Sheets (one row per session)
+    Log purchase request to Google Sheets
 
     Args:
-        user_info: User information dictionary (name, email, address, e_transfer_email, team)
-        forms: List of submitted form data (not used for logging, kept for compatibility)
-        session_folder: Session folder path
-        drive_folder_url: Google Drive folder URL for easy access
+        user_info: Dictionary containing user information
+        forms: List of form data dictionaries
+        session_folder: Path to the session folder
+        drive_folder_url: URL to the Google Drive folder (optional)
     """
     try:
         success = sheets_client.log_purchase_request(
             user_info, forms, session_folder, drive_folder_url
         )
-        if success:
-            logger.info("Session data successfully logged to Google Sheets")
-        else:
+        if not success:
             logger.warning("Failed to log session data to Google Sheets")
     except Exception as e:
         logger.error(f"Unexpected error logging to Google Sheets: {e}")

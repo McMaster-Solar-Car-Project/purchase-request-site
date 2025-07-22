@@ -60,7 +60,6 @@ def copy_expense_report_template(session_folder, user_info, submitted_forms):
             try:
                 # Insert signature at cell A19
                 insert_signature_at_cell(ws, session_folder, "A19")
-                logger.info("Inserted signature into expense report at A19")
             except Exception as e:
                 logger.warning(f"Failed to insert signature into expense report: {e}")
 
@@ -158,10 +157,6 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
 
             # USD form row populated
 
-        total_forms = len(canadian_forms) + len(us_forms)
-        logger.info(
-            f"✅ Populated {total_forms} expense rows ({len(canadian_forms)} CAD, {len(us_forms)} USD)"
-        )
         return True
 
     except Exception as e:

@@ -36,13 +36,55 @@ def setup_logger(name: str) -> logging.Logger:
         console_handler.setFormatter(console_formatter)
         logger.addHandler(console_handler)
 
+        # File handler for persistent logging
+        file_handler = _setup_file_handler()
+        if file_handler:
+            logger.addHandler(file_handler)
+
         # Email handler for errors (if configured)
         email_handler = _setup_email_handler()
         if email_handler:
             logger.addHandler(email_handler)
-            logger.info("Email notifications enabled for ERROR and CRITICAL logs")
 
     return logger
+
+
+def _setup_file_handler() -> logging.Handler:
+    """Set up file handler for persistent logging.
+
+    Returns:
+        logging.Handler or None: File handler if successful, None otherwise.
+    """
+    try:
+        # Create logs directory if it doesn't exist
+        logs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
+        os.makedirs(logs_dir, exist_ok=True)
+
+        # Create log file path with date
+        from datetime import datetime
+
+        log_filename = f"purchase_request_site_{datetime.now().strftime('%Y%m%d')}.log"
+        log_filepath = os.path.join(logs_dir, log_filename)
+
+        # Create rotating file handler (max 10MB, keep 5 backups)
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_filepath,
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=5,
+        )
+
+        # Set detailed formatter for file logs
+        file_formatter = logging.Formatter(
+            "[%(asctime)s] [%(levelname)s] [%(name)s] [%(filename)s:%(lineno)d] %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        file_handler.setFormatter(file_formatter)
+
+        return file_handler
+
+    except Exception as e:
+        print(f"Warning: Could not set up file handler: {e}")
+        return None
 
 
 def _setup_email_handler() -> logging.Handler:
