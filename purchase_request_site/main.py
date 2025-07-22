@@ -190,6 +190,7 @@ async def login(
         request.session["authenticated"] = True
         request.session["user_email"] = email
         request.session["is_admin"] = True
+        logger.info(f"🔐 Admin login: {email}")
         return RedirectResponse(url="/", status_code=303)
 
     # Check user database
@@ -198,6 +199,7 @@ async def login(
         request.session["authenticated"] = True
         request.session["user_email"] = email
         request.session["is_admin"] = False
+        logger.info(f"🔐 User login: {user.name} ({email})")
 
         # Check if user profile is complete
         if is_user_profile_complete(user):
@@ -219,6 +221,7 @@ async def login(
             url=f"/edit-profile?user_email={email}", status_code=303
         )
     else:
+        logger.warning(f"🚫 Failed login attempt: {email}")
         return templates.TemplateResponse(
             "login.html",
             {

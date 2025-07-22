@@ -22,9 +22,10 @@ logger = setup_logger(__name__)
 
 # Google Sheets configuration
 SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
-SHEET_TAB_NAME = os.getenv(
-    "GOOGLE_SHEET_TAB_NAME"
-)  # Using existing tab from your sheet
+SHEET_TAB_NAME = "Website Responses"
+# Clean the tab name in case it has comments or extra text
+if SHEET_TAB_NAME and '#' in SHEET_TAB_NAME:
+    SHEET_TAB_NAME = SHEET_TAB_NAME.split('#')[0].strip()
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 
