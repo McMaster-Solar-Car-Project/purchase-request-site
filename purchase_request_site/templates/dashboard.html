@@ -44,11 +44,6 @@
             </div>
         </div>
 
-        {% if error_message %}
-        <div class="error-message">
-            <p>{{ error_message }}</p>
-        </div>
-        {% endif %}
 
         <form method="POST" action="/submit-all-requests" enctype="multipart/form-data"
             onsubmit="return validateSubmission()">

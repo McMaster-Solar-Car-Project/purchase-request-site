@@ -24,8 +24,8 @@ logger = setup_logger(__name__)
 SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 SHEET_TAB_NAME = "Website Responses"
 # Clean the tab name in case it has comments or extra text
-if SHEET_TAB_NAME and '#' in SHEET_TAB_NAME:
-    SHEET_TAB_NAME = SHEET_TAB_NAME.split('#')[0].strip()
+if SHEET_TAB_NAME and "#" in SHEET_TAB_NAME:
+    SHEET_TAB_NAME = SHEET_TAB_NAME.split("#")[0].strip()
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 

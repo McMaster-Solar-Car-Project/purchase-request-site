@@ -115,9 +115,6 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
                 img.width = 280  # Set width for 5 cells wide (approximately)
                 img.height = 70  # Set height for 3 cells high (approximately)
                 ws.add_image(img)
-                logger.info(
-                    f"Signature inserted at B33 for form {form['form_number']} (using {signature_type})"
-                )
                 return True
             except Exception as e:
                 logger.error(
