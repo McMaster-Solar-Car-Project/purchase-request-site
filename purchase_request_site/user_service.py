@@ -1,10 +1,10 @@
-import io
 import base64
+import io
 import os
-from typing import Optional
-from sqlalchemy.orm import Session
-from fastapi import UploadFile
+
 from database import User
+from fastapi import UploadFile
+from sqlalchemy.orm import Session
 
 
 class FileUploadFromPath:
@@ -60,7 +60,7 @@ def create_user_from_cli(
     )
 
 
-def get_user_by_email(db: Session, email: str) -> Optional[User]:
+def get_user_by_email(db: Session, email: str) -> User | None:
     """Get user by McMaster email"""
     return db.query(User).filter(User.email == email).first()
 
@@ -122,7 +122,7 @@ def create_or_update_user(
         return new_user
 
 
-def get_user_signature_as_data_url(user: User) -> Optional[str]:
+def get_user_signature_as_data_url(user: User) -> str | None:
     """Get user's signature as a data URL for HTML display"""
     if user.signature_data and user.signature_content_type:
         base64_data = base64.b64encode(user.signature_data).decode("utf-8")

@@ -1,9 +1,10 @@
 import os
 import shutil
 from datetime import datetime
-from openpyxl import load_workbook
-from image_processing import insert_signature_into_worksheet, insert_signature_at_cell
+
+from image_processing import insert_signature_at_cell, insert_signature_into_worksheet
 from logging_utils import setup_logger
+from openpyxl import load_workbook
 
 # Set up logger
 logger = setup_logger(__name__)

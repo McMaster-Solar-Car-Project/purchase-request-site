@@ -6,7 +6,8 @@ This module handles writing purchase request data to Google Sheets for logging a
 
 import os
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any
+
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -37,7 +38,7 @@ class GoogleSheetsClient:
         self.sheet_id = SHEET_ID
         self.service = None
 
-    def _get_credentials_from_env(self) -> Dict[str, str]:
+    def _get_credentials_from_env(self) -> dict[str, str]:
         """
         Build service account credentials from environment variables
 
@@ -199,8 +200,8 @@ class GoogleSheetsClient:
 
     def log_purchase_request(
         self,
-        user_info: Dict[str, Any],
-        forms: List[Dict[str, Any]],
+        user_info: dict[str, Any],
+        forms: list[dict[str, Any]],
         session_folder: str,
         drive_folder_url: str = "",
     ) -> bool:
@@ -285,8 +286,8 @@ def test_google_sheets_connection():
 
 
 def log_purchase_request_to_sheets(
-    user_info: Dict[str, Any],
-    forms: List[Dict[str, Any]],
+    user_info: dict[str, Any],
+    forms: list[dict[str, Any]],
     session_folder: str,
     drive_folder_url: str = "",
 ) -> None:

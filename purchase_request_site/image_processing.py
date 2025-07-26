@@ -1,8 +1,9 @@
 import os
 import shutil
-from PIL import Image
-from openpyxl.drawing import image
+
 from logging_utils import setup_logger
+from openpyxl.drawing import image
+from PIL import Image
 
 # Set up logger
 logger = setup_logger(__name__)

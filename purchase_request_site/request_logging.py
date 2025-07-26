@@ -3,9 +3,10 @@ Middleware for logging HTTP requests and responses.
 """
 
 import time
+
 from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
 from logging_utils import setup_logger
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Set up logger for request logging
 request_logger = setup_logger("requests")

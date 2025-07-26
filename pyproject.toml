@@ -19,4 +19,19 @@ dependencies = [
     "itsdangerous>=2.2.0",
     "sqlalchemy>=2.0.41",
     "psycopg2-binary>=2.9.0",
+    "ruff>=0.1.0",
 ]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "B", "C4", "UP", "ARG", "SIM", "TCH", "TID", "Q"]
+ignore = ["E501", "B008", "C901", "ARG001", "ARG002", "SIM210", "SIM105"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

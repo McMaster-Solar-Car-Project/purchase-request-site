@@ -6,8 +6,9 @@ format and outputs logs to stdout. Also supports email notifications for errors.
 
 import logging
 import logging.handlers
-import sys
 import os
+import sys
+
 from dotenv import load_dotenv
 
 # Load environment variables

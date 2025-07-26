@@ -46,9 +46,14 @@ From the project root directory:
 uv run run.py
 ```
 
-The application will start on `http://localhost:8000` with login authentication enabled.
+Or with Docker:
 
-### 4. Long Term Maintainance
+```bash
+./build.sh
+./run-docker.sh
+```
+
+### 4. Long Term Maintenance
 
 This project relies of a few key API's and Services.
 
@@ -58,29 +63,5 @@ This project relies of a few key API's and Services.
   - Place API (Address Autocomplete, not needed but nice to have)
 - Google Service Account (Accessing Drive files)
 - Gmail Account (Emailing warnings)
-- Oracle Access (Cloud Hosting Service)
-
-### 5. Setting up a new Server
-
-In case this needs to be migrated, these are the steps to work on a new server:
-
-Configure the servers firewall to be able to handle ports 22 (for SSH), 80, and 8000 (for deployment)
-
-
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt update
-sudo apt install -y build-essential git curl wget htop net-tools python
-sudo snap install astral-uv --classic
-```
-
-Then, generate a new SSH key on the server and add it to a Github profile that has access to this repo, clone the repo and ensure you can run the project by doing
-
-```bash
-uv sync
-uv run run.py
-```
-
-This should now be accessable. Push a random commit to Github and see if it updates on the server.
-
+- Google Cloud Run (Building/Storing/Deploying the Docker image)
+- Supabase (Store credentials so any container can access them)

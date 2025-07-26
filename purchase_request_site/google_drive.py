@@ -4,14 +4,15 @@ Google Drive integration module for the Purchase Request Site.
 This module handles uploading session data (Excel files, invoices, signatures) to Google Drive.
 """
 
-import os
 import mimetypes
-import time
-from datetime import datetime
-from typing import Dict, Any
-from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
 import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -42,7 +43,7 @@ class GoogleDriveClient:
         self.service = None
         self.parent_folder_id = None
 
-    def _get_credentials_from_env(self) -> Dict[str, str]:
+    def _get_credentials_from_env(self) -> dict[str, str]:
         """
         Build service account credentials from environment variables
 
@@ -306,7 +307,7 @@ class GoogleDriveClient:
                     return None
 
     def create_session_folder_structure(
-        self, session_folder_path: str, user_info: Dict[str, Any]
+        self, session_folder_path: str, user_info: dict[str, Any]
     ) -> tuple[bool, str, str]:
         """
         Create the folder structure in Google Drive and return folder URL and ID
@@ -352,7 +353,7 @@ class GoogleDriveClient:
     def upload_session_folder(
         self,
         session_folder_path: str,
-        user_info: Dict[str, Any],
+        user_info: dict[str, Any],
         session_folder_id: str = None,
     ) -> bool:
         """
@@ -491,7 +492,7 @@ drive_client = GoogleDriveClient()
 
 
 def upload_session_to_drive(
-    session_folder_path: str, user_info: Dict[str, Any]
+    session_folder_path: str, user_info: dict[str, Any]
 ) -> bool:
     """
     Convenience function to upload session data to Google Drive
@@ -514,7 +515,7 @@ def upload_session_to_drive(
 
 
 def create_drive_folder_and_get_url(
-    session_folder_path: str, user_info: Dict[str, Any]
+    session_folder_path: str, user_info: dict[str, Any]
 ) -> tuple[str, str]:
     """
     Create Google Drive folder structure and return the folder URL and ID
@@ -541,7 +542,7 @@ def create_drive_folder_and_get_url(
 
 
 def upload_session_to_drive_background(
-    session_folder_path: str, user_info: Dict[str, Any], session_folder_id: str = None
+    session_folder_path: str, user_info: dict[str, Any], session_folder_id: str = None
 ) -> None:
     """
     Upload session data to Google Drive in the background (non-blocking)

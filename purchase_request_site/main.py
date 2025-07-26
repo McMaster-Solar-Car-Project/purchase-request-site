@@ -1,39 +1,40 @@
+import asyncio
 import os
 import shutil
-import asyncio
-from datetime import datetime
 from contextlib import asynccontextmanager
+from datetime import datetime
+
+from data_processing import copy_expense_report_template, create_excel_report
+from database import get_db, init_database
+from dotenv import load_dotenv
 from fastapi import (
-    FastAPI,
-    Request,
-    Form,
-    File,
-    UploadFile,
-    HTTPException,
     Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
     status,
 )
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, FileResponse
-from starlette.middleware.sessions import SessionMiddleware
-from dotenv import load_dotenv
-from sqlalchemy.orm import Session
-from data_processing import create_excel_report, copy_expense_report_template
-from logging_utils import setup_logger
-from google_sheets import log_purchase_request_to_sheets
+from fastapi.templating import Jinja2Templates
 from google_drive import (
-    upload_session_to_drive_background,
     create_drive_folder_and_get_url,
+    upload_session_to_drive_background,
 )
-from database import get_db, init_database
+from google_sheets import log_purchase_request_to_sheets
+from logging_utils import setup_logger
+from request_logging import RequestLoggingMiddleware
+from sqlalchemy.orm import Session
+from starlette.middleware.sessions import SessionMiddleware
 from user_service import (
     get_user_by_email,
     get_user_signature_as_data_url,
     is_user_profile_complete,
     save_signature_to_file,
 )
-from request_logging import RequestLoggingMiddleware
 
 # Load environment variables
 load_dotenv()

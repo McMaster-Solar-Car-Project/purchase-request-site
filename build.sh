@@ -54,6 +54,9 @@ if [ $? -eq 0 ]; then
     echo "💾 Database URL is baked into the container from .env file"
     echo ""
     echo "⚡ Quick start: ./run-docker.sh"
+    echo ""
+    echo "🔍 For code quality: ./format.sh"
+    echo "🚀 CI/CD: GitHub Actions will run on push to main/master"
 else
     echo "❌ Docker build failed!"
     exit 1

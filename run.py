@@ -5,8 +5,8 @@ This script allows running the app from the project root while the code is in pu
 """
 
 import os
-import sys
 import subprocess
+import sys
 
 
 def main():
