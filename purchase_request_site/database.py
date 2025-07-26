@@ -14,10 +14,14 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./user_info.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Create engine
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Note: check_same_thread is SQLite-specific, removed for PostgreSQL compatibility
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL)
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

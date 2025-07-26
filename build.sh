@@ -46,8 +46,14 @@ if [ $? -eq 0 ]; then
     docker images purchase-request-site --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
     
     echo ""
-    echo "🏃 To run the container:"
-    echo "   docker run -d --name purchase-request-site -p 8000:80 purchase-request-site"
+    echo "🏃 To run the container with Supabase:"
+    echo "   docker run -d --name purchase-request-site --network host purchase-request-site"
+    echo ""
+    echo "📝 Note: Using --network host to allow Supabase connection"
+    echo "🌐 Access your app at: http://localhost:80"
+    echo "💾 Database URL is baked into the container from .env file"
+    echo ""
+    echo "⚡ Quick start: ./run-docker.sh"
 else
     echo "❌ Docker build failed!"
     exit 1

@@ -18,4 +18,5 @@ dependencies = [
     "google-auth-httplib2>=0.2.0",
     "itsdangerous>=2.2.0",
     "sqlalchemy>=2.0.41",
+    "psycopg2-binary>=2.9.0",
 ]
