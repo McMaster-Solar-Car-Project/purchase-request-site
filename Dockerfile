@@ -32,8 +32,13 @@ WORKDIR /app
 COPY purchase_request_site/ ./purchase_request_site/
 COPY run.py ./
 
+# Copy static files and templates to root level (where FastAPI expects them)
+COPY purchase_request_site/static/ ./static/
+COPY purchase_request_site/templates/ ./templates/
+COPY purchase_request_site/excel_templates/ ./excel_templates/
+
 # Create required directories
-RUN mkdir -p sessions static templates excel_templates logs
+RUN mkdir -p sessions logs
 
 # Define build arguments for environment variables
 ARG SESSION_SECRET_KEY
