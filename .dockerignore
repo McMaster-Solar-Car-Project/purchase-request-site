@@ -1,0 +1,59 @@
+# Git
+.git
+.gitignore
+
+# Environment files
+.env
+.env.*
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.venv
+venv/
+.pytest_cache
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Session data (will be recreated)
+sessions/
+
+# Documentation
+README.md
+*.md
+
+# Build artifacts
+dist/
+build/
+*.egg-info
+
+# Docker files (not needed in container)
+Dockerfile*
+docker-compose*.yml
+build.sh
+build.ps1
+
+# SSH keys
+*.key
+*.pem
+
+# Large files that aren't needed
+*.zip
+*.tar.gz
+*.dmg

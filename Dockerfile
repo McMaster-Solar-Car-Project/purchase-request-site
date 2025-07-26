@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bookworm
+FROM python:3.12-slim-bookworm AS builder
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -6,14 +6,31 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Set working directory
 WORKDIR /app
 
-# Copy dependency files first for better caching
+# Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies
-RUN uv sync --locked --no-dev
+# Install dependencies in a virtual environment
+RUN uv venv /opt/venv && \
+    uv pip install --no-cache-dir -r pyproject.toml --python /opt/venv/bin/python
 
-# Copy the rest of the application
-COPY . .
+# Production stage
+FROM python:3.12-slim-bookworm AS production
+
+# Install only runtime dependencies (no build tools)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy virtual environment from builder stage
+COPY --from=builder /opt/venv /opt/venv
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code
+COPY purchase_request_site/ ./purchase_request_site/
+COPY run.py ./
 
 # Create required directories
 RUN mkdir -p sessions static templates excel_templates logs
@@ -40,6 +57,7 @@ ARG ERROR_EMAIL_FROM
 ARG ERROR_EMAIL_TO
 
 # Set environment variables for production
+ENV PATH="/opt/venv/bin:$PATH"
 ENV ENVIRONMENT=production
 ENV PYTHONUNBUFFERED=1
 ENV SESSION_SECRET_KEY=${SESSION_SECRET_KEY}
@@ -61,9 +79,11 @@ ENV SMTP_USERNAME=${SMTP_USERNAME}
 ENV SMTP_PASSWORD=${SMTP_PASSWORD}
 ENV ERROR_EMAIL_FROM=${ERROR_EMAIL_FROM}
 ENV ERROR_EMAIL_TO=${ERROR_EMAIL_TO}
+ENV HOST=0.0.0.0
+ENV PORT=8000
 
 # Expose the port
 EXPOSE 8000
 
 # Run the application
-CMD ["uv", "run", "run.py"]
+CMD ["python", "run.py"] 

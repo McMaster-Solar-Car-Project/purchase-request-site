@@ -32,15 +32,22 @@ while IFS='=' read -r key value || [ -n "$key" ]; do
     BUILD_ARGS+=("--build-arg" "$key=$value")
 done < .env
 
-echo "🚀 Building with build arguments..."
+echo "🚀 Building optimized image with multi-stage build..."
 
 # Build the Docker image
 docker build "${BUILD_ARGS[@]}" -t purchase-request-site .
 
 if [ $? -eq 0 ]; then
-    echo "✅ Docker image built successfully!"
+    echo "✅ Optimized Docker image built successfully!"
+    
+    # Show image size
+    echo ""
+    echo "📊 Image size:"
+    docker images purchase-request-site --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+    
+    echo ""
     echo "🏃 To run the container:"
-    echo "   docker run -d --name purchase-request-site -p 8080:80 purchase-request-site"
+    echo "   docker run -d --name purchase-request-site -p 8000:80 purchase-request-site"
 else
     echo "❌ Docker build failed!"
     exit 1
