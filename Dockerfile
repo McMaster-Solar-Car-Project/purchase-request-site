@@ -32,11 +32,6 @@ WORKDIR /app
 COPY purchase_request_site/ ./purchase_request_site/
 COPY run.py ./
 
-# Copy static files and templates to root level (where FastAPI expects them)
-COPY purchase_request_site/static/ ./static/
-COPY purchase_request_site/templates/ ./templates/
-COPY purchase_request_site/excel_templates/ ./excel_templates/
-
 # Create required directories
 RUN mkdir -p sessions logs
 
@@ -85,10 +80,10 @@ ENV SMTP_PASSWORD=${SMTP_PASSWORD}
 ENV ERROR_EMAIL_FROM=${ERROR_EMAIL_FROM}
 ENV ERROR_EMAIL_TO=${ERROR_EMAIL_TO}
 ENV HOST=0.0.0.0
-ENV PORT=8000
+ENV PORT=80
 
 # Expose the port
-EXPOSE 8000
+EXPOSE 80
 
 # Run the application
 CMD ["python", "run.py"] 
