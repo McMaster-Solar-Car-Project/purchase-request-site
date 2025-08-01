@@ -155,6 +155,7 @@ class GoogleSheetsClient:
                     "123 Test St",
                     "test.etransfer@email.com",
                     "Test Team",
+                    "$150.00",  # Total Amount
                     "https://drive.google.com/drive/folders/test_folder_id",
                 ],
                 [
@@ -164,13 +165,14 @@ class GoogleSheetsClient:
                     "456 Demo Ave",
                     "demo.etransfer@email.com",
                     "Demo Team",
+                    "$275.50",  # Total Amount
                     "https://drive.google.com/drive/folders/test_folder_id_2",
                 ],
             ]
 
             # Write to the sheet
             range_name = (
-                f"{SHEET_TAB_NAME}!A:G"  # 7 columns to match session data format
+                f"{SHEET_TAB_NAME}!A:H"  # 8 columns to match session data format
             )
             body = {"values": test_data}
 
@@ -198,6 +200,26 @@ class GoogleSheetsClient:
             logger.error(f"Error writing test data: {e}")
             return False
 
+    def _calculate_total_amount(self, forms: list[dict[str, Any]]) -> float:
+        """
+        Calculate the total amount from all submitted forms in CAD
+
+        Args:
+            forms: List of submitted form data dictionaries
+
+        Returns:
+            float: Total amount in CAD
+        """
+        total = 0.0
+        for form in forms:
+            if form.get("currency") == "USD":
+                # For USD forms, use the Canadian equivalent amount
+                total += float(form.get("canadian_amount", 0))
+            else:
+                # For CAD forms, use the total amount directly
+                total += float(form.get("total_amount", 0))
+        return total
+
     def log_purchase_request(
         self,
         user_info: dict[str, Any],
@@ -210,7 +232,7 @@ class GoogleSheetsClient:
 
         Args:
             user_info: User information dictionary
-            forms: List of submitted form data (not used for logging, but kept for compatibility)
+            forms: List of submitted form data (used to calculate total amount)
             session_folder: Session folder path
             drive_folder_url: Google Drive folder URL for easy access
 
@@ -224,6 +246,9 @@ class GoogleSheetsClient:
             # Prepare data for sheets - one row per session
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+            # Calculate total amount from all forms
+            total_amount = self._calculate_total_amount(forms)
+
             # Create single row with user session information
             row = [
                 timestamp,
@@ -232,11 +257,12 @@ class GoogleSheetsClient:
                 user_info.get("address", ""),
                 user_info.get("e_transfer_email", ""),  # Email Address
                 user_info.get("team", ""),
+                f"${total_amount:.2f}",  # Total Amount (formatted as currency)
                 drive_folder_url,  # Google Drive folder link
             ]
 
             # Write to the sheet
-            range_name = f"{SHEET_TAB_NAME}!A:G"  # 7 columns: Timestamp, Name, Mac Email, Address, Email Address, Team, Drive Link
+            range_name = f"{SHEET_TAB_NAME}!A:H"  # 8 columns: Timestamp, Name, Mac Email, Address, Email Address, Team, Total Amount, Drive Link
             body = {
                 "values": [row]  # Single row
             }
@@ -255,7 +281,7 @@ class GoogleSheetsClient:
 
             updated_rows = result.get("updates", {}).get("updatedRows", 0)
             logger.info(
-                f"Session data logged to Google Sheets. Updated {updated_rows} row(s)"
+                f"Session data logged to Google Sheets. Updated {updated_rows} row(s), Total Amount: ${total_amount:.2f}"
             )
             return True
 
