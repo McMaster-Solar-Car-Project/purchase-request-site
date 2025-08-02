@@ -566,9 +566,7 @@ def upload_session_to_drive_background(
                 session_folder_path, user_info, session_folder_id
             )
             if success:
-                logger.info(
-                    "✅ Upload to Google Drive completed successfully"
-                )
+                logger.info("✅ Upload to Google Drive completed successfully")
             else:
                 logger.warning("❌ Upload to Google Drive failed")
         except Exception as e:

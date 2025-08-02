@@ -285,13 +285,63 @@
 
             <div class="dashboard-actions">
                 <div class="form-group">
-                    <button type="submit" class="btn btn-large">Submit All Purchase Requests</button>
+                    <button type="submit" id="submit-all-btn" class="btn btn-large">Submit All Purchase Requests</button>
                 </div>
             </div>
         </form>
     </div>
 
     <script src="/static/js/dashboard.js"></script>
+    <script>
+        let isSubmitting = false;
+        
+        function validateSubmission() {
+            // Your existing validation logic.
+            // Return false to block submission if invalid.
+            // Example placeholder:
+            // if (!someCondition) { alert("Fix form"); return false; }
+        
+            return true; // or actual validation result
+        }
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.querySelector('form[action="/submit-all-requests"]');
+            const submitBtn = document.getElementById("submit-all-btn");
+        
+            form.addEventListener("submit", (e) => {
+                if (isSubmitting) {
+                    // already in flight, block
+                    e.preventDefault();
+                    return;
+                }
+        
+                if (!validateSubmission()) {
+                    // validation failed, do not proceed
+                    e.preventDefault();
+                    return;
+                }
+        
+                // mark as submitting and disable button
+                isSubmitting = true;
+                submitBtn.disabled = true;
+                submitBtn.textContent = "Submitting… (This may take a few minutes)";
+        
+                // Optionally add a CSS class to indicate disabled/spinner state
+                // submitBtn.classList.add("loading");
+        
+                // If you want to guard against the user navigating away and then coming back
+                // you could also set a short timeout to re-enable in case of unexpected failure:
+                setTimeout(() => {
+                    // safety net: if submission didn't go through after, say, 30s, re-enable
+                    if (isSubmitting) {
+                        isSubmitting = false;
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = "Submit All Purchase Requests";
+                    }
+                }, 30000);
+            });
+        });
+    </script>
 </body>
 
 </html>
