@@ -40,7 +40,7 @@ def main():
                     "--port",
                     "80",
                     "--workers",
-                    "2",
+                    "1",
                 ],
                 check=True,
             )

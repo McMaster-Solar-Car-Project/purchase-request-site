@@ -410,9 +410,11 @@ class GoogleDriveClient:
                 return True
 
             # Upload files in parallel using ThreadPoolExecutor (with conservative threading)
-            with ThreadPoolExecutor(
-                max_workers=min(len(files_to_upload), 3)
-            ) as executor:
+            # Reduce parallelism in production to avoid Cloud Run resource issues
+            is_production = os.getenv("ENVIRONMENT") == "production"
+            max_workers = 1 if is_production else min(len(files_to_upload), 3)
+
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 # Submit all upload tasks
                 future_to_file = {
                     executor.submit(
@@ -545,34 +547,40 @@ def upload_session_to_drive_background(
     session_folder_path: str, user_info: dict[str, Any], session_folder_id: str = None
 ) -> None:
     """
-    Upload session data to Google Drive in the background (non-blocking)
+    Upload session data to Google Drive in the background (non-blocking for local dev, synchronous for Cloud Run)
 
     Args:
         session_folder_path: Local path to the session folder
         user_info: User information dictionary
         session_folder_id: Optional existing folder ID to upload to
     """
+    # Check if we're running in production (Cloud Run)
+    is_production = os.getenv("ENVIRONMENT") == "production"
 
     def background_upload():
         try:
             logger.info(
-                f"Starting background upload to Google Drive: {session_folder_path}"
+                f"Starting {'synchronous' if is_production else 'background'} upload to Google Drive: {session_folder_path}"
             )
             success = drive_client.upload_session_folder(
                 session_folder_path, user_info, session_folder_id
             )
             if success:
                 logger.info(
-                    "✅ Background upload to Google Drive completed successfully"
+                    "✅ Upload to Google Drive completed successfully"
                 )
             else:
-                logger.warning("❌ Background upload to Google Drive failed")
+                logger.warning("❌ Upload to Google Drive failed")
         except Exception as e:
-            logger.error(f"Unexpected error in background upload to Google Drive: {e}")
+            logger.error(f"Unexpected error in upload to Google Drive: {e}")
 
-    # Start upload in background thread
-    upload_thread = threading.Thread(target=background_upload, daemon=True)
-    upload_thread.start()
+    if is_production:
+        # In production (Cloud Run), run synchronously to avoid daemon thread issues
+        background_upload()
+    else:
+        # In development, use background thread for faster response
+        upload_thread = threading.Thread(target=background_upload, daemon=True)
+        upload_thread.start()
 
 
 def test_google_drive_connection():
