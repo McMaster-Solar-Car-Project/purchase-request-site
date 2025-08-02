@@ -552,7 +552,9 @@ def upload_session_to_drive_background(
         session_folder_id: Optional existing folder ID to upload to
     """
     try:
-        logger.info(f"Starting synchronous upload to Google Drive: {session_folder_path}")
+        logger.info(
+            f"Starting synchronous upload to Google Drive: {session_folder_path}"
+        )
         success = drive_client.upload_session_folder(
             session_folder_path, user_info, session_folder_id
         )
