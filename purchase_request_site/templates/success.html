@@ -22,7 +22,7 @@
       <p>Your purchase request has been compiled into an Excel report. You can download it below.</p>
 
       <div class="session-info">
-        <strong>Generated:</strong> {{ current_time.strftime('%B %d, %Y at %I:%M %p') }}
+        <strong>Generated:</strong> {{ current_time.strftime('%B %d, %Y') }}
       </div>
 
       <a href="{{ download_info.download_url }}" class="download-btn" download="{{ download_info.excel_file }}">
