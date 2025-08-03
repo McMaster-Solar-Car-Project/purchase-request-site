@@ -4,6 +4,13 @@
 pre-commit:
   parallel: true
   commands:
+    protect-main:
+      run: |
+        if [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ]; then
+          echo "❌ Direct commits to main branch are not allowed!"
+          echo "Please create a feature branch and submit a pull request."
+          exit 1
+        fi
     ruff:
       glob: "*.py"
       run: ruff check --fix {staged_files} && ruff format {staged_files}
