@@ -46,14 +46,20 @@ From the project root directory:
 uv run run.py
 ```
 
-Or with Docker:
+Or with Docker (Currently facing some IPV4 vs IPV6 errors):
 
 ```bash
 ./build.sh
 ./run-docker.sh
 ```
 
-### 4. Long Term Maintenance
+### 4. Contributing to the Project
+
+To contribute to this project, **please make a separate branch and make your changes there**. After pushing these changes, create a Pull Request on the Github repo, after the build has been finished, you should be able to access the repo with the PR at [https://purchase-request-site-staging-864928778234.northamerica-northeast2.run.app/login](https://purchase-request-site-staging-864928778234.northamerica-northeast2.run.app/login). Only the latest commit to any given pull request will be visible at this url, so keep this in mind.
+
+#### DO NOT MERGE THIS PR IN WITHOUT APPROVAL AND ATLEAST 1 REVIEW
+
+### 5. Long Term Maintenance
 
 This project relies of a few key API's and Services.
 
