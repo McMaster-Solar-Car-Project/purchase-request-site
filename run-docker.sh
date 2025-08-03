@@ -14,7 +14,7 @@ fi
 
 # Run the container (DATABASE_URL is baked in from .env)
 echo "🐳 Starting new container..."
-docker run -d --name purchase-request-site --network host purchase-request-site
+docker run -d --name purchase-request-site -p 8080:80 purchase-request-site 
 
 if [ $? -eq 0 ]; then
     echo "✅ Container started successfully!"

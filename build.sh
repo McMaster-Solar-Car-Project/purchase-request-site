@@ -38,7 +38,7 @@ echo "🚀 Building optimized image with multi-stage build..."
 docker build "${BUILD_ARGS[@]}" -t purchase-request-site .
 
 if [ $? -eq 0 ]; then
-    echo "✅ Optimized Docker image built successfully!"
+    echo "✅ Docker image built successfully!"
     
     # Show image size
     echo ""
