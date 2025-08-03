@@ -17,17 +17,8 @@ from sqlalchemy.orm import sessionmaker
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Create engine
-# Note: check_same_thread is SQLite-specific, removed for PostgreSQL compatibility
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    # For PostgreSQL (including Supabase), configure SSL settings
-    if DATABASE_URL.startswith("postgresql"):
-        connect_args = {"sslmode": "require"}
-        engine = create_engine(DATABASE_URL, connect_args=connect_args)
-    else:
-        engine = create_engine(DATABASE_URL)
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
