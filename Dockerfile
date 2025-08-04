@@ -1,4 +1,4 @@
-FROM python:3.12-slim-buster AS builder
+FROM python:3.11-slim-buster AS builder
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -14,11 +14,11 @@ RUN uv venv /opt/venv && \
     uv pip install --no-cache-dir -r pyproject.toml --python /opt/venv/bin/python
 
 # Production stage
-FROM python:3.12-slim-buster AS production
+FROM python:3.11-slim-buster AS production
 
 # Install runtime dependencies and upgrade OpenSSL
 RUN apt-get update && \
-    apt-get upgrade -y openssl libssl3 && \
+    apt-get upgrade -y openssl libssl1.1 && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
     && apt-get clean \
