@@ -16,9 +16,11 @@ RUN uv venv /opt/venv && \
 # Production stage
 FROM python:3.12-slim-bookworm AS production
 
-# Install only runtime dependencies (no build tools)
+# Install runtime dependencies and upgrade OpenSSL
 RUN apt-get update && \
+    apt-get upgrade -y openssl libssl3 && \
     apt-get install -y --no-install-recommends \
+        ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
