@@ -5,6 +5,9 @@ This module handles writing purchase request data to Google Sheets for logging a
 """
 
 import os
+import random
+import ssl
+import time
 from datetime import datetime
 from typing import Any
 
@@ -91,7 +94,9 @@ class GoogleSheetsClient:
             credentials = Credentials.from_service_account_info(
                 service_account_info, scopes=SCOPES
             )
-            self.service = build("sheets", "v4", credentials=credentials)
+            self.service = build(
+                "sheets", "v4", credentials=credentials, cache_discovery=False
+            )
             logger.info(
                 "Successfully authenticated with Google Sheets API using environment variables"
             )
@@ -220,6 +225,39 @@ class GoogleSheetsClient:
                 total += float(form.get("total_amount", 0))
         return total
 
+    def _append_row_with_retries(self, range_name, body, max_attempts=5):
+        for attempt in range(1, max_attempts + 1):
+            try:
+                return (
+                    self.service.spreadsheets()
+                    .values()
+                    .append(
+                        spreadsheetId=self.sheet_id,
+                        range=range_name,
+                        valueInputOption="RAW",
+                        body=body,
+                    )
+                    .execute()
+                )
+            except HttpError as e:
+                status = getattr(e.resp, "status", None)
+                # Retry on server-side 5xx errors
+                if status and 500 <= int(status) < 600 and attempt < max_attempts:
+                    backoff = (2 ** (attempt - 1)) + random.random()
+                    time.sleep(backoff)
+                    continue
+                raise  # non-retriable or out of attempts
+            except (OSError, ssl.SSLError) as e:
+                msg = str(e)
+                if (
+                    "EOF occurred in violation of protocol" in msg
+                    and attempt < max_attempts
+                ):
+                    backoff = (2 ** (attempt - 1)) + random.random()
+                    time.sleep(backoff)
+                    continue
+                raise  # other SSL/socket error or exhausted
+
     def log_purchase_request(
         self,
         user_info: dict[str, Any],
@@ -267,17 +305,7 @@ class GoogleSheetsClient:
                 "values": [row]  # Single row
             }
 
-            result = (
-                self.service.spreadsheets()
-                .values()
-                .append(
-                    spreadsheetId=self.sheet_id,
-                    range=range_name,
-                    valueInputOption="RAW",
-                    body=body,
-                )
-                .execute()
-            )
+            result = self._append_row_with_retries(range_name, body)
 
             updated_rows = result.get("updates", {}).get("updatedRows", 0)
             logger.info(
