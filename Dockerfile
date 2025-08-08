@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bullseye AS builder
+FROM python:3.11-slim-bookworm AS builder
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -14,7 +14,7 @@ RUN uv venv /opt/venv && \
     uv pip install --no-cache-dir -r pyproject.toml --python /opt/venv/bin/python
 
 # Production stage
-FROM python:3.11-slim-bullseye AS production
+FROM python:3.11-slim-bookworm AS production
 
 # Install runtime dependencies and upgrade OpenSSL
 RUN apt-get update && \
