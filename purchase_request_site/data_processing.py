@@ -249,6 +249,9 @@ def create_excel_report(user_info, submitted_forms, session_folder):
         else:
             ws["E25"] = "HST/GST"
 
+        # F24: Subtotal amount (HST/GST for CAD, Taxes for USD)
+        ws["F24"] = form["subtotal_amount"]
+
         # F25: Tax amount (HST/GST for CAD, Taxes for USD)
         ws["F25"] = form["hst_gst_amount"]
 
