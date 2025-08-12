@@ -1,5 +1,14 @@
 FROM python:3.11-slim-bullseye AS builder
 
+# Install Node.js for Tailwind CSS build
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
@@ -9,9 +18,26 @@ WORKDIR /app
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies in a virtual environment
+# Install Python dependencies in a virtual environment
 RUN uv venv /opt/venv && \
     uv pip install --no-cache-dir -r pyproject.toml --python /opt/venv/bin/python
+
+# Copy Node.js dependency files
+COPY package.json package-lock.json ./
+
+# Install Node.js dependencies (including devDependencies for Tailwind)
+RUN npm ci
+
+# Copy Tailwind input file and config
+COPY tailwind.config.js ./
+COPY purchase_request_site/static/css/tailwind.css ./purchase_request_site/static/css/
+
+# Copy templates (needed for Tailwind to scan for classes)
+COPY purchase_request_site/templates/ ./purchase_request_site/templates/
+COPY purchase_request_site/static/js/ ./purchase_request_site/static/js/
+
+# Build production CSS
+RUN npm run build-css-prod
 
 # Production stage
 FROM python:3.11-slim-bullseye AS production
@@ -33,6 +59,9 @@ WORKDIR /app
 # Copy application code
 COPY purchase_request_site/ ./purchase_request_site/
 COPY run.py ./
+
+# Copy built CSS from builder stage (overwrite the input CSS)
+COPY --from=builder /app/purchase_request_site/static/css/output.css ./purchase_request_site/static/css/
 
 # Create required directories
 RUN mkdir -p sessions logs
