@@ -97,24 +97,7 @@ h1 {
     flex-wrap: wrap;
 }
 
-.edit-profile-btn {
-    background: #28a745;
-    color: white;
-    text-decoration: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: bold;
-    transition: all 0.3s ease;
-    border: none;
-    cursor: pointer;
-}
-
-.edit-profile-btn:hover {
-    background: #218838;
-    text-decoration: none;
-    color: white;
-    transform: translateY(-1px);
-}
+/* Edit profile styles - MIGRATED TO TAILWIND ✅ */
 
 .logout-btn {
     background: #dc3545;

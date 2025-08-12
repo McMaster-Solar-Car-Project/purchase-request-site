@@ -2,9 +2,10 @@ function updateFileName(input, displayId) {
     const display = document.getElementById(displayId);
     if (input.files.length > 0) {
         display.textContent = `Selected: ${input.files[0].name}`;
-        display.style.color = '#28a745';
+        display.className = 'mt-2 text-sm text-green-600 font-medium';
     } else {
         display.textContent = '';
+        display.className = 'mt-2 text-sm text-gray-600';
     }
 }
 
@@ -12,9 +13,10 @@ function updateFileName(input, displayId) {
 function checkPasswordStrength() {
     const password = document.getElementById('new_password').value;
     const strengthDiv = document.getElementById('password-strength');
+    const strengthBar = strengthDiv.querySelector('div');
     
     if (!password) {
-        strengthDiv.className = 'password-strength';
+        strengthBar.className = 'h-full w-0 transition-all duration-300 ease-in-out rounded-full bg-red-500';
         return;
     }
     
@@ -26,11 +28,11 @@ function checkPasswordStrength() {
     if (/[^A-Za-z0-9]/.test(password)) strength++;
     
     if (strength <= 2) {
-        strengthDiv.className = 'password-strength password-strength-weak';
+        strengthBar.className = 'h-full w-1/3 transition-all duration-300 ease-in-out rounded-full bg-red-500';
     } else if (strength <= 3) {
-        strengthDiv.className = 'password-strength password-strength-medium';
+        strengthBar.className = 'h-full w-2/3 transition-all duration-300 ease-in-out rounded-full bg-yellow-500';
     } else {
-        strengthDiv.className = 'password-strength password-strength-strong';
+        strengthBar.className = 'h-full w-full transition-all duration-300 ease-in-out rounded-full bg-green-500';
     }
 }
 
@@ -42,16 +44,16 @@ function checkPasswordMatch() {
     
     if (!confirmPassword) {
         messageElement.textContent = 'Must match new password';
-        messageElement.style.color = '#6c757d';
+        messageElement.className = 'block text-gray-600 text-sm mt-1 italic';
         return;
     }
     
     if (newPassword === confirmPassword) {
         messageElement.textContent = '✓ Passwords match';
-        messageElement.style.color = '#28a745';
+        messageElement.className = 'block text-green-600 text-sm mt-1 font-medium';
     } else {
         messageElement.textContent = '✗ Passwords do not match';
-        messageElement.style.color = '#dc3545';
+        messageElement.className = 'block text-red-600 text-sm mt-1 font-medium';
     }
 }
 
