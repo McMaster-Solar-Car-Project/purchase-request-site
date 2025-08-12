@@ -18,7 +18,7 @@ These setup instructions are for macOS, if you are using windows, download the d
 
 ```bash
 # Install system dependencies (macOS)
-brew install uv gitleaks lefthook
+brew install uv gitleaks lefthook node
 
 # Create a venv
 uv venv
@@ -28,6 +28,9 @@ source .venv/bin/activate
 
 # Install project dependencies
 uv sync
+
+# Install Node.js dependencies (for Tailwind CSS)
+npm install
 
 # Install git hooks
 lefthook install
@@ -40,11 +43,17 @@ Reach out to Raj for environment variables.
 
 ### 3. Run the Application
 
-From the project root directory:
+Start both CSS watcher and Python app in one command:
 
 ```bash
-uv run run.py
+npm run dev
 ```
+
+This will:
+- ✅ Start Tailwind CSS watcher (auto-rebuilds on changes)
+- ✅ Start the Python application concurrently
+- ✅ Color-coded output (CSS=blue, APP=green)
+- ✅ Stop both services with Ctrl+C
 
 Or with Docker (Currently facing some IPV4 vs IPV6 errors):
 

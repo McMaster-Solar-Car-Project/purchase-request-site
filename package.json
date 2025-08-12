@@ -4,10 +4,17 @@
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.7",
-    "@tailwindcss/typography": "^0.5.10"
+    "@tailwindcss/typography": "^0.5.10",
+    "concurrently": "^9.2.0",
+    "nodemon": "^3.1.10"
   },
   "scripts": {
     "build-css": "tailwindcss -i ./purchase_request_site/static/css/tailwind.css -o ./purchase_request_site/static/css/output.css --watch",
-    "build-css-prod": "tailwindcss -i ./purchase_request_site/static/css/tailwind.css -o ./purchase_request_site/static/css/output.css --minify"
+    "build-css-once": "tailwindcss -i ./purchase_request_site/static/css/tailwind.css -o ./purchase_request_site/static/css/output.css",
+    "build-css-prod": "tailwindcss -i ./purchase_request_site/static/css/tailwind.css -o ./purchase_request_site/static/css/output.css --minify",
+    "watch-css": "nodemon --watch ./purchase_request_site/templates --watch ./purchase_request_site/static/js --watch ./purchase_request_site/static/css/tailwind.css --ext html,js,css --exec \"npm run build-css-once\"",
+    "start-python": "uv run run.py",
+    "dev": "concurrently --names \"CSS,APP\" --prefix-colors \"blue,green\" \"npm run build-css\" \"npm run start-python\"",
+    "dev-nodemon": "concurrently --names \"CSS,APP\" --prefix-colors \"blue,green\" \"npm run watch-css\" \"npm run start-python\""
   }
 }
