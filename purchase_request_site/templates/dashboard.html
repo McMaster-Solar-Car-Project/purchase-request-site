@@ -72,7 +72,7 @@
                                 <button type="button" class="bg-red-600 text-white border-none rounded py-1.5 px-3 text-xs cursor-pointer transition-colors duration-300 whitespace-nowrap hover:bg-red-700"
                                     onclick="event.stopPropagation(); clearForm({{ form_num }})"
                                     title="Clear this form">Clear</button>
-                                <span class="font-bold text-xl">▼</span>
+                                <span class="font-bold text-xl form-toggle">▼</span>
                             </div>
                         </div>
                         <div class="hidden p-5 border-t border-gray-300" id="form-{{ form_num }}">
@@ -580,7 +580,8 @@
                 let hasValidItem = false;
                 const itemsContainer = document.getElementById(`items-container-${formNumber}`);
                 if (itemsContainer) {
-                    const itemRows = itemsContainer.querySelectorAll('.item-row');
+                    // Use children instead of looking for .item-row class
+                    const itemRows = itemsContainer.children;
                     
                     for (let row of itemRows) {
                         const nameInput = row.querySelector('input[name*="_name_"]');
