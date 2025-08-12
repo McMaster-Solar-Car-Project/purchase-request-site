@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "tailwindcss": "^3.4.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.10"
+  },
+  "scripts": {
+    "build-css": "tailwindcss -i ./purchase_request_site/static/css/tailwind.css -o ./purchase_request_site/static/css/output.css --watch",
+    "build-css-prod": "tailwindcss -i ./purchase_request_site/static/css/tailwind.css -o ./purchase_request_site/static/css/output.css --minify"
+  }
+}

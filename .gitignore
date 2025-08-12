@@ -52,3 +52,4 @@ sessions/
 
 # SSH Key
 ssh.key
+node_modules
