@@ -5,41 +5,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purchase Request Dashboard</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/output.css">
 </head>
 
-<body class="dashboard-body">
-    <div class="dashboard-container">
-        <div class="dashboard-header">
-            <h1>Purchase Request Dashboard</h1>
-            <div class="dashboard-user-info">
-                <a href="/edit-profile?user_email={{ user_email }}" class="edit-profile-btn">✏️ Edit Information</a>
-                <a href="/logout" class="logout-btn">Logout</a>
+<body class="font-sans m-0 py-10 px-5 bg-gray-100 leading-relaxed min-h-screen">
+    <div class="max-w-6xl mx-auto p-5 bg-white rounded-xl shadow-lg">
+        <div class="flex justify-between items-center py-4 border-b-2 border-gray-200 mb-8">
+            <h1 class="text-gray-800 m-0 text-3xl font-bold">Purchase Request Dashboard</h1>
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="/edit-profile?user_email={{ user_email }}" 
+                   class="bg-green-600 text-white no-underline py-2 px-4 rounded-md font-bold transition-all duration-300 ease-in-out border-none cursor-pointer hover:bg-green-700 hover:text-white hover:-translate-y-0.5">✏️ Edit Information</a>
+                <a href="/logout" 
+                   class="bg-red-600 text-white no-underline py-2 px-4 rounded-md transition-all duration-300 ease-in-out hover:bg-red-700 hover:text-white">Logout</a>
             </div>
         </div>
 
         {% if success_message %}
-        <div class="dashboard-success-message">
+        <div class="bg-green-100 text-green-800 p-4 rounded-lg mb-5 border border-green-200 font-bold">
             {{ success_message }}
         </div>
         {% endif %}
 
         {% if error_message %}
-        <div class="error-message">
+        <div class="bg-red-100 border border-red-200 text-red-800 p-4 rounded mb-5">
             {{ error_message }}
         </div>
         {% endif %}
 
-        <p class="subtitle">Fill out up to 10 separate purchase requests and submit them all together</p>
+        <p class="text-gray-600 text-xl mb-8 text-center">Fill out up to 10 separate purchase requests and submit them all together</p>
 
-        <div class="user-info">
-            <div class="info-summary">
-                <p><strong>Name:</strong> {{ name }}</p>
-                <p><strong>Team:</strong> {{ team }}</p>
-                <p><strong>McMaster Email:</strong> {{ email }}</p>
-                <div class="signature-display">
-                    <p><strong>Digital Signature:</strong></p>
-                    <img src="/{{ session_folder }}/{{ signature }}" alt="Digital Signature" class="signature-image">
+        <div class="mb-8">
+            <div class="bg-gray-100 p-5 rounded border-l-4 border-blue-600">
+                <p class="my-2 text-gray-700"><strong>Name:</strong> {{ name }}</p>
+                <p class="my-2 text-gray-700"><strong>Team:</strong> {{ team }}</p>
+                <p class="my-2 text-gray-700"><strong>McMaster Email:</strong> {{ email }}</p>
+                <div class="mt-4 pt-4 border-t border-gray-300">
+                    <p class="mb-2 font-bold">Digital Signature:</p>
+                    <img src="/{{ session_folder }}/{{ signature }}" alt="Digital Signature" class="max-w-48 max-h-24 border border-gray-300 rounded bg-white p-1 object-contain">
                 </div>
             </div>
         </div>
@@ -56,184 +58,200 @@
             <input type="hidden" name="session_folder" value="{{ session_folder }}">
             <input type="hidden" name="signature" value="{{ signature }}">
 
-            <div class="dashboard-section">
-                <h2>Your Purchase Request Forms</h2>
-                <p class="dashboard-help">Fill out any number of the forms below. Empty forms will be ignored when you
+            <div class="bg-gray-50 p-8 rounded-lg mt-8 text-left">
+                <h2 class="text-gray-800 mb-4 text-center text-xl font-semibold">Your Purchase Request Forms</h2>
+                <p class="text-gray-600 text-center mb-8 italic">Fill out any number of the forms below. Empty forms will be ignored when you
                     submit.</p>
 
-                <div class="forms-container">
+                <div class="mb-8">
                     {% for form_num in range(1, 11) %}
-                    <div class="form-accordion">
-                        <div class="form-accordion-header" onclick="toggleForm({{ form_num }})">
-                            <h3>Invoice #{{ form_num }}</h3>
-                            <div class="form-header-actions">
-                                <button type="button" class="btn-clear"
+                    <div class="bg-white border border-gray-300 rounded-lg mb-4 overflow-hidden">
+                        <div class="bg-blue-600 text-white p-4 cursor-pointer flex justify-between items-center transition-colors duration-300 hover:bg-blue-700" onclick="toggleForm({{ form_num }})">
+                            <h3 class="m-0 text-lg font-medium">Invoice #{{ form_num }}</h3>
+                            <div class="flex items-center gap-4">
+                                <button type="button" class="bg-red-600 text-white border-none rounded py-1.5 px-3 text-xs cursor-pointer transition-colors duration-300 whitespace-nowrap hover:bg-red-700"
                                     onclick="event.stopPropagation(); clearForm({{ form_num }})"
                                     title="Clear this form">Clear</button>
-                                <span class="form-toggle">▼</span>
+                                <span class="font-bold text-xl">▼</span>
                             </div>
                         </div>
-                        <div class="form-accordion-content" id="form-{{ form_num }}">
-                            <div class="reimbursement-form">
-                                <div class="form-group">
-                                    <label for="vendor_name_{{ form_num }}">Vendor/Store Name</label>
+                        <div class="hidden p-5 border-t border-gray-300" id="form-{{ form_num }}">
+                            <div class="max-w-full">
+                                <div class="mb-5">
+                                    <label for="vendor_name_{{ form_num }}" class="block mb-2 font-bold text-gray-800">Vendor/Store Name</label>
                                     <input type="text" id="vendor_name_{{ form_num }}" name="vendor_name_{{ form_num }}"
-                                        placeholder="Enter the name of the vendor or store">
+                                        placeholder="Enter the name of the vendor or store"
+                                        class="w-full p-3 border border-gray-300 rounded box-border text-base transition-all duration-300 focus:outline-none focus:border-blue-600">
                                 </div>
 
-                                <div class="form-group">
-                                    <label for="currency_{{ form_num }}">Currency</label>
+                                <div class="mb-5">
+                                    <label for="currency_{{ form_num }}" class="block mb-2 font-bold text-gray-800">Currency</label>
                                     <select id="currency_{{ form_num }}" name="currency_{{ form_num }}"
-                                        onchange="updateCurrencyLabels({{ form_num }})">
+                                        onchange="updateCurrencyLabels({{ form_num }})"
+                                        class="w-full p-3 border border-gray-300 rounded box-border text-base transition-all duration-300 focus:outline-none focus:border-blue-600">
                                         <option value="CAD">CAD - Canadian Dollar</option>
                                         <option value="USD">USD - US Dollar</option>
                                     </select>
-                                    <small class="file-help">Select the currency used for this purchase</small>
+                                    <small class="block text-xs text-gray-600 mt-1 italic">Select the currency used for this purchase</small>
                                 </div>
 
-                                <div class="form-group">
-                                    <label for="invoice_file_{{ form_num }}">Upload Invoice/Receipt</label>
-                                    <div class="custom-file-upload">
+                                <div class="mb-5">
+                                    <label for="invoice_file_{{ form_num }}" class="block mb-2 font-bold text-gray-800">Upload Invoice/Receipt</label>
+                                    <div class="relative inline-block w-full">
                                         <input type="file" id="invoice_file_{{ form_num }}"
                                             name="invoice_file_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif"
-                                            onchange="updateFileName(this, 'invoice-filename-{{ form_num }}')">
-                                        <span class="file-upload-btn"
+                                            onchange="updateFileName(this, 'invoice-filename-{{ form_num }}')"
+                                            class="absolute opacity-0 w-0.5 h-0.5 overflow-hidden -z-10">
+                                        <span class="inline-block bg-blue-600 text-white py-2.5 px-5 border-none rounded cursor-pointer text-sm transition-colors duration-300 mr-2.5 select-none hover:bg-blue-700"
                                             onclick="document.getElementById('invoice_file_{{ form_num }}').click()">Choose
                                             File</span>
-                                        <span class="file-name" id="invoice-filename-{{ form_num }}">No file
+                                        <span class="text-gray-600 italic align-middle" id="invoice-filename-{{ form_num }}">No file
                                             chosen</span>
                                     </div>
-                                    <small class="file-help">Please upload your invoice or receipt (PDF, JPG, PNG, or
+                                    <small class="block text-xs text-gray-600 mt-1 italic">Please upload your invoice or receipt (PDF, JPG, PNG, or
                                         GIF format)</small>
                                 </div>
 
-                                <div class="form-group proof-of-payment-section proof-of-payment-section-{{ form_num }}"
+                                <div class="mb-5 bg-yellow-50 border border-yellow-200 rounded p-4 proof-of-payment-section proof-of-payment-section-{{ form_num }}"
                                     style="display: none;">
-                                    <label for="proof_of_payment_{{ form_num }}">Proof of Payment (Required for USD
+                                    <label for="proof_of_payment_{{ form_num }}" class="text-yellow-800 font-bold">Proof of Payment (Required for USD
                                         purchases)</label>
-                                    <div class="custom-file-upload">
+                                    <div class="relative inline-block w-full">
                                         <input type="file" id="proof_of_payment_{{ form_num }}"
                                             name="proof_of_payment_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif"
-                                            onchange="updateFileName(this, 'payment-filename-{{ form_num }}')">
-                                        <span class="file-upload-btn"
+                                            onchange="updateFileName(this, 'payment-filename-{{ form_num }}')"
+                                            class="absolute opacity-0 w-0.5 h-0.5 overflow-hidden -z-10">
+                                        <span class="inline-block bg-yellow-800 text-white py-2.5 px-5 border-none rounded cursor-pointer text-sm transition-colors duration-300 mr-2.5 select-none hover:bg-yellow-900"
                                             onclick="document.getElementById('proof_of_payment_{{ form_num }}').click()">Choose
                                             File</span>
-                                        <span class="file-name" id="payment-filename-{{ form_num }}">No file
+                                        <span class="text-gray-600 italic align-middle" id="payment-filename-{{ form_num }}">No file
                                             chosen</span>
                                     </div>
-                                    <small class="file-help">Upload a screenshot of your bank transaction or payment
+                                    <small class="block text-yellow-800 text-xs italic">Upload a screenshot of your bank transaction or payment
                                         confirmation (PDF, JPG, PNG, or GIF format)</small>
                                 </div>
 
-                                <div class="items-section">
-                                    <h4>Item Details</h4>
-                                    <small class="items-help">Add the items you purchased (up to 15 items)</small>
+                                <div class="my-8 p-5 bg-white rounded border border-gray-300">
+                                    <h4 class="text-gray-800 mb-4 text-lg font-semibold">Item Details</h4>
+                                    <small class="block text-xs text-gray-600 mb-4 italic">Add the items you purchased (up to 15 items)</small>
 
                                     <div id="items-container-{{ form_num }}">
-                                        <div class="item-row">
-                                            <div class="item-input-group">
-                                                <label>Item Name</label>
-                                                <input type="text" name="item_name_{{ form_num }}_1"
-                                                    placeholder="Enter item name">
+                                        <div class="mb-4 p-4 bg-gray-50 rounded border border-gray-200">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                                <div class="flex flex-col">
+                                                    <label class="font-bold text-gray-800 mb-2 text-sm">Item Name</label>
+                                                    <input type="text" name="item_name_{{ form_num }}_1"
+                                                        placeholder="Enter item name"
+                                                        class="p-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-600 transition-colors">
+                                                </div>
+                                                <div class="flex flex-col">
+                                                    <label class="font-bold text-gray-800 mb-2 text-sm">Usage/Purpose</label>
+                                                    <input type="text" name="item_usage_{{ form_num }}_1"
+                                                        placeholder="What is this item for?"
+                                                        class="p-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-600 transition-colors">
+                                                </div>
+                                                <div class="flex flex-col">
+                                                    <label class="font-bold text-gray-800 mb-2 text-sm">Quantity</label>
+                                                    <input type="number" name="item_quantity_{{ form_num }}_1" min="1"
+                                                        value="1" oninput="calculateItemTotal({{ form_num }}, 1)"
+                                                        class="p-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-600 transition-colors">
+                                                </div>
                                             </div>
-                                            <div class="item-input-group">
-                                                <label>Usage/Purpose</label>
-                                                <input type="text" name="item_usage_{{ form_num }}_1"
-                                                    placeholder="What is this item for?">
-                                            </div>
-                                            <div class="item-input-group">
-                                                <label>Quantity</label>
-                                                <input type="number" name="item_quantity_{{ form_num }}_1" min="1"
-                                                    value="1" oninput="calculateItemTotal({{ form_num }}, 1)">
-                                            </div>
-                                            <div class="item-input-group">
-                                                <label>Unit Price</label>
-                                                <input type="number" name="item_price_{{ form_num }}_1" min="0"
-                                                    step="0.01" placeholder="0.00"
-                                                    oninput="calculateItemTotal({{ form_num }}, 1)">
-                                            </div>
-                                            <div class="item-input-group">
-                                                <label>Total</label>
-                                                <input type="number" name="item_total_{{ form_num }}_1" readonly
-                                                    placeholder="0.00" class="total-field">
-                                            </div>
-                                            <div class="item-actions">
-                                                <button type="button" class="btn-remove"
-                                                    onclick="removeItem(this, {{ form_num }})"
-                                                    style="display: none;">Remove</button>
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                                <div class="flex flex-col">
+                                                    <label class="font-bold text-gray-800 mb-2 text-sm">Unit Price</label>
+                                                    <input type="number" name="item_price_{{ form_num }}_1" min="0"
+                                                        step="0.01" placeholder="0.00"
+                                                        oninput="calculateItemTotal({{ form_num }}, 1)"
+                                                        class="p-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-600 transition-colors">
+                                                </div>
+                                                <div class="flex flex-col">
+                                                    <label class="font-bold text-gray-800 mb-2 text-sm">Total</label>
+                                                    <input type="number" name="item_total_{{ form_num }}_1" readonly
+                                                        placeholder="0.00" 
+                                                        class="p-3 border border-gray-300 rounded text-sm bg-gray-100 font-bold text-gray-700">
+                                                </div>
+                                                <div class="flex flex-col">
+                                                    <button type="button" class="bg-red-600 text-white py-3 px-4 border-none rounded text-sm cursor-pointer transition-colors duration-300 whitespace-nowrap hover:bg-red-700"
+                                                        onclick="removeItem(this, {{ form_num }})"
+                                                        style="display: none;">Remove Item</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <button type="button" class="btn-secondary"
+                                    <div class="mb-5">
+                                        <button type="button" class="bg-gray-600 text-white py-3 px-6 border-none rounded text-base cursor-pointer transition-colors duration-300 w-full hover:bg-gray-700"
                                             onclick="addItem({{ form_num }})">Add Another Item</button>
                                     </div>
                                 </div>
 
-                                <div class="total-section">
-                                    <h4>Financial Summary</h4>
+                                <div class="mt-8 p-5 bg-blue-50 border border-blue-200 rounded">
+                                    <h4 class="text-gray-800 mb-5 text-lg font-semibold text-center">Financial Summary</h4>
 
                                     <!-- CAD Financial Breakdown -->
-                                    <div class="financial-breakdown cad-breakdown-{{ form_num }}">
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="subtotal_amount_{{ form_num }}">Subtotal (<span
+                                    <div class="bg-white p-5 rounded border border-gray-300 mb-5 cad-breakdown-{{ form_num }}">
+                                        <div class="mb-4">
+                                            <div class="mb-5">
+                                                <label for="subtotal_amount_{{ form_num }}" class="block mb-2 font-bold text-gray-800">Subtotal (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="subtotal_amount_{{ form_num }}"
                                                     name="subtotal_amount_{{ form_num }}" readonly min="0" step="0.01"
-                                                    placeholder="0.00" class="total-field">
-                                                <small class="financial-help">Automatically calculated from item totals
+                                                    placeholder="0.00" class="w-full p-3 border border-gray-300 rounded box-border text-base bg-gray-100 font-bold text-gray-700">
+                                                <small class="block text-xs text-gray-600 mt-1 italic">Automatically calculated from item totals
                                                     above</small>
                                             </div>
                                         </div>
 
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="discount_amount_{{ form_num }}">Discount (<span
+                                        <div class="mb-4">
+                                            <div class="mb-5">
+                                                <label for="discount_amount_{{ form_num }}" class="block mb-2 font-bold text-gray-800">Discount (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="discount_amount_{{ form_num }}"
                                                     name="discount_amount_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
-                                                <small class="financial-help">Coupons, promotional discounts, or
+                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})"
+                                                    class="w-full p-3 border border-gray-300 rounded box-border text-base transition-all duration-300 focus:outline-none focus:border-blue-600">
+                                                <small class="block text-xs text-gray-600 mt-1 italic">Coupons, promotional discounts, or
                                                     rebates</small>
                                             </div>
                                         </div>
 
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="hst_gst_amount_{{ form_num }}"><span
+                                        <div class="mb-4">
+                                            <div class="mb-5">
+                                                <label for="hst_gst_amount_{{ form_num }}" class="block mb-2 font-bold text-gray-800"><span
                                                         class="tax-label-{{ form_num }}">HST/GST</span> (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>) <span
                                                         class="required-indicator-{{ form_num }}"></span></label>
                                                 <input type="number" id="hst_gst_amount_{{ form_num }}"
                                                     name="hst_gst_amount_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
-                                                <small class="financial-help tax-help-{{ form_num }}">Harmonized Sales
+                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})"
+                                                    class="w-full p-3 border border-gray-300 rounded box-border text-base transition-all duration-300 focus:outline-none focus:border-blue-600">
+                                                <small class="block text-xs text-gray-600 mt-1 italic tax-help-{{ form_num }}">Harmonized Sales
                                                     Tax / Goods and Services Tax</small>
                                             </div>
                                         </div>
 
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="shipping_amount_{{ form_num }}">Shipping & Handling (<span
+                                        <div class="mb-4">
+                                            <div class="mb-5">
+                                                <label for="shipping_amount_{{ form_num }}" class="block mb-2 font-bold text-gray-800">Shipping & Handling (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="shipping_amount_{{ form_num }}"
                                                     name="shipping_amount_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
-                                                <small class="financial-help">Shipping, delivery, and handling
+                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})"
+                                                    class="w-full p-3 border border-gray-300 rounded box-border text-base transition-all duration-300 focus:outline-none focus:border-blue-600">
+                                                <small class="block text-xs text-gray-600 mt-1 italic">Shipping, delivery, and handling
                                                     fees</small>
                                             </div>
                                         </div>
 
-                                        <div class="form-row total-row">
-                                            <div class="form-group">
-                                                <label for="total_amount_{{ form_num }}">Total Reimbursement Amount
+                                        <div class="border-t-2 border-blue-600 pt-4 mt-5">
+                                            <div class="mb-5">
+                                                <label for="total_amount_{{ form_num }}" class="block mb-2 font-bold text-gray-800">Total Reimbursement Amount
                                                     (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="total_amount_{{ form_num }}"
                                                     name="total_amount_{{ form_num }}" readonly min="0" step="0.01"
-                                                    placeholder="0.00" class="total-field">
-                                                <small class="financial-help">Automatically calculated (Subtotal -
+                                                    placeholder="0.00" class="w-full p-3 border-2 border-blue-600 rounded box-border text-lg font-bold bg-gray-100 text-gray-700">
+                                                <small class="block text-xs text-gray-600 mt-1 italic">Automatically calculated (Subtotal -
                                                     Discount + Tax + Shipping)</small>
                                             </div>
                                         </div>
@@ -324,30 +342,34 @@
             itemCounts[formNumber]++;
             const container = document.getElementById(`items-container-${formNumber}`);
             const newRow = document.createElement('div');
-            newRow.className = 'item-row';
+            newRow.className = 'mb-4 p-4 bg-gray-50 rounded border border-gray-200';
             newRow.innerHTML = `
-                <div class="item-input-group">
-                    <label>Item Name</label>
-                    <input type="text" name="item_name_${formNumber}_${itemCounts[formNumber]}" placeholder="Enter item name">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                    <div class="flex flex-col">
+                        <label class="font-bold text-gray-800 mb-2 text-sm">Item Name</label>
+                        <input type="text" name="item_name_${formNumber}_${itemCounts[formNumber]}" placeholder="Enter item name" class="p-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-600 transition-colors">
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="font-bold text-gray-800 mb-2 text-sm">Usage/Purpose</label>
+                        <input type="text" name="item_usage_${formNumber}_${itemCounts[formNumber]}" placeholder="What is this item for?" class="p-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-600 transition-colors">
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="font-bold text-gray-800 mb-2 text-sm">Quantity</label>
+                        <input type="number" name="item_quantity_${formNumber}_${itemCounts[formNumber]}" min="1" value="1" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})" class="p-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-600 transition-colors">
+                    </div>
                 </div>
-                <div class="item-input-group">
-                    <label>Usage/Purpose</label>
-                    <input type="text" name="item_usage_${formNumber}_${itemCounts[formNumber]}" placeholder="What is this item for?">
-                </div>
-                <div class="item-input-group">
-                    <label>Quantity</label>
-                    <input type="number" name="item_quantity_${formNumber}_${itemCounts[formNumber]}" min="1" value="1" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
-                </div>
-                <div class="item-input-group">
-                    <label>Unit Price</label>
-                    <input type="number" name="item_price_${formNumber}_${itemCounts[formNumber]}" min="0" step="0.01" placeholder="0.00" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
-                </div>
-                <div class="item-input-group">
-                    <label>Total</label>
-                    <input type="number" name="item_total_${formNumber}_${itemCounts[formNumber]}" readonly placeholder="0.00" class="total-field">
-                </div>
-                <div class="item-actions">
-                    <button type="button" class="btn-remove" onclick="removeItem(this, ${formNumber})">Remove</button>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div class="flex flex-col">
+                        <label class="font-bold text-gray-800 mb-2 text-sm">Unit Price</label>
+                        <input type="number" name="item_price_${formNumber}_${itemCounts[formNumber]}" min="0" step="0.01" placeholder="0.00" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})" class="p-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-600 transition-colors">
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="font-bold text-gray-800 mb-2 text-sm">Total</label>
+                        <input type="number" name="item_total_${formNumber}_${itemCounts[formNumber]}" readonly placeholder="0.00" class="p-3 border border-gray-300 rounded text-sm bg-gray-100 font-bold text-gray-700">
+                    </div>
+                    <div class="flex flex-col">
+                        <button type="button" class="bg-red-600 text-white py-3 px-4 border-none rounded text-sm cursor-pointer transition-colors duration-300 whitespace-nowrap hover:bg-red-700" onclick="removeItem(this, ${formNumber})">Remove Item</button>
+                    </div>
                 </div>
             `;
             container.appendChild(newRow);
@@ -355,7 +377,7 @@
         }
 
         function removeItem(button, formNumber) {
-            const row = button.closest('.item-row');
+            const row = button.closest('.mb-4.p-4.bg-gray-50.rounded.border.border-gray-200');
             row.remove();
             itemCounts[formNumber]--;
             updateRemoveButtons(formNumber);
@@ -364,7 +386,7 @@
 
         function updateRemoveButtons(formNumber) {
             const container = document.getElementById(`items-container-${formNumber}`);
-            const removeButtons = container.querySelectorAll('.btn-remove');
+            const removeButtons = container.querySelectorAll('button[onclick*="removeItem"]');
             removeButtons.forEach(btn => {
                 btn.style.display = itemCounts[formNumber] > 1 ? 'block' : 'none';
             });
@@ -658,9 +680,9 @@
             // Clear all items except the first one
             const itemsContainer = document.getElementById(`items-container-${formNumber}`);
             if (itemsContainer) {
-                // Remove all item rows except the first one
-                const itemRows = itemsContainer.querySelectorAll('.item-row');
-                for (let i = 1; i < itemRows.length; i++) {
+                // Remove all item rows except the first one (using the new Tailwind class selector)
+                const itemRows = itemsContainer.children;
+                for (let i = itemRows.length - 1; i >= 1; i--) {
                     itemRows[i].remove();
                 }
 
