@@ -5,40 +5,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Purchase Request Site</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/output.css">
 </head>
 
-<body class="login-body">
-    <div class="login-container">
-        <div class="login-header">
-            <h1>🔐 Login Required</h1>
-            <p>Please enter your credentials to access the Purchase Request Site</p>
+<body class="font-sans m-0 p-0 bg-gray-100 leading-relaxed min-h-screen flex items-center justify-center">
+    <div class="max-w-sm w-[90%] p-8 bg-white rounded-lg shadow-md">
+        <div class="text-center mb-8">
+            <h1 class="text-gray-800 mb-2 text-2xl font-semibold">🔐 Login Required</h1>
+            <p class="text-gray-600 m-0">Please enter your credentials to access the Purchase Request Site</p>
         </div>
 
         {% if error_message %}
-        <div class="login-error-message">
+        <div class="bg-red-50 border border-red-200 text-red-800 p-4 rounded mb-4 text-center">
             {{ error_message }}
         </div>
         {% endif %}
 
         <form method="POST" action="/login">
-            <div class="login-form-group">
-                <label for="email">Email Address</label>
+            <div class="mb-6">
+                <label for="email" class="block mb-2 font-bold text-gray-800">Email Address</label>
                 <input type="email" id="email" name="email" required placeholder="Enter your email address"
-                    value="{{ email or '' }}">
+                    value="{{ email or '' }}" 
+                    class="w-full p-3 border-2 border-gray-300 rounded text-base transition-colors duration-300 box-border focus:outline-none focus:border-blue-600">
             </div>
 
-            <div class="login-form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter your password">
+            <div class="mb-6">
+                <label for="password" class="block mb-2 font-bold text-gray-800">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password"
+                    class="w-full p-3 border-2 border-gray-300 rounded text-base transition-colors duration-300 box-border focus:outline-none focus:border-blue-600">
             </div>
 
-            <button type="submit" class="login-btn">
+            <button type="submit" class="w-full p-3 bg-blue-600 text-white border-none rounded text-base cursor-pointer transition-colors duration-300 hover:bg-blue-700">
                 🚀 Login to Purchase Request Site
             </button>
         </form>
 
-        <div class="login-footer">
+        <div class="text-center mt-8 pt-4 border-t border-gray-200 text-gray-600 text-sm">
             <p>Contact Raj on teams if you would like access to the purchase request site.</p>
         </div>
     </div>
