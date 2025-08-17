@@ -104,7 +104,7 @@
                 <label for="address" class="block mb-2 font-bold text-gray-800">Address <span class="text-red-600">*</span></label>
                 <textarea id="address" name="address" placeholder="Start typing your address..." required
                           class="w-full p-3 border-2 border-gray-300 rounded-lg box-border text-base transition-all duration-300 ease-in-out min-h-20 resize-y focus:outline-none focus:border-indigo-500 focus:shadow-lg focus:shadow-indigo-500/10">{{ user.address if user else '' }}</textarea>
-                <small class="address-help block text-sm text-gray-600 mt-1 italic">Start typing and select from suggestions for accurate address</small>
+                <small class="help-text block text-sm text-gray-600 mt-1 italic">Start typing and select from suggestions for accurate address</small>
             </div>
 
             <div class="mb-6">
@@ -232,7 +232,7 @@
         }
 
         function showFallback() {
-            const helpText = document.querySelector('.address-help');
+            const helpText = document.querySelector('.help-text');
             if (helpText) {
                 helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
                 helpText.style.color = '#dc3545';
@@ -254,7 +254,7 @@
     <script>
         // No Google API key available - show fallback message
         document.addEventListener('DOMContentLoaded', function () {
-            const helpText = document.querySelector('.address-help');
+            const helpText = document.querySelector('.help-text');
             if (helpText) {
                 helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
                 helpText.style.color = '#dc3545';

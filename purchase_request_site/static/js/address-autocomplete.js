@@ -58,7 +58,7 @@ function initAutocomplete() {
 }
 
 function showFallback() {
-    const helpText = document.querySelector('.address-help');
+    const helpText = document.querySelector('.help-text');
     if (helpText) {
         helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
         helpText.style.color = '#dc3545';

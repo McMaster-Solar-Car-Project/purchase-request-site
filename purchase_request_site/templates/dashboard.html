@@ -72,7 +72,7 @@
                                 <button type="button" class="bg-red-600 text-white border-none rounded py-1.5 px-3 text-xs cursor-pointer transition-colors duration-300 whitespace-nowrap hover:bg-red-700"
                                     onclick="event.stopPropagation(); clearForm({{ form_num }})"
                                     title="Clear this form">Clear</button>
-                                <span class="font-bold text-xl form-toggle">▼</span>
+                                <span class="font-bold text-xl" data-toggle>▼</span>
                             </div>
                         </div>
                         <div class="hidden p-5 border-t border-gray-300" id="form-{{ form_num }}">
@@ -112,8 +112,8 @@
                                         GIF format)</small>
                                 </div>
 
-                                <div class="mb-5 bg-yellow-50 border border-yellow-200 rounded p-4 proof-of-payment-section proof-of-payment-section-{{ form_num }}"
-                                    style="display: none;">
+                                <div class="mb-5 bg-yellow-50 border border-yellow-200 rounded p-4"
+                                    data-proof-payment="{{ form_num }}" style="display: none;">
                                     <label for="proof_of_payment_{{ form_num }}" class="text-yellow-800 font-bold">Proof of Payment (Required for USD
                                         purchases)</label>
                                     <div class="relative inline-block w-full">
@@ -258,37 +258,40 @@
                                     </div>
 
                                     <!-- USD Financial Breakdown -->
-                                    <div class="financial-breakdown usd-breakdown-{{ form_num }}"
+                                    <div class="bg-white p-5 rounded border border-gray-300 mb-5 usd-breakdown-{{ form_num }}"
                                         style="display: none;">
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="us_total_{{ form_num }}">US Subtotal (USD)</label>
+                                        <div class="mb-4">
+                                            <div class="mb-5">
+                                                <label for="us_total_{{ form_num }}" class="block mb-2 font-bold text-gray-800">US Subtotal (USD)</label>
                                                 <input type="number" id="us_total_{{ form_num }}"
                                                     name="us_total_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00">
-                                                <small class="financial-help">Subtotal in US dollars</small>
+                                                    placeholder="0.00"
+                                                    class="w-full p-3 border border-gray-300 rounded box-border text-base transition-all duration-300 focus:outline-none focus:border-blue-600">
+                                                <small class="block text-xs text-gray-600 mt-1 italic">Subtotal in US dollars</small>
                                             </div>
                                         </div>
 
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="usd_taxes_{{ form_num }}">Taxes (USD)</label>
+                                        <div class="mb-4">
+                                            <div class="mb-5">
+                                                <label for="usd_taxes_{{ form_num }}" class="block mb-2 font-bold text-gray-800">Taxes (USD)</label>
                                                 <input type="number" id="usd_taxes_{{ form_num }}"
                                                     name="usd_taxes_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00">
-                                                <small class="financial-help">Sales tax, state tax, or other applicable
+                                                    placeholder="0.00"
+                                                    class="w-full p-3 border border-gray-300 rounded box-border text-base transition-all duration-300 focus:outline-none focus:border-blue-600">
+                                                <small class="block text-xs text-gray-600 mt-1 italic">Sales tax, state tax, or other applicable
                                                     taxes</small>
                                             </div>
                                         </div>
 
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="canadian_amount_{{ form_num }}">Canadian Amount
+                                        <div class="border-t-2 border-blue-600 pt-4 mt-5">
+                                            <div class="mb-5">
+                                                <label for="canadian_amount_{{ form_num }}" class="block mb-2 font-bold text-gray-800">Canadian Amount
                                                     (CAD)</label>
                                                 <input type="number" id="canadian_amount_{{ form_num }}"
                                                     name="canadian_amount_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00">
-                                                <small class="financial-help">Equivalent amount in Canadian dollars for
+                                                    placeholder="0.00"
+                                                    class="w-full p-3 border-2 border-blue-600 rounded box-border text-lg font-bold bg-gray-100 text-gray-700">
+                                                <small class="block text-xs text-gray-600 mt-1 italic">Equivalent amount in Canadian dollars for
                                                     reimbursement</small>
                                             </div>
                                         </div>
@@ -322,7 +325,7 @@
 
         function toggleForm(formNumber) {
             const content = document.getElementById(`form-${formNumber}`);
-            const toggle = content.previousElementSibling.querySelector('.form-toggle');
+            const toggle = content.previousElementSibling.querySelector('[data-toggle]');
             
             if (content.style.display === 'none' || content.style.display === '') {
                 content.style.display = 'block';
@@ -466,7 +469,7 @@
             const currencyLabels = document.querySelectorAll(`.currency-label-${formNumber}`);
             const taxLabels = document.querySelectorAll(`.tax-label-${formNumber}`);
             const taxHelp = document.querySelector(`.tax-help-${formNumber}`);
-            const proofOfPaymentSection = document.querySelector(`.proof-of-payment-section-${formNumber}`);
+            const proofOfPaymentSection = document.querySelector(`[data-proof-payment="${formNumber}"]`);
             const cadBreakdown = document.querySelector(`.cad-breakdown-${formNumber}`);
             const usdBreakdown = document.querySelector(`.usd-breakdown-${formNumber}`);
             const hstGstInput = document.getElementById(`hst_gst_amount_${formNumber}`);
