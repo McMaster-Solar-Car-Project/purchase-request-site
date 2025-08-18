@@ -14,5 +14,6 @@ pre-commit:
     ruff:
       glob: "*.py"
       run: ruff check --fix {staged_files} && ruff format {staged_files}
+      stage_fixed: true
     gitleaks:
       run: gitleaks protect --verbose --redact --staged -c .gitleaks.toml 

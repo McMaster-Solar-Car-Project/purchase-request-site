@@ -7,7 +7,6 @@ This module handles uploading session data (Excel files, invoices, signatures) t
 import mimetypes
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -228,23 +227,11 @@ class GoogleDriveClient:
             logger.error(f"Error managing month/year folder: {e}")
             raise
 
-    def _create_thread_safe_service(self):
-        """Create a new thread-safe service instance for parallel uploads"""
-        try:
-            service_account_info = self._get_credentials_from_env()
-            credentials = Credentials.from_service_account_info(
-                service_account_info, scopes=DRIVE_SCOPES
-            )
-            return build("drive", "v3", credentials=credentials)
-        except Exception as e:
-            logger.error(f"Failed to create thread-safe service: {e}")
-            return None
-
     def _upload_file(
         self, file_path: str, folder_id: str, file_name: str = None
     ) -> str:
         """
-        Upload a file to Google Drive with thread-safe service and retry logic
+        Upload a file to Google Drive with retry logic
 
         Args:
             file_path: Local path to the file
@@ -257,10 +244,8 @@ class GoogleDriveClient:
         max_retries = 3
         retry_delay = 1  # seconds
 
-        # Create thread-safe service instance for this upload
-        service = self._create_thread_safe_service()
-        if not service:
-            logger.error(f"Failed to create service for {file_path}")
+        if not self.service and not self._authenticate():
+            logger.error(f"Failed to authenticate for {file_path}")
             return None
 
         for attempt in range(max_retries):
@@ -283,15 +268,15 @@ class GoogleDriveClient:
                 # Create media upload
                 media = MediaFileUpload(file_path, mimetype=mime_type, resumable=True)
 
-                # Upload file using thread-safe service
+                # Upload file using the main service
                 file_obj = (
-                    service.files()
+                    self.service.files()
                     .create(body=file_metadata, media_body=media, fields="id")
                     .execute()
                 )
 
                 file_id = file_obj.get("id")
-                # File uploaded successfully
+                logger.info(f"✅ Uploaded {file_name} to Google Drive")
                 return file_id
 
             except (HttpError, Exception) as e:
@@ -391,7 +376,7 @@ class GoogleDriveClient:
                     drive_folder_name, month_year_folder_id
                 )
 
-            # Upload all files in the session folder (in parallel)
+            # Upload all files in the session folder sequentially
             uploaded_files = []
             session_path = Path(session_folder_path)
 
@@ -410,54 +395,19 @@ class GoogleDriveClient:
                 )
                 return True
 
-            # Upload files sequentially using ThreadPoolExecutor with max_workers = 1
-            max_workers = 1
+            # Upload files one by one (simple and reliable)
+            for file_path in files_to_upload:
+                try:
+                    file_id = self._upload_file(str(file_path), session_folder_id)
+                    if file_id:
+                        uploaded_files.append({"name": file_path.name, "id": file_id})
+                    else:
+                        logger.warning(f"Failed to upload {file_path.name}")
+                except Exception as e:
+                    logger.error(f"Error uploading {file_path.name}: {e}")
 
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                # Submit all upload tasks
-                future_to_file = {
-                    executor.submit(
-                        self._upload_file, str(file_path), session_folder_id
-                    ): file_path
-                    for file_path in files_to_upload
-                }
-
-                # Collect results as they complete
-                failed_files = []
-                for future in as_completed(future_to_file):
-                    file_path = future_to_file[future]
-                    try:
-                        file_id = future.result()
-                        if file_id:
-                            uploaded_files.append(
-                                {"name": file_path.name, "id": file_id}
-                            )
-                        else:
-                            failed_files.append(file_path)
-                    except Exception as e:
-                        logger.error(f"Error uploading {file_path.name}: {e}")
-                        failed_files.append(file_path)
-
-            # Retry failed files sequentially (less network stress)
-            if failed_files:
-                logger.info(
-                    f"Retrying {len(failed_files)} failed files sequentially..."
-                )
-                for file_path in failed_files:
-                    try:
-                        time.sleep(0.5)  # Small delay between sequential uploads
-                        file_id = self._upload_file(str(file_path), session_folder_id)
-                        if file_id:
-                            uploaded_files.append(
-                                {"name": file_path.name, "id": file_id}
-                            )
-                            logger.info(
-                                f"✓ Sequential retry succeeded: {file_path.name}"
-                            )
-                    except Exception as e:
-                        logger.warning(
-                            f"Sequential retry also failed for {file_path.name}: {e}"
-                        )
+                # Small delay between uploads to be nice to the API
+                time.sleep(0.5)
 
             return True
 
@@ -563,29 +513,6 @@ class GoogleDriveClient:
 drive_client = GoogleDriveClient()
 
 
-def upload_session_to_drive(
-    session_folder_path: str, user_info: dict[str, Any]
-) -> bool:
-    """
-    Convenience function to upload session data to Google Drive
-
-    Args:
-        session_folder_path: Local path to the session folder
-        user_info: User information dictionary
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    try:
-        success = drive_client.upload_session_folder(session_folder_path, user_info)
-        if not success:
-            logger.warning("Failed to upload session folder to Google Drive")
-        return success
-    except Exception as e:
-        logger.error(f"Unexpected error uploading to Google Drive: {e}")
-        return False
-
-
 def create_drive_folder_and_get_url(
     session_folder_path: str, user_info: dict[str, Any]
 ) -> tuple[str, str]:
@@ -613,7 +540,7 @@ def create_drive_folder_and_get_url(
         return "", ""
 
 
-def upload_session_to_drive_background(
+def upload_session_to_drive(
     session_folder_path: str, user_info: dict[str, Any], session_folder_id: str = None
 ) -> bool:
     """

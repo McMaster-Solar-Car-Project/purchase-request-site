@@ -24,9 +24,9 @@ from fastapi.templating import Jinja2Templates
 from google_drive import (
     create_drive_folder_and_get_url,
     download_file_from_drive,
-    upload_session_to_drive_background,
+    upload_session_to_drive,
 )
-from google_sheets import log_purchase_request_to_sheets
+from google_sheets import sheets_client
 from logging_utils import setup_logger
 from request_logging import RequestLoggingMiddleware
 from sqlalchemy.orm import Session
@@ -526,7 +526,7 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
 
         # Log to Google Sheets (with Drive folder URL)
         try:
-            log_purchase_request_to_sheets(
+            sheets_client.log_purchase_request(
                 user_info, submitted_forms, session_folder, drive_folder_url
             )
         except Exception as e:
@@ -535,7 +535,7 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
         # Upload files to Google Drive (in background)
         upload_success = False
         try:
-            upload_success = upload_session_to_drive_background(
+            upload_success = upload_session_to_drive(
                 session_folder, user_info, drive_folder_id
             )
         except Exception as e:
