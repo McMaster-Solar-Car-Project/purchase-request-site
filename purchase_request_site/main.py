@@ -1,5 +1,6 @@
 import asyncio
 import os
+import secrets
 import shutil
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -17,11 +18,12 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from google_drive import (
     create_drive_folder_and_get_url,
+    download_file_from_drive,
     upload_session_to_drive_background,
 )
 from google_sheets import log_purchase_request_to_sheets
@@ -133,10 +135,13 @@ app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
 # Add request logging middleware
 app.add_middleware(RequestLoggingMiddleware)
 
+# Generate a random secret key for this session (Note: users will be logged out on restart)
+session_secret = os.getenv("SESSION_SECRET_KEY") or secrets.token_urlsafe(32)
+
 # Add session middleware for authentication
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.getenv("SESSION_SECRET_KEY", "your-secret-key-change-this"),
+    secret_key=session_secret,
 )
 
 # Mount static files (directories are guaranteed to exist now)
@@ -145,10 +150,6 @@ app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
 
 # Set up templates
 templates = Jinja2Templates(directory="templates")
-
-# Authentication configuration
-LOGIN_EMAIL = os.getenv("LOGIN_EMAIL", "admin@example.com")
-LOGIN_PASSWORD = os.getenv("LOGIN_PASSWORD", "admin123")
 
 
 def is_authenticated(request: Request) -> bool:
@@ -186,20 +187,11 @@ async def login(
     db: Session = Depends(get_db),
 ):
     """Handle login form submission"""
-    # Check if it's the admin login
-    if email == LOGIN_EMAIL and password == LOGIN_PASSWORD:
-        request.session["authenticated"] = True
-        request.session["user_email"] = email
-        request.session["is_admin"] = True
-        logger.info(f"🔐 Admin login: {email}")
-        return RedirectResponse(url="/", status_code=303)
-
     # Check user database
     user = get_user_by_email(db, email)
     if user and user.password == password:
         request.session["authenticated"] = True
         request.session["user_email"] = email
-        request.session["is_admin"] = False
         logger.info(f"🔐 User login: {user.name} ({email})")
 
         # Check if user profile is complete
@@ -249,35 +241,35 @@ async def home(request: Request):
 @app.get("/download-excel")
 async def download_excel(
     request: Request,
-    session_folder: str,
+    drive_folder_id: str,
     excel_file: str,
     _: None = Depends(require_auth),
 ):
-    """Download the generated Excel file for a session"""
-    file_path = f"{session_folder}/{excel_file}"
+    """Download the generated Excel file from Google Drive"""
+    try:
+        # Download file content from Google Drive
+        file_content = download_file_from_drive(drive_folder_id, excel_file)
 
-    # Security check: ensure the path is within the sessions directory
-    if not session_folder.startswith("sessions/"):
-        raise HTTPException(status_code=400, detail="Invalid session folder")
+        # Return the file content as a streaming response
+        from fastapi.responses import Response
 
-    # Check if file exists
-    if not os.path.exists(file_path):
-        logger.error(f"File not found: {file_path}")
-        raise HTTPException(status_code=404, detail="Excel file not found")
+        return Response(
+            content=file_content,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={excel_file}"},
+        )
 
-    # Return the file for download
-    return FileResponse(
-        path=file_path,
-        filename=excel_file,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+    except Exception as e:
+        logger.error(f"Failed to download {excel_file} from Google Drive: {e}")
+        raise HTTPException(
+            status_code=404, detail=f"Excel file not found in Google Drive: {str(e)}"
+        ) from e
 
 
 def create_session_folder(name):
-    """Create a unique session folder name with user name and timestamp"""
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    """Create a session folder with just the user's name (overwrites previous sessions)"""
     safe_name = name.replace(" ", "_").lower()
-    session_folder = f"sessions/{safe_name}_{timestamp}"
+    session_folder = f"sessions/{safe_name}"
 
     # Create the session directory if it doesn't exist
     os.makedirs(session_folder, exist_ok=True)
@@ -541,8 +533,9 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             logger.error(f"Failed to log to Google Sheets (continuing anyway): {e}")
 
         # Upload files to Google Drive (in background)
+        upload_success = False
         try:
-            upload_session_to_drive_background(
+            upload_success = upload_session_to_drive_background(
                 session_folder, user_info, drive_folder_id
             )
         except Exception as e:
@@ -550,17 +543,25 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
                 f"Failed to start Google Drive upload (continuing anyway): {e}"
             )
 
+        # Clean up session folder if upload was successful
+        if upload_success:
+            try:
+                shutil.rmtree(session_folder)
+                logger.info(f"🗑️ Cleaned up session folder: {session_folder}")
+            except Exception as e:
+                logger.error(f"Failed to delete session folder {session_folder}: {e}")
+
     else:
         logger.warning("No forms were submitted (all forms were empty)")
         # Redirect back to dashboard with error message instead of success
         return RedirectResponse(
-            url=f"/dashboard?user_email={email}&session_folder={session_folder}&signature={signature_filename}&error=no_forms",
+            url=f"/dashboard?user_email={email}&error=no_forms",
             status_code=303,
         )
 
     # Redirect back to home with success message and session info for download
     return RedirectResponse(
-        url=f"/success?session_folder={session_folder}&excel_file=purchase_request.xlsx&user_email={email}",
+        url=f"/success?drive_folder_id={drive_folder_id}&excel_file=purchase_request.xlsx&user_email={email}",
         status_code=303,
     )
 
@@ -568,7 +569,7 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
 @app.get("/success")
 async def success_page(
     request: Request,
-    session_folder: str = None,
+    drive_folder_id: str = None,
     excel_file: str = None,
     user_email: str = None,
     _: None = Depends(require_auth),
@@ -577,11 +578,11 @@ async def success_page(
     download_info = None
     current_time = datetime.now()
 
-    if session_folder and excel_file:
+    if drive_folder_id and excel_file:
         download_info = {
-            "session_folder": session_folder,
+            "drive_folder_id": drive_folder_id,
             "excel_file": excel_file,
-            "download_url": f"/download-excel?session_folder={session_folder}&excel_file={excel_file}",
+            "download_url": f"/download-excel?drive_folder_id={drive_folder_id}&excel_file={excel_file}",
         }
 
     return templates.TemplateResponse(

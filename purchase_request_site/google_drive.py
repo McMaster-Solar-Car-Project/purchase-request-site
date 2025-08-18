@@ -485,6 +485,77 @@ class GoogleDriveClient:
             logger.error(f"Error testing Google Drive connection: {e}")
             return False
 
+    def download_file(self, file_id: str, file_name: str) -> bytes:
+        """Download a file from Google Drive by file ID
+
+        Args:
+            file_id: Google Drive file ID
+            file_name: Name of the file (for logging)
+
+        Returns:
+            bytes: File content as bytes
+
+        Raises:
+            Exception: If download fails
+        """
+        if not self.service and not self._authenticate():
+            raise Exception("Failed to authenticate with Google Drive")
+
+        try:
+            # Download the file
+            request = self.service.files().get_media(fileId=file_id)
+            file_content = request.execute()
+
+            logger.info(
+                f"✅ Downloaded {file_name} from Google Drive ({len(file_content)} bytes)"
+            )
+            return file_content
+
+        except HttpError as e:
+            logger.error(f"HTTP error downloading {file_name} from Google Drive: {e}")
+            raise Exception(f"Failed to download {file_name}: {e}") from e
+        except Exception as e:
+            logger.error(f"Error downloading {file_name} from Google Drive: {e}")
+            raise
+
+    def find_file_in_folder(self, folder_id: str, file_name: str) -> str:
+        """Find a file by name in a specific Google Drive folder
+
+        Args:
+            folder_id: Google Drive folder ID to search in
+            file_name: Name of the file to find
+
+        Returns:
+            str: File ID if found, empty string if not found
+        """
+        if not self.service and not self._authenticate():
+            return ""
+
+        try:
+            # Search for the file in the specific folder
+            query = f"name='{file_name}' and '{folder_id}' in parents and trashed=false"
+            results = (
+                self.service.files().list(q=query, fields="files(id, name)").execute()
+            )
+
+            files = results.get("files", [])
+            if files:
+                file_id = files[0]["id"]
+                logger.info(f"Found {file_name} in Google Drive folder: {file_id}")
+                return file_id
+            else:
+                logger.warning(
+                    f"File {file_name} not found in Google Drive folder {folder_id}"
+                )
+                return ""
+
+        except HttpError as e:
+            logger.error(f"HTTP error searching for {file_name}: {e}")
+            return ""
+        except Exception as e:
+            logger.error(f"Error searching for {file_name}: {e}")
+            return ""
+
 
 # Global instance
 drive_client = GoogleDriveClient()
@@ -542,7 +613,7 @@ def create_drive_folder_and_get_url(
 
 def upload_session_to_drive_background(
     session_folder_path: str, user_info: dict[str, Any], session_folder_id: str = None
-) -> None:
+) -> bool:
     """
     Upload session data to Google Drive synchronously
 
@@ -550,6 +621,9 @@ def upload_session_to_drive_background(
         session_folder_path: Local path to the session folder
         user_info: User information dictionary
         session_folder_id: Optional existing folder ID to upload to
+
+    Returns:
+        bool: True if upload was successful, False otherwise
     """
     try:
         logger.info(
@@ -560,10 +634,35 @@ def upload_session_to_drive_background(
         )
         if success:
             logger.info("✅ Upload to Google Drive completed successfully")
+            return True
         else:
             logger.warning("❌ Upload to Google Drive failed")
+            return False
     except Exception as e:
         logger.error(f"Unexpected error in upload to Google Drive: {e}")
+        return False
+
+
+def download_file_from_drive(folder_id: str, file_name: str) -> bytes:
+    """Download a file from Google Drive by folder ID and file name
+
+    Args:
+        folder_id: Google Drive folder ID where the file is located
+        file_name: Name of the file to download
+
+    Returns:
+        bytes: File content as bytes
+
+    Raises:
+        Exception: If file not found or download fails
+    """
+    # First find the file in the folder
+    file_id = drive_client.find_file_in_folder(folder_id, file_name)
+    if not file_id:
+        raise Exception(f"File '{file_name}' not found in Google Drive folder")
+
+    # Download the file
+    return drive_client.download_file(file_id, file_name)
 
 
 def test_google_drive_connection():
