@@ -262,4 +262,3 @@ class GoogleSheetsClient:
 
 # Global instance
 sheets_client = GoogleSheetsClient()
-
