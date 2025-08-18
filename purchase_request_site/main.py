@@ -18,7 +18,7 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from google_drive import (
@@ -249,22 +249,22 @@ async def download_excel(
     try:
         # Download file content from Google Drive
         file_content = download_file_from_drive(drive_folder_id, excel_file)
-        
+
         # Return the file content as a streaming response
         from fastapi.responses import Response
-        
+
         return Response(
             content=file_content,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": f"attachment; filename={excel_file}"}
         )
-        
+
     except Exception as e:
         logger.error(f"Failed to download {excel_file} from Google Drive: {e}")
         raise HTTPException(
-            status_code=404, 
+            status_code=404,
             detail=f"Excel file not found in Google Drive: {str(e)}"
-        )
+        ) from e
 
 
 def create_session_folder(name):
