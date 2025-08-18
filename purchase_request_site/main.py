@@ -1,5 +1,6 @@
 import asyncio
 import os
+import secrets
 import shutil
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -133,10 +134,13 @@ app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
 # Add request logging middleware
 app.add_middleware(RequestLoggingMiddleware)
 
+# Generate a random secret key for this session (Note: users will be logged out on restart)
+session_secret = os.getenv("SESSION_SECRET_KEY") or secrets.token_urlsafe(32)
+
 # Add session middleware for authentication
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.getenv("SESSION_SECRET_KEY", "your-secret-key-change-this"),
+    secret_key=session_secret,
 )
 
 # Mount static files (directories are guaranteed to exist now)
@@ -145,10 +149,6 @@ app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
 
 # Set up templates
 templates = Jinja2Templates(directory="templates")
-
-# Authentication configuration
-LOGIN_EMAIL = os.getenv("LOGIN_EMAIL", "admin@example.com")
-LOGIN_PASSWORD = os.getenv("LOGIN_PASSWORD", "admin123")
 
 
 def is_authenticated(request: Request) -> bool:
@@ -186,20 +186,11 @@ async def login(
     db: Session = Depends(get_db),
 ):
     """Handle login form submission"""
-    # Check if it's the admin login
-    if email == LOGIN_EMAIL and password == LOGIN_PASSWORD:
-        request.session["authenticated"] = True
-        request.session["user_email"] = email
-        request.session["is_admin"] = True
-        logger.info(f"🔐 Admin login: {email}")
-        return RedirectResponse(url="/", status_code=303)
-
     # Check user database
     user = get_user_by_email(db, email)
     if user and user.password == password:
         request.session["authenticated"] = True
         request.session["user_email"] = email
-        request.session["is_admin"] = False
         logger.info(f"🔐 User login: {user.name} ({email})")
 
         # Check if user profile is complete
@@ -274,10 +265,9 @@ async def download_excel(
 
 
 def create_session_folder(name):
-    """Create a unique session folder name with user name and timestamp"""
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    """Create a session folder with just the user's name (overwrites previous sessions)"""
     safe_name = name.replace(" ", "_").lower()
-    session_folder = f"sessions/{safe_name}_{timestamp}"
+    session_folder = f"sessions/{safe_name}"
 
     # Create the session directory if it doesn't exist
     os.makedirs(session_folder, exist_ok=True)
@@ -541,14 +531,23 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             logger.error(f"Failed to log to Google Sheets (continuing anyway): {e}")
 
         # Upload files to Google Drive (in background)
+        upload_success = False
         try:
-            upload_session_to_drive_background(
+            upload_success = upload_session_to_drive_background(
                 session_folder, user_info, drive_folder_id
             )
         except Exception as e:
             logger.error(
                 f"Failed to start Google Drive upload (continuing anyway): {e}"
             )
+
+        # Clean up session folder if upload was successful
+        if upload_success:
+            try:
+                shutil.rmtree(session_folder)
+                logger.info(f"🗑️ Cleaned up session folder: {session_folder}")
+            except Exception as e:
+                logger.error(f"Failed to delete session folder {session_folder}: {e}")
 
     else:
         logger.warning("No forms were submitted (all forms were empty)")

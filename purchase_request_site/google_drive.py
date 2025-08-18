@@ -542,7 +542,7 @@ def create_drive_folder_and_get_url(
 
 def upload_session_to_drive_background(
     session_folder_path: str, user_info: dict[str, Any], session_folder_id: str = None
-) -> None:
+) -> bool:
     """
     Upload session data to Google Drive synchronously
 
@@ -550,6 +550,9 @@ def upload_session_to_drive_background(
         session_folder_path: Local path to the session folder
         user_info: User information dictionary
         session_folder_id: Optional existing folder ID to upload to
+
+    Returns:
+        bool: True if upload was successful, False otherwise
     """
     try:
         logger.info(
@@ -560,10 +563,13 @@ def upload_session_to_drive_background(
         )
         if success:
             logger.info("✅ Upload to Google Drive completed successfully")
+            return True
         else:
             logger.warning("❌ Upload to Google Drive failed")
+            return False
     except Exception as e:
         logger.error(f"Unexpected error in upload to Google Drive: {e}")
+        return False
 
 
 def test_google_drive_connection():
