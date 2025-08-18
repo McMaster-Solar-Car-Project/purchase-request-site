@@ -513,29 +513,6 @@ class GoogleDriveClient:
 drive_client = GoogleDriveClient()
 
 
-def upload_session_to_drive(
-    session_folder_path: str, user_info: dict[str, Any]
-) -> bool:
-    """
-    Convenience function to upload session data to Google Drive
-
-    Args:
-        session_folder_path: Local path to the session folder
-        user_info: User information dictionary
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    try:
-        success = drive_client.upload_session_folder(session_folder_path, user_info)
-        if not success:
-            logger.warning("Failed to upload session folder to Google Drive")
-        return success
-    except Exception as e:
-        logger.error(f"Unexpected error uploading to Google Drive: {e}")
-        return False
-
-
 def create_drive_folder_and_get_url(
     session_folder_path: str, user_info: dict[str, Any]
 ) -> tuple[str, str]:
@@ -563,7 +540,7 @@ def create_drive_folder_and_get_url(
         return "", ""
 
 
-def upload_session_to_drive_background(
+def upload_session_to_drive(
     session_folder_path: str, user_info: dict[str, Any], session_folder_id: str = None
 ) -> bool:
     """
