@@ -256,14 +256,13 @@ async def download_excel(
         return Response(
             content=file_content,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": f"attachment; filename={excel_file}"}
+            headers={"Content-Disposition": f"attachment; filename={excel_file}"},
         )
 
     except Exception as e:
         logger.error(f"Failed to download {excel_file} from Google Drive: {e}")
         raise HTTPException(
-            status_code=404,
-            detail=f"Excel file not found in Google Drive: {str(e)}"
+            status_code=404, detail=f"Excel file not found in Google Drive: {str(e)}"
         ) from e
 
 

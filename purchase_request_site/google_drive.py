@@ -506,7 +506,9 @@ class GoogleDriveClient:
             request = self.service.files().get_media(fileId=file_id)
             file_content = request.execute()
 
-            logger.info(f"✅ Downloaded {file_name} from Google Drive ({len(file_content)} bytes)")
+            logger.info(
+                f"✅ Downloaded {file_name} from Google Drive ({len(file_content)} bytes)"
+            )
             return file_content
 
         except HttpError as e:
@@ -532,10 +534,9 @@ class GoogleDriveClient:
         try:
             # Search for the file in the specific folder
             query = f"name='{file_name}' and '{folder_id}' in parents and trashed=false"
-            results = self.service.files().list(
-                q=query,
-                fields="files(id, name)"
-            ).execute()
+            results = (
+                self.service.files().list(q=query, fields="files(id, name)").execute()
+            )
 
             files = results.get("files", [])
             if files:
@@ -543,7 +544,9 @@ class GoogleDriveClient:
                 logger.info(f"Found {file_name} in Google Drive folder: {file_id}")
                 return file_id
             else:
-                logger.warning(f"File {file_name} not found in Google Drive folder {folder_id}")
+                logger.warning(
+                    f"File {file_name} not found in Google Drive folder {folder_id}"
+                )
                 return ""
 
         except HttpError as e:
