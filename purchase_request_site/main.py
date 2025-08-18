@@ -23,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from google_drive import (
     create_drive_folder_and_get_url,
+    download_file_from_drive,
     upload_session_to_drive_background,
 )
 from google_sheets import log_purchase_request_to_sheets
@@ -240,28 +241,30 @@ async def home(request: Request):
 @app.get("/download-excel")
 async def download_excel(
     request: Request,
-    session_folder: str,
+    drive_folder_id: str,
     excel_file: str,
     _: None = Depends(require_auth),
 ):
-    """Download the generated Excel file for a session"""
-    file_path = f"{session_folder}/{excel_file}"
-
-    # Security check: ensure the path is within the sessions directory
-    if not session_folder.startswith("sessions/"):
-        raise HTTPException(status_code=400, detail="Invalid session folder")
-
-    # Check if file exists
-    if not os.path.exists(file_path):
-        logger.error(f"File not found: {file_path}")
-        raise HTTPException(status_code=404, detail="Excel file not found")
-
-    # Return the file for download
-    return FileResponse(
-        path=file_path,
-        filename=excel_file,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+    """Download the generated Excel file from Google Drive"""
+    try:
+        # Download file content from Google Drive
+        file_content = download_file_from_drive(drive_folder_id, excel_file)
+        
+        # Return the file content as a streaming response
+        from fastapi.responses import Response
+        
+        return Response(
+            content=file_content,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={excel_file}"}
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to download {excel_file} from Google Drive: {e}")
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Excel file not found in Google Drive: {str(e)}"
+        )
 
 
 def create_session_folder(name):
@@ -553,13 +556,13 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
         logger.warning("No forms were submitted (all forms were empty)")
         # Redirect back to dashboard with error message instead of success
         return RedirectResponse(
-            url=f"/dashboard?user_email={email}&session_folder={session_folder}&signature={signature_filename}&error=no_forms",
+            url=f"/dashboard?user_email={email}&error=no_forms",
             status_code=303,
         )
 
     # Redirect back to home with success message and session info for download
     return RedirectResponse(
-        url=f"/success?session_folder={session_folder}&excel_file=purchase_request.xlsx&user_email={email}",
+        url=f"/success?drive_folder_id={drive_folder_id}&excel_file=purchase_request.xlsx&user_email={email}",
         status_code=303,
     )
 
@@ -567,7 +570,7 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
 @app.get("/success")
 async def success_page(
     request: Request,
-    session_folder: str = None,
+    drive_folder_id: str = None,
     excel_file: str = None,
     user_email: str = None,
     _: None = Depends(require_auth),
@@ -576,11 +579,11 @@ async def success_page(
     download_info = None
     current_time = datetime.now()
 
-    if session_folder and excel_file:
+    if drive_folder_id and excel_file:
         download_info = {
-            "session_folder": session_folder,
+            "drive_folder_id": drive_folder_id,
             "excel_file": excel_file,
-            "download_url": f"/download-excel?session_folder={session_folder}&excel_file={excel_file}",
+            "download_url": f"/download-excel?drive_folder_id={drive_folder_id}&excel_file={excel_file}",
         }
 
     return templates.TemplateResponse(
