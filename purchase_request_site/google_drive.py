@@ -331,7 +331,8 @@ class GoogleDriveClient:
             # Create session folder name with user info and timestamp
             session_name = os.path.basename(session_folder_path)
             user_name = user_info.get("name", "Unknown").replace(" ", "_")
-            drive_folder_name = f"{session_name}_{user_name}"
+            timestamp = datetime.now().strftime("%d_%m_%Y_%H-%M-%S")
+            drive_folder_name = f"{session_name}_{user_name}_{timestamp}"
 
             # Create session folder in the month/year folder
             session_folder_id = self._create_session_folder(
@@ -373,7 +374,8 @@ class GoogleDriveClient:
             # Create session folder name with user info and timestamp (always needed for logging)
             session_name = os.path.basename(session_folder_path)
             user_name = user_info.get("name", "Unknown").replace(" ", "_")
-            drive_folder_name = f"{session_name}_{user_name}"
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            drive_folder_name = f"{session_name}_{user_name}_{timestamp}"
 
             # Use provided folder ID or create new folder structure
             if not session_folder_id:
