@@ -144,67 +144,6 @@ class GoogleSheetsClient:
             logger.error(f"Error testing Google Sheets connection: {e}")
             return False
 
-    def write_test_data(self) -> bool:
-        """Write test data to verify the connection works"""
-        if not self.service and not self._authenticate():
-            return False
-
-        try:
-            # Test data with current timestamp
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            test_data = [
-                [
-                    current_time,
-                    "Test User",
-                    "test@mcmaster.ca",
-                    "123 Test St",
-                    "test.etransfer@email.com",
-                    "Test Team",
-                    "$150.00",  # Total Amount
-                    "https://drive.google.com/drive/folders/test_folder_id",
-                ],
-                [
-                    current_time,
-                    "Another Test",
-                    "another@mcmaster.ca",
-                    "456 Demo Ave",
-                    "demo.etransfer@email.com",
-                    "Demo Team",
-                    "$275.50",  # Total Amount
-                    "https://drive.google.com/drive/folders/test_folder_id_2",
-                ],
-            ]
-
-            # Write to the sheet
-            range_name = (
-                f"{SHEET_TAB_NAME}!A:H"  # 8 columns to match session data format
-            )
-            body = {"values": test_data}
-
-            result = (
-                self.service.spreadsheets()
-                .values()
-                .append(
-                    spreadsheetId=self.sheet_id,
-                    range=range_name,
-                    valueInputOption="RAW",
-                    body=body,
-                )
-                .execute()
-            )
-
-            logger.info(
-                f"Test data written successfully. Updated {result.get('updates', {}).get('updatedRows', 0)} rows"
-            )
-            return True
-
-        except HttpError as e:
-            logger.error(f"HTTP error writing test data: {e}")
-            return False
-        except Exception as e:
-            logger.error(f"Error writing test data: {e}")
-            return False
-
     def _calculate_total_amount(self, forms: list[dict[str, Any]]) -> float:
         """
         Calculate the total amount from all submitted forms in CAD
@@ -324,41 +263,3 @@ class GoogleSheetsClient:
 # Global instance
 sheets_client = GoogleSheetsClient()
 
-
-def test_google_sheets_connection():
-    """Test function to verify Google Sheets integration"""
-    if sheets_client.test_connection():
-        # Try writing test data
-        if sheets_client.write_test_data():
-            return True
-        else:
-            logger.error("❌ Failed to write test data")
-            return False
-    else:
-        logger.error("❌ Google Sheets connection failed")
-        return False
-
-
-def log_purchase_request_to_sheets(
-    user_info: dict[str, Any],
-    forms: list[dict[str, Any]],
-    session_folder: str,
-    drive_folder_url: str = "",
-) -> None:
-    """
-    Log purchase request to Google Sheets
-
-    Args:
-        user_info: Dictionary containing user information
-        forms: List of form data dictionaries
-        session_folder: Path to the session folder
-        drive_folder_url: URL to the Google Drive folder (optional)
-    """
-    try:
-        success = sheets_client.log_purchase_request(
-            user_info, forms, session_folder, drive_folder_url
-        )
-        if not success:
-            logger.warning("Failed to log session data to Google Sheets")
-    except Exception as e:
-        logger.error(f"Unexpected error logging to Google Sheets: {e}")
