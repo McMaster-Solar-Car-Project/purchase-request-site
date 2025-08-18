@@ -249,8 +249,11 @@ def create_excel_report(user_info, submitted_forms, session_folder):
         else:
             ws["E25"] = "HST/GST"
 
-        # F24: Subtotal amount (HST/GST for CAD, Taxes for USD)
-        ws["F24"] = form["subtotal_amount"]
+        # F24: Subtotal amount (uses different fields for USD vs CAD)
+        if form["currency"] == "USD":
+            ws["F24"] = form["us_total"]  # For USD, use the US total as subtotal
+        else:
+            ws["F24"] = form["subtotal_amount"]  # For CAD, use regular subtotal
 
         # F25: Tax amount (HST/GST for CAD, Taxes for USD)
         ws["F25"] = form["hst_gst_amount"]
