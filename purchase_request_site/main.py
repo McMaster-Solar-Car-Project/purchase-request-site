@@ -267,9 +267,10 @@ async def download_excel(
 
 
 def create_session_folder(name):
-    """Create a session folder with just the user's name (overwrites previous sessions)"""
+    """Create a session folder with user name and timestamp"""
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     safe_name = name.replace(" ", "_").lower()
-    session_folder = f"sessions/{safe_name}"
+    session_folder = f"sessions/{safe_name}_{timestamp}"
 
     # Create the session directory if it doesn't exist
     os.makedirs(session_folder, exist_ok=True)
