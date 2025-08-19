@@ -46,12 +46,7 @@ From the project root directory:
 uv run run.py
 ```
 
-Or with Docker (Currently facing some IPV4 vs IPV6 errors):
-
-```bash
-./build.sh
-./run-docker.sh
-```
+Docker build instructions coming soon
 
 ### 4. Contributing to the Project
 
