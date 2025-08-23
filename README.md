@@ -75,9 +75,7 @@ Docker build instructions coming soon
 
 ### 4. Contributing to the Project
 
-To contribute to this project, **please make a separate branch and make your changes there**. After pushing these changes, create a Pull Request on the Github repo, after the build has been finished, you should be able to access the repo with the PR at [https://purchase-request-site-staging-864928778234.northamerica-northeast2.run.app/login](https://purchase-request-site-staging-864928778234.northamerica-northeast2.run.app/login). Only the latest commit to any given pull request will be visible at this url, so keep this in mind.
-
-#### DO NOT MERGE THIS PR IN WITHOUT APPROVAL AND ATLEAST 1 REVIEW
+To contribute to this project, please make a separate branch and make your changes there. After pushing these changes, create a Pull Request on the Github repo. For the staging environment to run, you will need write access to the repository. After the build has been finished, you should be able to access the repo with the PR at [https://purchase-request-site-staging-864928778234.northamerica-northeast2.run.app/login](https://purchase-request-site-staging-864928778234.northamerica-northeast2.run.app/login). Only the latest commit to any given pull request will be visible at this url. **DO NOT MERGE WITHOUT APPROVAL AND A REVIEW**
 
 ### 5. Long Term Maintenance
 
