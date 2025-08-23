@@ -14,11 +14,36 @@ A FastAPI web application for managing purchase requests and expense reports. Us
 
 ### 1. Install Dependencies
 
-These setup instructions are for macOS, if you are using windows, download the dependencies by visiting their website and following their instructions
+These setup instructions are for macOS and WSL.
 
+**macOS:**
 ```bash
-# Install system dependencies (macOS)
+# Install system dependencies
 brew install uv gitleaks lefthook
+```
+
+**WSL/Linux:**
+```bash
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install gitleaks
+curl -sSL \
+  https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz \
+  -o gitleaks.tar.gz
+tar -xvzf gitleaks.tar.gz
+sudo mv gitleaks /usr/local/bin/
+rm gitleaks.tar.gz
+
+# Install lefthook
+pip install lefthook
+```
+
+**All platforms:**
+```bash
+# Clone the repo
+git clone git@github.com:McMaster-Solar-Car-Project/purchase-request-site.git
+cd purchase-request-site
 
 # Create a venv
 uv venv
