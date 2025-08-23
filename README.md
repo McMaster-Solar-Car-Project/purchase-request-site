@@ -57,7 +57,6 @@ uv sync
 # Install git hooks
 lefthook install
 ```
-```
 
 ### 2. Environment Variables
 
