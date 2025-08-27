@@ -2,6 +2,7 @@ import base64
 import os
 from datetime import datetime
 
+from dotenv import load_dotenv
 from sqlalchemy import (
     Column,
     DateTime,
@@ -13,6 +14,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
+# Load environment variables
+load_dotenv()
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
