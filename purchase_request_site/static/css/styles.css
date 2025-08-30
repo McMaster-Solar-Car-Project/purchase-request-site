@@ -798,49 +798,72 @@ h1 {
    ================================================================= */
 
 .login-body {
-    font-family: Arial, sans-serif;
+    font-family: 'Inter', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f5f5f5;
+    background-color: #0a0a0a;
+    background-image: radial-gradient(circle at 25% 25%, rgba(60, 60, 60, 0.1) 0%, transparent 40%), 
+                      radial-gradient(circle at 75% 75%, rgba(60, 60, 60, 0.1) 0%, transparent 40%);
     line-height: 1.6;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #e0e0e0;
 }
 
 .login-container {
     max-width: 400px;
     width: 90%;
-    padding: 2rem;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2.5rem;
+    background: #121212;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .login-header {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
+}
+
+.login-logo {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-weight: 700;
+    font-size: 24px;
+    color: white;
+    letter-spacing: 1px;
 }
 
 .login-header h1 {
-    color: #333;
+    color: #ffffff;
     margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 1.75rem;
 }
 
 .login-header p {
-    color: #666;
+    color: #a0a0a0;
     margin: 0;
+    font-size: 0.95rem;
 }
 
 .login-error-message {
-    background-color: #fee;
-    border: 1px solid #fcc;
-    color: #c33;
+    background-color: rgba(255, 68, 68, 0.1);
+    border: 1px solid rgba(255, 68, 68, 0.2);
+    color: #ff4444;
     padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
     text-align: center;
+    font-size: 0.9rem;
 }
 
 .login-form-group {
@@ -850,48 +873,79 @@ h1 {
 .login-form-group label {
     display: block;
     margin-bottom: 0.5rem;
-    font-weight: bold;
-    color: #333;
+    font-weight: 500;
+    color: #d0d0d0;
+    font-size: 0.9rem;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    color: #6e6e6e;
 }
 
 .login-form-group input {
     width: 100%;
-    padding: 0.75rem;
-    border: 2px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-    transition: border-color 0.3s;
+    padding: 0.85rem 0.85rem 0.85rem 42px;
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
     box-sizing: border-box;
+    color: #e0e0e0;
 }
 
 .login-form-group input:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: #3a7bd5;
+    box-shadow: 0 0 0 2px rgba(58, 123, 213, 0.2);
+    background-color: #252525;
+}
+
+.login-form-group input::placeholder {
+    color: #6e6e6e;
 }
 
 .login-btn {
     width: 100%;
-    padding: 0.75rem;
-    background-color: #007bff;
+    padding: 0.85rem;
+    background: linear-gradient(135deg, #3a7bd5, #00d2ff);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 1rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.2s ease;
+    margin-top: 1rem;
 }
 
 .login-btn:hover {
-    background-color: #0056b3;
+    background: linear-gradient(135deg, #3373c8, #00bce4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 210, 255, 0.2);
+}
+
+.login-btn:active {
+    transform: translateY(0);
 }
 
 .login-footer {
     text-align: center;
     margin-top: 2rem;
-    padding-top: 1rem;
-    border-top: 1px solid #eee;
-    color: #666;
-    font-size: 0.9rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    color: #777;
+    font-size: 0.85rem;
 }
 
 /* =================================================================

@@ -6,13 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Purchase Request Site</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 </head>
 
 <body class="login-body">
     <div class="login-container">
         <div class="login-header">
-            <h1>🔐 Login Required</h1>
-            <p>Please enter your credentials to access the Purchase Request Site</p>
+            <div class="login-logo">PR</div>
+            <h1>Sign In</h1>
+            <p>Enter your credentials to continue</p>
         </div>
 
         {% if error_message %}
@@ -23,23 +25,28 @@
 
         <form method="POST" action="/login">
             <div class="login-form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required placeholder="Enter your email address"
-                    value="{{ email or '' }}">
+                <label for="email">Email</label>
+                <div class="input-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    <input type="email" id="email" name="email" required placeholder="macid@mcmaster.ca" value="{{ email or '' }}">
+                </div>
             </div>
 
             <div class="login-form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter your password">
+                <div class="input-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <input type="password" id="password" name="password" required placeholder="••••••••">
+                </div>
             </div>
 
             <button type="submit" class="login-btn">
-                🚀 Login to Purchase Request Site
+                Sign In
             </button>
         </form>
 
         <div class="login-footer">
-            <p>Contact Raj on teams if you would like access to the purchase request site.</p>
+            <p>Need access? Contact Raj on Teams.</p>
         </div>
     </div>
 </body>
