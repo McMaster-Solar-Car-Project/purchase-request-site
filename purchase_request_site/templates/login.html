@@ -6,13 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Purchase Request Site</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body class="login-body">
     <div class="login-container">
         <div class="login-header">
-            <h1>🔐 Login Required</h1>
-            <p>Please enter your credentials to access the Purchase Request Site</p>
+            <h1>Sign In</h1>
+            <p>Enter your credentials to access the Purchase Request Portal</p>
         </div>
 
         {% if error_message %}
@@ -23,23 +26,26 @@
 
         <form method="POST" action="/login">
             <div class="login-form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required placeholder="Enter your email address"
-                    value="{{ email or '' }}">
+                <label for="email">Email</label>
+                <div class="input-container">
+                    <input type="email" id="email" name="email" required placeholder="macid@mcmaster.ca" value="{{ email or '' }}">
+                </div>
             </div>
 
             <div class="login-form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter your password">
+                <div class="input-container">
+                    <input type="password" id="password" name="password" required placeholder="••••••••">
+                </div>
             </div>
 
             <button type="submit" class="login-btn">
-                🚀 Login to Purchase Request Site
+                Sign In
             </button>
         </form>
 
         <div class="login-footer">
-            <p>Contact Raj on teams if you would like access to the purchase request site.</p>
+            <p>Need access? Contact Raj on Teams</p>
         </div>
     </div>
 </body>
