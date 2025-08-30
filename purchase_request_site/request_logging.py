@@ -53,7 +53,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # Always log errors
             process_time = time.time() - start_time
-            request_logger.error(
+            request_logger.exception(
                 f"❌ {request.method} {request.url.path} "
                 f"failed after {process_time:.3f}s - {str(e)}"
             )
@@ -76,4 +76,4 @@ def log_google_drive_upload(folder_url: str, user_name: str):
 def log_email_notification(recipient: str, subject: str, success: bool):
     """Log email notification attempts."""
     if not success:  # Only log failures
-        request_logger.error(f"📧 Email failed to {recipient}")
+        request_logger.exception(f"📧 Email failed to {recipient}")

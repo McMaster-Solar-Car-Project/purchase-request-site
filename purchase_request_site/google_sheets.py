@@ -102,10 +102,10 @@ class GoogleSheetsClient:
             )
             return True
         except ValueError as e:
-            logger.error(f"Environment variable error: {e}")
+            logger.exception(f"Environment variable error: {e}")
             return False
         except Exception as e:
-            logger.error(f"Failed to authenticate with Google Sheets API: {e}")
+            logger.exception(f"Failed to authenticate with Google Sheets API: {e}")
             return False
 
     def test_connection(self) -> bool:
@@ -131,9 +131,9 @@ class GoogleSheetsClient:
             return True
 
         except HttpError as e:
-            logger.error(f"HTTP error accessing Google Sheets: {e}")
+            logger.exception(f"HTTP error accessing Google Sheets: {e}")
             if e.resp.status == 403:
-                logger.error(
+                logger.exception(
                     "Permission denied. Make sure you shared the sheet with: "
                     + os.getenv(
                         "GOOGLE_SETTINGS__CLIENT_EMAIL", "service account email"
@@ -141,7 +141,7 @@ class GoogleSheetsClient:
                 )
             return False
         except Exception as e:
-            logger.error(f"Error testing Google Sheets connection: {e}")
+            logger.exception(f"Error testing Google Sheets connection: {e}")
             return False
 
     def _calculate_total_amount(self, forms: list[dict[str, Any]]) -> float:
@@ -253,10 +253,10 @@ class GoogleSheetsClient:
             return True
 
         except HttpError as e:
-            logger.error(f"HTTP error logging session data: {e}")
+            logger.exception(f"HTTP error logging session data: {e}")
             return False
         except Exception as e:
-            logger.error(f"Error logging session data: {e}")
+            logger.exception(f"Error logging session data: {e}")
             return False
 
 

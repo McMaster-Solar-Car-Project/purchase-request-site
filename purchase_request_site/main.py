@@ -92,20 +92,26 @@ async def cleanup_old_sessions():
                     try:
                         shutil.rmtree(folder_path)
                         deleted_count += 1
-                    except Exception as e:
-                        logger.error(
-                            f"Failed to delete session folder {folder_name}: {e}"
+                    except Exception:
+                        logger.exception(
+                            f"Failed to delete session folder {folder_name}"
                         )
 
             # Only log if many folders were deleted (indicates potential issue)
             if deleted_count > 10:
                 logger.info(f"🧹 Deleted {deleted_count} old session folders")
 
-        except Exception as e:
-            logger.error(f"Error during session cleanup: {e}")
+            # Wait before next cleanup check
+            await asyncio.sleep(SESSION_CLEANUP_CHECK_INTERVAL)
 
-        # Wait before next cleanup check
-        await asyncio.sleep(SESSION_CLEANUP_CHECK_INTERVAL)
+        except Exception:
+            logger.exception("Error during session cleanup")
+
+            # Sleep for a bit to avoid tight loop in case of persistent error
+            await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            logger.info("Session cleanup task cancelled")
+            break
 
 
 @asynccontextmanager
@@ -259,11 +265,11 @@ async def download_excel(
             headers={"Content-Disposition": f"attachment; filename={excel_file}"},
         )
 
-    except Exception as e:
-        logger.error(f"Failed to download {excel_file} from Google Drive: {e}")
+    except Exception:
+        logger.exception(f"Failed to download {excel_file} from Google Drive")
         raise HTTPException(
-            status_code=404, detail=f"Excel file not found in Google Drive: {str(e)}"
-        ) from e
+            status_code=404, detail="Excel file not found in Google Drive"
+        ) from None
 
 
 def create_session_folder(name):
@@ -293,7 +299,7 @@ async def dashboard(
     # Get user from database
     user = get_user_by_email(db, user_email)
     if not user:
-        logger.error(f"User not found in database: {user_email}")
+        logger.exception(f"User not found in database: {user_email}")
         raise HTTPException(status_code=404, detail="User not found")
 
     # If use_saved is True, create session folder and signature for existing user
@@ -508,9 +514,9 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
         # Copy expense report template to session folder
         try:
             copy_expense_report_template(session_folder, user_info, submitted_forms)
-        except Exception as e:
-            logger.error(
-                f"Failed to copy and populate expense report template (continuing anyway): {e}"
+        except Exception:
+            logger.exception(
+                "Failed to copy and populate expense report template (continuing anyway)"
             )
 
         # Create Google Drive folder and get URL
@@ -520,18 +526,16 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             drive_folder_url, drive_folder_id = create_drive_folder_and_get_url(
                 session_folder, user_info
             )
-        except Exception as e:
-            logger.error(
-                f"Failed to create Google Drive folder (continuing anyway): {e}"
-            )
+        except Exception:
+            logger.exception("Failed to create Google Drive folder (continuing anyway)")
 
         # Log to Google Sheets (with Drive folder URL)
         try:
             sheets_client.log_purchase_request(
                 user_info, submitted_forms, session_folder, drive_folder_url
             )
-        except Exception as e:
-            logger.error(f"Failed to log to Google Sheets (continuing anyway): {e}")
+        except Exception:
+            logger.exception("Failed to log to Google Sheets (continuing anyway)")
 
         # Upload files to Google Drive (in background)
         upload_success = False
@@ -539,18 +543,16 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             upload_success = upload_session_to_drive(
                 session_folder, user_info, drive_folder_id
             )
-        except Exception as e:
-            logger.error(
-                f"Failed to start Google Drive upload (continuing anyway): {e}"
-            )
+        except Exception:
+            logger.exception("Failed to start Google Drive upload (continuing anyway)")
 
         # Clean up session folder if upload was successful
         if upload_success:
             try:
                 shutil.rmtree(session_folder)
                 logger.info(f"🗑️ Cleaned up session folder: {session_folder}")
-            except Exception as e:
-                logger.error(f"Failed to delete session folder {session_folder}: {e}")
+            except Exception:
+                logger.exception(f"Failed to delete session folder {session_folder}")
 
     else:
         logger.warning("No forms were submitted (all forms were empty)")
@@ -694,7 +696,7 @@ async def edit_profile_post(
         return RedirectResponse(url=redirect_url, status_code=303)
 
     except Exception as e:
-        logger.error(f"Error updating profile for {user_email}: {str(e)}")
+        logger.exception(f"Error updating profile for {user_email}: {str(e)}")
         db.rollback()
 
         # Redirect back to edit form with error

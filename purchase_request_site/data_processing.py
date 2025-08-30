@@ -17,7 +17,7 @@ def copy_expense_report_template(session_folder, user_info, submitted_forms):
 
     # Check if template exists
     if not os.path.exists(template_path):
-        logger.error(f"Expense report template not found: {template_path}")
+        logger.exception(f"Expense report template not found: {template_path}")
         return False
 
     try:
@@ -53,7 +53,9 @@ def copy_expense_report_template(session_folder, user_info, submitted_forms):
         try:
             populate_expense_rows_from_submitted_forms(ws, submitted_forms)
         except Exception as e:
-            logger.error(f"Failed to populate expense rows from submitted forms: {e}")
+            logger.exception(
+                f"Failed to populate expense rows from submitted forms: {e}"
+            )
 
         # Insert signature if available
         signature_filename = user_info.get("signature")
@@ -71,7 +73,7 @@ def copy_expense_report_template(session_folder, user_info, submitted_forms):
         return True
 
     except Exception as e:
-        logger.error(f"Failed to copy and populate expense report template: {e}")
+        logger.exception(f"Failed to copy and populate expense report template: {e}")
         return False
 
 
@@ -161,7 +163,7 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
         return True
 
     except Exception as e:
-        logger.error(f"Error populating expense rows: {e}")
+        logger.exception(f"Error populating expense rows: {e}")
         return False
 
 
