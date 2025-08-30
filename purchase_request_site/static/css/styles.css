@@ -801,7 +801,7 @@ h1 {
     font-family: 'Inter', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #0a0a0a;
+    background-color: #0a0a0a !important;
     background-image: radial-gradient(circle at 25% 25%, rgba(60, 60, 60, 0.1) 0%, transparent 40%), 
                       radial-gradient(circle at 75% 75%, rgba(60, 60, 60, 0.1) 0%, transparent 40%);
     line-height: 1.6;
