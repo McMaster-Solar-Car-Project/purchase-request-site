@@ -866,10 +866,6 @@ h1 {
     font-size: 0.875rem;
 }
 
-.input-container {
-    position: relative;
-}
-
 .login-form-group input {
     width: 100%;
     padding: 0.875rem;
@@ -881,6 +877,8 @@ h1 {
     box-sizing: border-box;
     color: #e4e4e7;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    display: block;
+    caret-color: #6366f1;
 }
 
 .login-form-group input:focus {

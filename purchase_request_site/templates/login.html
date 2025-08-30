@@ -27,16 +27,12 @@
         <form method="POST" action="/login">
             <div class="login-form-group">
                 <label for="email">Email</label>
-                <div class="input-container">
-                    <input type="email" id="email" name="email" required placeholder="macid@mcmaster.ca" value="{{ email or '' }}">
-                </div>
+                <input type="email" id="email" name="email" required placeholder="macid@mcmaster.ca" value="{{ email or '' }}">
             </div>
 
             <div class="login-form-group">
                 <label for="password">Password</label>
-                <div class="input-container">
-                    <input type="password" id="password" name="password" required placeholder="••••••••">
-                </div>
+                <input type="password" id="password" name="password" required placeholder="••••••••">
             </div>
 
             <button type="submit" class="login-btn">
