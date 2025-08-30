@@ -98,10 +98,10 @@ class GoogleDriveClient:
             # Authentication successful
             return True
         except ValueError as e:
-            logger.error(f"Environment variable error: {e}")
+            logger.exception(f"Environment variable error: {e}")
             return False
         except Exception as e:
-            logger.error(f"Failed to authenticate with Google Drive API: {e}")
+            logger.exception(f"Failed to authenticate with Google Drive API: {e}")
             return False
 
     def _ensure_parent_folder(self) -> str:
@@ -131,10 +131,10 @@ class GoogleDriveClient:
             return self.parent_folder_id
 
         except HttpError as e:
-            logger.error(f"HTTP error accessing parent folder: {e}")
+            logger.exception(f"HTTP error accessing parent folder: {e}")
             raise
         except Exception as e:
-            logger.error(f"Error accessing parent folder: {e}")
+            logger.exception(f"Error accessing parent folder: {e}")
             raise
 
     def _create_session_folder(self, session_name: str, parent_id: str) -> str:
@@ -164,10 +164,10 @@ class GoogleDriveClient:
             return folder_id
 
         except HttpError as e:
-            logger.error(f"HTTP error creating session folder: {e}")
+            logger.exception(f"HTTP error creating session folder: {e}")
             raise
         except Exception as e:
-            logger.error(f"Error creating session folder: {e}")
+            logger.exception(f"Error creating session folder: {e}")
             raise
 
     def _ensure_month_year_folder(self, parent_id: str) -> str:
@@ -221,10 +221,10 @@ class GoogleDriveClient:
                 return month_folder_id
 
         except HttpError as e:
-            logger.error(f"HTTP error managing month/year folder: {e}")
+            logger.exception(f"HTTP error managing month/year folder: {e}")
             raise
         except Exception as e:
-            logger.error(f"Error managing month/year folder: {e}")
+            logger.exception(f"Error managing month/year folder: {e}")
             raise
 
     def _upload_file(
@@ -245,7 +245,7 @@ class GoogleDriveClient:
         retry_delay = 1  # seconds
 
         if not self.service and not self._authenticate():
-            logger.error(f"Failed to authenticate for {file_path}")
+            logger.exception(f"Failed to authenticate for {file_path}")
             return None
 
         for attempt in range(max_retries):
@@ -287,7 +287,7 @@ class GoogleDriveClient:
                     time.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                 else:
-                    logger.error(f"All upload attempts failed for {file_path}: {e}")
+                    logger.exception(f"All upload attempts failed for {file_path}: {e}")
                     return None
 
     def create_session_folder_structure(
@@ -332,7 +332,7 @@ class GoogleDriveClient:
             return True, folder_url, session_folder_id
 
         except Exception as e:
-            logger.error(f"Error creating session folder structure: {e}")
+            logger.exception(f"Error creating session folder structure: {e}")
             return False, "", ""
 
     def upload_session_folder(
@@ -381,7 +381,7 @@ class GoogleDriveClient:
             session_path = Path(session_folder_path)
 
             if not session_path.exists():
-                logger.error(f"Session folder not found: {session_folder_path}")
+                logger.exception(f"Session folder not found: {session_folder_path}")
                 return False
 
             # Get all files to upload
@@ -404,7 +404,7 @@ class GoogleDriveClient:
                     else:
                         logger.warning(f"Failed to upload {file_path.name}")
                 except Exception as e:
-                    logger.error(f"Error uploading {file_path.name}: {e}")
+                    logger.exception(f"Error uploading {file_path.name}: {e}")
 
                 # Small delay between uploads to be nice to the API
                 time.sleep(0.5)
@@ -412,7 +412,7 @@ class GoogleDriveClient:
             return True
 
         except Exception as e:
-            logger.error(f"Error uploading session folder: {e}")
+            logger.exception(f"Error uploading session folder: {e}")
             return False
 
     def test_connection(self) -> bool:
@@ -431,10 +431,10 @@ class GoogleDriveClient:
             return True if usage < limit else False
 
         except HttpError as e:
-            logger.error(f"HTTP error testing Google Drive connection: {e}")
+            logger.exception(f"HTTP error testing Google Drive connection: {e}")
             return False
         except Exception as e:
-            logger.error(f"Error testing Google Drive connection: {e}")
+            logger.exception(f"Error testing Google Drive connection: {e}")
             return False
 
     def download_file(self, file_id: str, file_name: str) -> bytes:
@@ -464,10 +464,12 @@ class GoogleDriveClient:
             return file_content
 
         except HttpError as e:
-            logger.error(f"HTTP error downloading {file_name} from Google Drive: {e}")
+            logger.exception(
+                f"HTTP error downloading {file_name} from Google Drive: {e}"
+            )
             raise Exception(f"Failed to download {file_name}: {e}") from e
         except Exception as e:
-            logger.error(f"Error downloading {file_name} from Google Drive: {e}")
+            logger.exception(f"Error downloading {file_name} from Google Drive: {e}")
             raise
 
     def find_file_in_folder(self, folder_id: str, file_name: str) -> str:
@@ -502,10 +504,10 @@ class GoogleDriveClient:
                 return ""
 
         except HttpError as e:
-            logger.error(f"HTTP error searching for {file_name}: {e}")
+            logger.exception(f"HTTP error searching for {file_name}: {e}")
             return ""
         except Exception as e:
-            logger.error(f"Error searching for {file_name}: {e}")
+            logger.exception(f"Error searching for {file_name}: {e}")
             return ""
 
 
@@ -536,7 +538,7 @@ def create_drive_folder_and_get_url(
             logger.warning("Failed to create Google Drive folder")
             return "", ""
     except Exception as e:
-        logger.error(f"Unexpected error creating Google Drive folder: {e}")
+        logger.exception(f"Unexpected error creating Google Drive folder: {e}")
         return "", ""
 
 
@@ -568,7 +570,7 @@ def upload_session_to_drive(
             logger.warning("❌ Upload to Google Drive failed")
             return False
     except Exception as e:
-        logger.error(f"Unexpected error in upload to Google Drive: {e}")
+        logger.exception(f"Unexpected error in upload to Google Drive: {e}")
         return False
 
 
@@ -599,5 +601,5 @@ def test_google_drive_connection():
     if drive_client.test_connection():
         return True
     else:
-        logger.error("❌ Google Drive connection failed")
+        logger.exception("❌ Google Drive connection failed")
         return False

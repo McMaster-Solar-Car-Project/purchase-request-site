@@ -43,7 +43,7 @@ def convert_signature_to_png(signature_path, output_path):
         return True
 
     except Exception as e:
-        logger.error(f"Error converting signature: {e}")
+        logger.exception(f"Error converting signature: {e}")
         return False
 
 
@@ -98,7 +98,7 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
                     conversion_success = True
                     logger.debug(f"Copied {signature_type} PNG to processed location")
                 except Exception as e:
-                    logger.error(f"Could not copy signature PNG: {e}")
+                    logger.exception(f"Could not copy signature PNG: {e}")
                     conversion_success = False
             else:
                 conversion_success = True
@@ -118,7 +118,7 @@ def insert_signature_into_worksheet(ws, user_info, form, session_folder):
                 ws.add_image(img)
                 return True
             except Exception as e:
-                logger.error(
+                logger.exception(
                     f"Error inserting signature for form {form['form_number']}: {e}"
                 )
                 return False
@@ -176,7 +176,7 @@ def insert_signature_at_cell(
             )
             return True
         except Exception as e:
-            logger.error(f"Error inserting signature at {cell_location}: {e}")
+            logger.exception(f"Error inserting signature at {cell_location}: {e}")
             return False
     else:
         logger.warning(f"No signature file found for cell {cell_location}")
