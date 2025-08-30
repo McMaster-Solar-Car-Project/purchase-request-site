@@ -34,8 +34,10 @@ WORKDIR /app
 COPY purchase_request_site/ ./purchase_request_site/
 COPY run.py ./
 
-# Create required directories
-RUN mkdir -p sessions logs
+# Create required directories and ensure static files are properly set up
+RUN mkdir -p sessions logs static templates && \
+    cp -r purchase_request_site/static/* static/ || true && \
+    cp -r purchase_request_site/templates/* templates/ || true
 
 # Define build arguments for environment variables
 ARG SESSION_SECRET_KEY
