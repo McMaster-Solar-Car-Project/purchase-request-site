@@ -155,7 +155,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
 
 # Set up templates
-templates = Jinja2Templates(directory="templates")
+templates_dir = (
+    "purchase_request_site/templates"
+    if os.path.exists("purchase_request_site/templates")
+    else "templates"
+)
+templates = Jinja2Templates(directory=templates_dir)
 
 
 def is_authenticated(request: Request) -> bool:

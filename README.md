@@ -71,7 +71,15 @@ From the project root directory:
 uv run run.py
 ```
 
-Docker build instructions coming soon
+Alternatively, you can run the application using the Docker build instructions below. For Docker, you will need to access the site at the first port in the port mapping.
+```bash
+docker build -t purchase-request-site .
+docker run -p 8000:80 purchase-request-site
+
+# If you encounter errors with environment variables, you can include them in the docker run command.
+docker run -e GOOGLE_CLIENT_ID=... -e DATABASE_URL=... -p 8000:80 purchase-request-site
+
+```
 
 ### 4. Contributing to the Project
 
