@@ -25,17 +25,17 @@ jobs:
       with:
         version: latest
         
-    - name: Install dependencies
-      run: uv sync
+    - name: Install ruff
+      run: uv pip install ruff
       
     - name: Run ruff formatting check
       run: |
         echo "🔍 Checking code formatting with ruff..."
-        uv run ruff check --fix .
-        uv run ruff format --check .
+        ruff check --fix .
+        ruff format --check .
         
     - name: Run ruff linting
       run: |
         echo "🔍 Running ruff linting..."
-        uv run ruff check .
+        ruff check .
         
