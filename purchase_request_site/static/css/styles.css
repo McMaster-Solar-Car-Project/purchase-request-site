@@ -800,7 +800,7 @@ h1 {
 .login-body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     margin: 0;
-    padding: 0;
+    padding: 3rem 0;
     background-color: #0a0a0c;
     background-image: radial-gradient(circle at 50% 0%, #1a1a22 0%, #0a0a0c 70%);
     line-height: 1.6;
@@ -809,6 +809,8 @@ h1 {
     align-items: center;
     justify-content: center;
     color: #e4e4e7;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
 
 .login-container {
@@ -821,6 +823,7 @@ h1 {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 3rem auto;
 }
 
 .login-container.wide {
