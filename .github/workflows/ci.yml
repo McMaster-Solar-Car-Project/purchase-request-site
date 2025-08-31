@@ -28,14 +28,13 @@ jobs:
     - name: Install ruff
       run: uv pip install --system ruff
       
-    - name: Run ruff formatting check
+    - name: Check code formatting
       run: |
         echo "🔍 Checking code formatting with ruff..."
-        ruff check --fix .
         ruff format --check .
         
-    - name: Run ruff linting
+    - name: Check code linting
       run: |
-        echo "🔍 Running ruff linting..."
+        echo "🔍 Checking code linting with ruff..."
         ruff check .
         
