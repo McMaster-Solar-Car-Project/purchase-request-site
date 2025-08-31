@@ -6,142 +6,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
-<body class="edit-profile-body">
-    <div class="edit-profile-container">
-        <div class="edit-profile-header">
-            <a href="/dashboard?user_email={{ user.email }}&use_saved=true" class="back-link">← Back</a>
-            <h1>✏️ Edit Your Information</h1>
-            <p>Update your profile details below</p>
-        </div>
-
-        {% if user %}
-        <div class="current-info">
-            <h3 style="text-align: center;">📋 Current Information</h3>
-            <div class="current-info-grid">
-                <div class="current-info-item">
-                    <strong>Name:</strong>
-                    <span>{{ user.name or "Not set" }}</span>
-                </div>
-                <div class="current-info-item">
-                    <strong>McMaster Email:</strong>
-                    <span>{{ user.email or "Not set" }}</span>
-                </div>
-                <div class="current-info-item">
-                    <strong>E-Transfer Email:</strong>
-                    <span>{{ user.personal_email or "Not set" }}</span>
-                </div>
-                <div class="current-info-item">
-                    <strong>Team:</strong>
-                    <span>{{ user.team or "Not set" }}</span>
-                </div>
-                <div class="current-info-item">
-                    <strong>Address:</strong>
-                    <span>{{ user.address or "Not set" }}</span>
-                </div>
-                <div class="current-info-item">
-                    <strong>Signature:</strong>
-                    <span>{% if user.signature_data %}On file ✓{% else %}Not uploaded{% endif %}</span>
-                </div>
-            </div>
-
-            {% if signature_data_url %}
-            <div class="current-signature">
-                <h4>Current Signature:</h4>
-                <img src="{{ signature_data_url }}" alt="Current signature">
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <div class="edit-profile-note">
-            <strong>Note:</strong> All fields marked with <span class="required">*</span> are required.
-            Leave signature blank to keep your current signature.
+<body class="login-body">
+    <div class="login-container wide">
+        <div class="login-header">
+            <a href="/dashboard?user_email={{ user.email }}&use_saved=true" class="dark-back-link">← Back</a>
+            <h1>Edit Your Information</h1>
         </div>
 
         <form method="post" enctype="multipart/form-data">
-            <div class="edit-profile-form-group">
-                <label for="name">Full Name <span class="required">*</span></label>
+            <div class="login-form-group">
+                <label for="name">Full Name <span class="dark-required">*</span></label>
                 <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required>
             </div>
 
-            <div class="edit-profile-form-group">
-                <label for="email">McMaster Email <span class="required">*</span></label>
+            <div class="login-form-group">
+                <label for="email">McMaster Email <span class="dark-required">*</span></label>
                 <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required>
             </div>
 
-            <div class="edit-profile-form-group">
-                <label for="personal_email">Personal/E-Transfer Email <span class="required">*</span></label>
+            <div class="login-form-group">
+                <label for="personal_email">Personal/E-Transfer Email <span class="dark-required">*</span></label>
                 <input type="email" id="personal_email" name="personal_email"
                     value="{{ user.personal_email if user else '' }}" required>
             </div>
 
-            <div class="edit-profile-form-group">
-                <label for="team">Team <span class="required">*</span></label>
+            <div class="login-form-group">
+                <label for="team">Team <span class="dark-required">*</span></label>
                 <select id="team" name="team" required>
                     <option value="">Select your team</option>
-                    <option value="Aeroshell" {% if user and user.team=='Aeroshell' %}selected{% endif %}>Aeroshell
-                    </option>
+                    <option value="Aeroshell" {% if user and user.team=='Aeroshell' %}selected{% endif %}>Aeroshell</option>
                     <option value="Battery" {% if user and user.team=='Battery' %}selected{% endif %}>Battery</option>
                     <option value="Chassis" {% if user and user.team=='Chassis' %}selected{% endif %}>Chassis</option>
-                    <option value="Data Acquisition" {% if user and user.team=='Data Acquisition' %}selected{% endif %}>
-                        Data Acquisition</option>
-                    <option value="Firmware" {% if user and user.team=='Firmware' %}selected{% endif %}>Firmware
-                    </option>
-                    <option value="Management" {% if user and user.team=='Management' %}selected{% endif %}>Management
-                    </option>
+                    <option value="Data Acquisition" {% if user and user.team=='Data Acquisition' %}selected{% endif %}>Data Acquisition</option>
+                    <option value="Firmware" {% if user and user.team=='Firmware' %}selected{% endif %}>Firmware</option>
+                    <option value="Management" {% if user and user.team=='Management' %}selected{% endif %}>Management</option>
                     <option value="Media" {% if user and user.team=='Media' %}selected{% endif %}>Media</option>
-                    <option value="Power Management Systems" {% if user and user.team=='Power Management Systems'
-                        %}selected{% endif %}>Power Management Systems</option>
-                    <option value="Solar Cells" {% if user and user.team=='Solar Cells' %}selected{% endif %}>Solar
-                        Cells</option>
-                    <option value="Strategies" {% if user and user.team=='Strategies' %}selected{% endif %}>Strategies
-                    </option>
-                    <option value="Suspension" {% if user and user.team=='Suspension' %}selected{% endif %}>Suspension
-                    </option>
+                    <option value="Power Management Systems" {% if user and user.team=='Power Management Systems' %}selected{% endif %}>Power Management Systems</option>
+                    <option value="Solar Cells" {% if user and user.team=='Solar Cells' %}selected{% endif %}>Solar Cells</option>
+                    <option value="Strategies" {% if user and user.team=='Strategies' %}selected{% endif %}>Strategies</option>
+                    <option value="Suspension" {% if user and user.team=='Suspension' %}selected{% endif %}>Suspension</option>
                 </select>
             </div>
 
-            <div class="edit-profile-form-group">
-                <label for="address">Address <span class="required">*</span></label>
-                <textarea id="address" name="address" placeholder="Start typing your address..."
-                    required>{{ user.address if user else '' }}</textarea>
-                <small class="address-help" style="color: #666;">Start typing and select from suggestions for accurate
-                    address</small>
+            <div class="login-form-group">
+                <label for="address">Address <span class="dark-required">*</span></label>
+                <textarea id="address" name="address" placeholder="Start typing your address..." required>{{ user.address if user else '' }}</textarea>
+                <small class="address-help">Start typing and select from suggestions for accurate address</small>
             </div>
 
-            <div class="edit-profile-form-group">
-                <label for="signature">Digital Signature {% if not user or not user.signature_data %}<span
-                        class="required">*</span>{% endif %}</label>
-                <div class="file-input-wrapper">
-                    <div class="file-input">
+            <div class="login-form-group">
+                <label for="signature">Digital Signature <span class="dark-required">*</span></label>
+                <div class="dark-file-input-wrapper">
+                    <div class="dark-file-input">
                         <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg"
                             onchange="updateFileName(this, 'signature-name')">
                         <span>Click to upload signature image (PNG, JPG, JPEG)</span>
                     </div>
-                    <div id="signature-name" class="file-name"></div>
+                    <div id="signature-name" class="dark-file-name"></div>
                 </div>
                 {% if user and user.signature_data %}
-                <small style="color: #666;">Leave blank to keep your current signature</small>
+                <div class="signature-info">
+                    <small>Leave blank to keep your current signature</small>
+                    <a href="{{ signature_data_url }}" target="_blank" rel="noopener noreferrer" class="preview-signature-btn">View Current</a>
+                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // No need for toggle functionality now
+                    });
+                </script>
                 {% endif %}
             </div>
 
             <!-- Password Change Section -->
-            <div class="password-change-section">
+            <div class="dark-password-section">
                 <h3>Change Password</h3>
-                <div class="password-change-note">
-                    <strong>Optional:</strong> Leave password fields blank to keep your current password.
-                </div>
 
-                <div class="password-field-group">
+                <div class="login-form-group">
                     <label for="current_password">Current Password</label>
                     <input type="password" id="current_password" name="current_password"
                         placeholder="Enter your current password">
                     <small>Required only if changing password</small>
                 </div>
 
-                <div class="password-field-group">
+                <div class="login-form-group">
                     <label for="new_password">New Password</label>
                     <input type="password" id="new_password" name="new_password" placeholder="Enter new password"
                         minlength="5" oninput="checkPasswordStrength()">
@@ -151,14 +103,14 @@
                     </div>
                 </div>
 
-                <div class="password-field-group">
+                <div class="login-form-group">
                     <label for="confirm_password">Confirm New Password</label>
                     <input type="password" id="confirm_password" name="confirm_password"
                         placeholder="Confirm new password" oninput="checkPasswordMatch()">
                     <small id="password-match-message">Must match new password</small>
                 </div>
 
-                <div class="password-requirements">
+                <div class="dark-password-requirements">
                     <h4>Password Requirements:</h4>
                     <ul>
                         <li>At least 5 characters long</li>
@@ -168,7 +120,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="submit-btn">💾 Update Information</button>
+            <button type="submit" class="login-btn">Update Information</button>
         </form>
     </div>
 
@@ -234,7 +186,7 @@
             const helpText = document.querySelector('.address-help');
             if (helpText) {
                 helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
-                helpText.style.color = '#dc3545';
+                helpText.style.color = '#ef4444';
             }
         }
 
@@ -256,7 +208,7 @@
             const helpText = document.querySelector('.address-help');
             if (helpText) {
                 helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
-                helpText.style.color = '#dc3545';
+                helpText.style.color = '#ef4444';
             }
         });
     </script>

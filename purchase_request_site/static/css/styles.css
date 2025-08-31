@@ -800,7 +800,7 @@ h1 {
 .login-body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     margin: 0;
-    padding: 0;
+    padding: 3rem 0;
     background-color: #0a0a0c;
     background-image: radial-gradient(circle at 50% 0%, #1a1a22 0%, #0a0a0c 70%);
     line-height: 1.6;
@@ -809,6 +809,8 @@ h1 {
     align-items: center;
     justify-content: center;
     color: #e4e4e7;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
 
 .login-container {
@@ -821,11 +823,17 @@ h1 {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 3rem auto;
+}
+
+.login-container.wide {
+    max-width: 800px;
 }
 
 .login-header {
     text-align: center;
     margin-bottom: 2.5rem;
+    position: relative;
 }
 
 .login-header h1 {
@@ -891,6 +899,40 @@ h1 {
     color: #71717a;
 }
 
+.login-form-group small {
+    color: #a1a1aa;
+    font-size: 0.875rem;
+    margin-top: 5px;
+    font-style: italic;
+    display: block;
+}
+
+.login-form-group select,
+.login-form-group textarea {
+    width: 100%;
+    padding: 0.875rem;
+    background-color: rgba(39, 39, 42, 0.7);
+    border: 1px solid rgba(63, 63, 70, 0.5);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    color: #e4e4e7;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.login-form-group textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.login-form-group select:focus,
+.login-form-group textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
 .login-btn {
     width: 100%;
     padding: 0.875rem;
@@ -921,63 +963,12 @@ h1 {
     font-size: 0.875rem;
 }
 
-/* Responsive adjustments */
-@media (max-width: 480px) {
-    .login-container {
-        padding: 2rem 1.5rem;
-    }
-    
-    .login-options {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-}
-
-/* =================================================================
-   EDIT PROFILE STYLES
-   ================================================================= */
-
-.edit-profile-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    margin: 0;
-    padding: 20px;
-    min-height: 100vh;
-}
-
-.edit-profile-container {
-    max-width: 800px;
-    margin: 0 auto;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    padding: 2rem;
-    position: relative;
-}
-
-.edit-profile-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    position: relative;
-}
-
-.edit-profile-header h1 {
-    color: #333;
-    margin-bottom: 0.5rem;
-    font-size: 2rem;
-}
-
-.edit-profile-header p {
-    color: #666;
-    margin-bottom: 1.5rem;
-}
-
-.back-link {
+/* Back link in dark theme */
+.dark-back-link {
     position: absolute;
-    top: 0;
-    left: 0;
-    background: #6c757d;
+    top: 20px;
+    left: 20px;
+    background: rgba(108, 117, 125, 0.8);
     color: white;
     text-decoration: none;
     padding: 0.5rem 1rem;
@@ -985,110 +976,53 @@ h1 {
     transition: all 0.3s ease;
 }
 
-.back-link:hover {
-    background: #545b62;
-    text-decoration: none;
+.dark-back-link:hover {
+    background: rgba(108, 117, 125, 1);
     color: white;
 }
 
-.current-info {
-    background: #e3f2fd;
-    border: 1px solid #2196f3;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.current-info h3 {
-    color: #1976d2;
-    margin-bottom: 1rem;
-}
-
-.current-info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-}
-
-.current-info-item {
-    background: white;
-    padding: 0.75rem;
-    border-radius: 4px;
-    border-left: 3px solid #2196f3;
-}
-
-.current-info-item strong {
-    color: #333;
-    display: block;
-    margin-bottom: 0.25rem;
-}
-
-.current-info-item span {
-    color: #666;
-    font-size: 0.9rem;
-}
-
-.edit-profile-form-group {
+/* Note styling */
+.dark-note {
+    background: rgba(255, 243, 205, 0.1);
+    border: 1px solid rgba(255, 234, 167, 0.3);
+    color: #ffd166;
+    padding: 1rem;
+    border-radius: 6px;
     margin-bottom: 1.5rem;
 }
 
-.edit-profile-form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
-    color: #333;
+.dark-note strong {
+    font-weight: 600;
 }
 
-.edit-profile-form-group input[type="text"], 
-.edit-profile-form-group input[type="email"], 
-.edit-profile-form-group select, 
-.edit-profile-form-group textarea {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    box-sizing: border-box;
-    font-size: 16px;
-    transition: border-color 0.3s ease;
+/* Required field indicator */
+.dark-required {
+    color: #ef4444;
 }
 
-.edit-profile-form-group input[type="text"]:focus, 
-.edit-profile-form-group input[type="email"]:focus, 
-.edit-profile-form-group select:focus, 
-.edit-profile-form-group textarea:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.edit-profile-form-group textarea {
-    min-height: 80px;
-    resize: vertical;
-}
-
-.file-input-wrapper {
+/* File input styling */
+.dark-file-input-wrapper {
     position: relative;
     display: inline-block;
     width: 100%;
 }
 
-.file-input {
+.dark-file-input {
     width: 100%;
     padding: 12px;
-    border: 2px dashed #ddd;
+    border: 2px dashed rgba(63, 63, 70, 0.5);
     border-radius: 8px;
     text-align: center;
-    background: #f8f9fa;
+    background: rgba(39, 39, 42, 0.7);
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.file-input:hover {
-    border-color: #667eea;
-    background: #f0f2ff;
+.dark-file-input:hover {
+    border-color: #6366f1;
 }
 
-.file-input input[type="file"] {
+.dark-file-input input[type="file"] {
     position: absolute;
     top: 0;
     left: 0;
@@ -1098,75 +1032,71 @@ h1 {
     cursor: pointer;
 }
 
-.file-name {
+.dark-file-input span {
+    color: #a1a1aa;
+}
+
+.dark-file-name {
     margin-top: 0.5rem;
     font-size: 0.9rem;
-    color: #666;
+    color: #a1a1aa;
 }
 
-.current-signature {
-    margin-top: 1rem;
-    text-align: center;
+/* Help text styling */
+.address-help {
+    color: #a1a1aa;
+    font-size: 0.875rem;
+    margin-top: 5px;
+    font-style: italic;
+    display: block;
 }
 
-.current-signature img {
-    max-width: 200px;
-    max-height: 100px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
-    padding: 0.5rem;
+/* Signature preview section */
+.signature-info {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
 }
 
-.submit-btn {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+.signature-info small {
+    color: #a1a1aa;
+    font-size: 0.875rem;
+    font-style: italic;
+    display: block;
+    margin-right: 10px;
+}
+
+.preview-signature-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     color: white;
-    padding: 15px 40px;
     border: none;
-    border-radius: 8px;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    width: 100%;
-    transition: all 0.3s ease;
-    margin-top: 1rem;
-}
-
-.submit-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-}
-
-.submit-btn:active {
-    transform: translateY(0);
-}
-
-.edit-profile-note {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-    padding: 1rem;
     border-radius: 6px;
-    margin-bottom: 1.5rem;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
 }
 
-.required {
-    color: #dc3545;
+.preview-signature-btn:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
-/* Password Change Section Styles */
-.password-change-section {
-    border-top: 2px solid #e9ecef;
+/* Password section styling */
+.dark-password-section {
+    border-top: 2px solid rgba(63, 63, 70, 0.5);
     margin: 2rem 0;
     padding-top: 2rem;
-    background: #f8f9fa;
+    background: rgba(39, 39, 42, 0.5);
     border-radius: 8px;
     padding: 1.5rem;
-    border: 1px solid #dee2e6;
+    border: 1px solid rgba(63, 63, 70, 0.5);
 }
 
-.password-change-section h3 {
-    color: #495057;
+.dark-password-section h3 {
+    color: #e4e4e7;
     margin-bottom: 1rem;
     font-size: 1.2rem;
     display: flex;
@@ -1174,90 +1104,11 @@ h1 {
     gap: 0.5rem;
 }
 
-.password-change-section h3::before {
-    content: "🔒";
-    font-size: 1.1rem;
-}
 
-.password-change-note {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-    padding: 0.75rem;
-    border-radius: 6px;
-    margin-bottom: 1.5rem;
-    font-size: 0.9rem;
-}
-
-.password-field-group {
-    position: relative;
-    margin-bottom: 1.5rem;
-}
-
-.password-field-group input[type="password"] {
-    width: 100%;
-    padding: 12px 16px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    box-sizing: border-box;
-    font-size: 16px;
-    transition: all 0.3s ease;
-    background: white;
-}
-
-.password-field-group input[type="password"]:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    background: #fafbff;
-}
-
-.password-field-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #495057;
-    font-size: 0.95rem;
-}
-
-.password-field-group small {
-    color: #6c757d;
-    font-size: 0.85rem;
-    margin-top: 0.25rem;
-    display: block;
-    font-style: italic;
-}
-
-.password-requirements {
-    background: #e3f2fd;
-    border: 1px solid #bbdefb;
-    border-radius: 6px;
-    padding: 0.75rem;
-    margin-top: 1rem;
-    font-size: 0.85rem;
-}
-
-.password-requirements h4 {
-    margin: 0 0 0.5rem 0;
-    color: #1976d2;
-    font-size: 0.9rem;
-}
-
-.password-requirements ul {
-    margin: 0;
-    padding-left: 1.2rem;
-    color: #1565c0;
-}
-
-.password-requirements li {
-    margin-bottom: 0.25rem;
-}
-
-/* Password strength indicator */
 .password-strength {
     margin-top: 0.5rem;
     height: 4px;
-    background: #e9ecef;
+    background: rgba(63, 63, 70, 0.5);
     border-radius: 2px;
     overflow: hidden;
 }
@@ -1282,6 +1133,31 @@ h1 {
 .password-strength-strong .password-strength-bar {
     width: 100%;
     background: #28a745;
+}
+
+.dark-password-requirements {
+    background: rgba(227, 242, 253, 0.1);
+    border: 1px solid rgba(187, 222, 251, 0.3);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+}
+
+.dark-password-requirements h4 {
+    margin: 0 0 0.5rem 0;
+    color: #a1a1aa;
+    font-size: 0.9rem;
+}
+
+.dark-password-requirements ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: #a1a1aa;
+}
+
+.dark-password-requirements li {
+    margin-bottom: 0.25rem;
 }
 
 /* Google Places Autocomplete styling for edit profile */
