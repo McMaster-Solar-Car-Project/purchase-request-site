@@ -24,9 +24,12 @@ jobs:
       uses: astral-sh/setup-uv@v3
       with:
         version: latest
-        
+    
+    - name: Create virtual environment
+      run: uv venv --python 3.11
+    
     - name: Install ruff
-      run: uv pip install ruff
+      run: uv add ruff
       
     - name: Run ruff formatting check
       run: |
