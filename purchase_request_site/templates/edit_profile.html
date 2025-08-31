@@ -6,169 +6,139 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
-<body class="edit-profile-body">
-    <div class="edit-profile-container">
-        <div class="edit-profile-header">
-            <a href="/dashboard?user_email={{ user.email }}&use_saved=true" class="back-link">← Back</a>
-            <h1>✏️ Edit Your Information</h1>
-            <p>Update your profile details below</p>
-        </div>
-
-        {% if user %}
-        <div class="current-info">
-            <h3 style="text-align: center;">📋 Current Information</h3>
-            <div class="current-info-grid">
-                <div class="current-info-item">
-                    <strong>Name:</strong>
-                    <span>{{ user.name or "Not set" }}</span>
-                </div>
-                <div class="current-info-item">
-                    <strong>McMaster Email:</strong>
-                    <span>{{ user.email or "Not set" }}</span>
-                </div>
-                <div class="current-info-item">
-                    <strong>E-Transfer Email:</strong>
-                    <span>{{ user.personal_email or "Not set" }}</span>
-                </div>
-                <div class="current-info-item">
-                    <strong>Team:</strong>
-                    <span>{{ user.team or "Not set" }}</span>
-                </div>
-                <div class="current-info-item">
-                    <strong>Address:</strong>
-                    <span>{{ user.address or "Not set" }}</span>
-                </div>
-                <div class="current-info-item">
-                    <strong>Signature:</strong>
-                    <span>{% if user.signature_data %}On file ✓{% else %}Not uploaded{% endif %}</span>
-                </div>
-            </div>
-
-            {% if signature_data_url %}
-            <div class="current-signature">
-                <h4>Current Signature:</h4>
-                <img src="{{ signature_data_url }}" alt="Current signature">
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <div class="edit-profile-note">
-            <strong>Note:</strong> All fields marked with <span class="required">*</span> are required.
-            Leave signature blank to keep your current signature.
+<body class="login-body">
+    <div class="login-container" style="max-width: 800px;">
+        <div class="login-header">
+            <a href="/dashboard?user_email={{ user.email }}&use_saved=true" class="back-link" style="position: absolute; top: 20px; left: 20px; background: rgba(108, 117, 125, 0.8); color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; transition: all 0.3s ease;">← Back</a>
+            <h1>Edit Your Information</h1>
         </div>
 
         <form method="post" enctype="multipart/form-data">
-            <div class="edit-profile-form-group">
-                <label for="name">Full Name <span class="required">*</span></label>
+            <div class="login-form-group">
+                <label for="name">Full Name <span class="required" style="color: #ef4444;">*</span></label>
                 <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required>
             </div>
 
-            <div class="edit-profile-form-group">
-                <label for="email">McMaster Email <span class="required">*</span></label>
+            <div class="login-form-group">
+                <label for="email">McMaster Email <span class="required" style="color: #ef4444;">*</span></label>
                 <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required>
             </div>
 
-            <div class="edit-profile-form-group">
-                <label for="personal_email">Personal/E-Transfer Email <span class="required">*</span></label>
+            <div class="login-form-group">
+                <label for="personal_email">Personal/E-Transfer Email <span class="required" style="color: #ef4444;">*</span></label>
                 <input type="email" id="personal_email" name="personal_email"
                     value="{{ user.personal_email if user else '' }}" required>
             </div>
 
-            <div class="edit-profile-form-group">
-                <label for="team">Team <span class="required">*</span></label>
-                <select id="team" name="team" required>
+            <div class="login-form-group">
+                <label for="team">Team <span class="required" style="color: #ef4444;">*</span></label>
+                <select id="team" name="team" required style="width: 100%; padding: 0.875rem; background-color: rgba(39, 39, 42, 0.7); border: 1px solid rgba(63, 63, 70, 0.5); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s ease; box-sizing: border-box; color: #e4e4e7; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
                     <option value="">Select your team</option>
-                    <option value="Aeroshell" {% if user and user.team=='Aeroshell' %}selected{% endif %}>Aeroshell
-                    </option>
+                    <option value="Aeroshell" {% if user and user.team=='Aeroshell' %}selected{% endif %}>Aeroshell</option>
                     <option value="Battery" {% if user and user.team=='Battery' %}selected{% endif %}>Battery</option>
                     <option value="Chassis" {% if user and user.team=='Chassis' %}selected{% endif %}>Chassis</option>
-                    <option value="Data Acquisition" {% if user and user.team=='Data Acquisition' %}selected{% endif %}>
-                        Data Acquisition</option>
-                    <option value="Firmware" {% if user and user.team=='Firmware' %}selected{% endif %}>Firmware
-                    </option>
-                    <option value="Management" {% if user and user.team=='Management' %}selected{% endif %}>Management
-                    </option>
+                    <option value="Data Acquisition" {% if user and user.team=='Data Acquisition' %}selected{% endif %}>Data Acquisition</option>
+                    <option value="Firmware" {% if user and user.team=='Firmware' %}selected{% endif %}>Firmware</option>
+                    <option value="Management" {% if user and user.team=='Management' %}selected{% endif %}>Management</option>
                     <option value="Media" {% if user and user.team=='Media' %}selected{% endif %}>Media</option>
-                    <option value="Power Management Systems" {% if user and user.team=='Power Management Systems'
-                        %}selected{% endif %}>Power Management Systems</option>
-                    <option value="Solar Cells" {% if user and user.team=='Solar Cells' %}selected{% endif %}>Solar
-                        Cells</option>
-                    <option value="Strategies" {% if user and user.team=='Strategies' %}selected{% endif %}>Strategies
-                    </option>
-                    <option value="Suspension" {% if user and user.team=='Suspension' %}selected{% endif %}>Suspension
-                    </option>
+                    <option value="Power Management Systems" {% if user and user.team=='Power Management Systems' %}selected{% endif %}>Power Management Systems</option>
+                    <option value="Solar Cells" {% if user and user.team=='Solar Cells' %}selected{% endif %}>Solar Cells</option>
+                    <option value="Strategies" {% if user and user.team=='Strategies' %}selected{% endif %}>Strategies</option>
+                    <option value="Suspension" {% if user and user.team=='Suspension' %}selected{% endif %}>Suspension</option>
                 </select>
             </div>
 
-            <div class="edit-profile-form-group">
-                <label for="address">Address <span class="required">*</span></label>
-                <textarea id="address" name="address" placeholder="Start typing your address..."
-                    required>{{ user.address if user else '' }}</textarea>
-                <small class="address-help" style="color: #666;">Start typing and select from suggestions for accurate
-                    address</small>
+            <div class="login-form-group">
+                <label for="address">Address <span class="required" style="color: #ef4444;">*</span></label>
+                <textarea id="address" name="address" placeholder="Start typing your address..." required
+                    style="width: 100%; padding: 0.875rem; background-color: rgba(39, 39, 42, 0.7); border: 1px solid rgba(63, 63, 70, 0.5); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s ease; box-sizing: border-box; color: #e4e4e7; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 80px; resize: vertical;">{{ user.address if user else '' }}</textarea>
+                <small class="address-help" style="color: #a1a1aa; font-size: 0.875rem; margin-top: 5px; font-style: italic; display: block;">Start typing and select from suggestions for accurate address</small>
             </div>
 
-            <div class="edit-profile-form-group">
-                <label for="signature">Digital Signature {% if not user or not user.signature_data %}<span
-                        class="required">*</span>{% endif %}</label>
-                <div class="file-input-wrapper">
-                    <div class="file-input">
+            <div class="login-form-group">
+                <label for="signature">Digital Signature <span class="required" style="color: #ef4444;">*</span></label>
+                <div class="file-input-wrapper" style="position: relative; display: inline-block; width: 100%;">
+                    <div class="file-input" style="width: 100%; padding: 12px; border: 2px dashed rgba(63, 63, 70, 0.5); border-radius: 8px; text-align: center; background: rgba(39, 39, 42, 0.7); cursor: pointer; transition: all 0.3s ease;">
                         <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg"
-                            onchange="updateFileName(this, 'signature-name')">
-                        <span>Click to upload signature image (PNG, JPG, JPEG)</span>
+                            onchange="updateFileName(this, 'signature-name')" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                        <span style="color: #a1a1aa;">Click to upload signature image (PNG, JPG, JPEG)</span>
                     </div>
-                    <div id="signature-name" class="file-name"></div>
+                    <div id="signature-name" class="file-name" style="margin-top: 0.5rem; font-size: 0.9rem; color: #a1a1aa;"></div>
                 </div>
                 {% if user and user.signature_data %}
-                <small style="color: #666;">Leave blank to keep your current signature</small>
+                <div style="display: flex; align-items: center; margin-top: 10px;">
+                    <small style="color: #a1a1aa; font-size: 0.875rem; font-style: italic; display: block; margin-right: 10px;">Leave blank to keep your current signature</small>
+                    <button type="button" id="preview-signature-btn" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease;">Preview Current</button>
+                </div>
+                <div id="signature-preview" style="display: none; margin-top: 10px; text-align: center; background: rgba(39, 39, 42, 0.7); border-radius: 8px; padding: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    <img src="{{ signature_data_url }}" alt="Current signature" style="max-width: 200px; max-height: 100px;">
+                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const previewBtn = document.getElementById('preview-signature-btn');
+                        const previewDiv = document.getElementById('signature-preview');
+                        
+                        previewBtn.addEventListener('click', function() {
+                            if (previewDiv.style.display === 'none') {
+                                previewDiv.style.display = 'block';
+                                previewBtn.textContent = 'Hide Preview';
+                            } else {
+                                previewDiv.style.display = 'none';
+                                previewBtn.textContent = 'Preview Current';
+                            }
+                        });
+                    });
+                </script>
                 {% endif %}
             </div>
 
             <!-- Password Change Section -->
-            <div class="password-change-section">
-                <h3>Change Password</h3>
-                <div class="password-change-note">
+            <div class="password-change-section" style="border-top: 2px solid rgba(63, 63, 70, 0.5); margin: 2rem 0; padding-top: 2rem; background: rgba(39, 39, 42, 0.5); border-radius: 8px; padding: 1.5rem; border: 1px solid rgba(63, 63, 70, 0.5);">
+                <h3 style="color: #e4e4e7; margin-bottom: 1rem; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">Change Password</h3>
+                <div class="password-change-note" style="background: rgba(255, 243, 205, 0.1); border: 1px solid rgba(255, 234, 167, 0.3); color: #ffd166; padding: 0.75rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.9rem;">
                     <strong>Optional:</strong> Leave password fields blank to keep your current password.
                 </div>
 
-                <div class="password-field-group">
+                <div class="login-form-group">
                     <label for="current_password">Current Password</label>
                     <input type="password" id="current_password" name="current_password"
                         placeholder="Enter your current password">
-                    <small>Required only if changing password</small>
+                    <small style="color: #a1a1aa; font-size: 0.875rem; margin-top: 5px; font-style: italic; display: block;">Required only if changing password</small>
                 </div>
 
-                <div class="password-field-group">
+                <div class="login-form-group">
                     <label for="new_password">New Password</label>
                     <input type="password" id="new_password" name="new_password" placeholder="Enter new password"
                         minlength="5" oninput="checkPasswordStrength()">
-                    <small>Minimum 5 characters</small>
-                    <div class="password-strength" id="password-strength">
-                        <div class="password-strength-bar"></div>
+                    <small style="color: #a1a1aa; font-size: 0.875rem; margin-top: 5px; font-style: italic; display: block;">Minimum 5 characters</small>
+                    <div class="password-strength" id="password-strength" style="margin-top: 0.5rem; height: 4px; background: rgba(63, 63, 70, 0.5); border-radius: 2px; overflow: hidden;">
+                        <div class="password-strength-bar" style="height: 100%; width: 0%; transition: all 0.3s ease; border-radius: 2px;"></div>
                     </div>
                 </div>
 
-                <div class="password-field-group">
+                <div class="login-form-group">
                     <label for="confirm_password">Confirm New Password</label>
                     <input type="password" id="confirm_password" name="confirm_password"
                         placeholder="Confirm new password" oninput="checkPasswordMatch()">
-                    <small id="password-match-message">Must match new password</small>
+                    <small id="password-match-message" style="color: #a1a1aa; font-size: 0.875rem; margin-top: 5px; font-style: italic; display: block;">Must match new password</small>
                 </div>
 
-                <div class="password-requirements">
-                    <h4>Password Requirements:</h4>
-                    <ul>
-                        <li>At least 5 characters long</li>
-                        <li>Mix of letters and numbers recommended</li>
-                        <li>Avoid using personal information</li>
+                <div class="password-requirements" style="background: rgba(227, 242, 253, 0.1); border: 1px solid rgba(187, 222, 251, 0.3); border-radius: 6px; padding: 0.75rem; margin-top: 1rem; font-size: 0.85rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: #a1a1aa; font-size: 0.9rem;">Password Requirements:</h4>
+                    <ul style="margin: 0; padding-left: 1.2rem; color: #a1a1aa;">
+                        <li style="margin-bottom: 0.25rem;">At least 5 characters long</li>
+                        <li style="margin-bottom: 0.25rem;">Mix of letters and numbers recommended</li>
+                        <li style="margin-bottom: 0.25rem;">Avoid using personal information</li>
                     </ul>
                 </div>
             </div>
 
-            <button type="submit" class="submit-btn">💾 Update Information</button>
+            <button type="submit" class="login-btn">Update Information</button>
         </form>
     </div>
 
@@ -234,7 +204,7 @@
             const helpText = document.querySelector('.address-help');
             if (helpText) {
                 helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
-                helpText.style.color = '#dc3545';
+                helpText.style.color = '#ef4444';
             }
         }
 
@@ -256,7 +226,7 @@
             const helpText = document.querySelector('.address-help');
             if (helpText) {
                 helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
-                helpText.style.color = '#dc3545';
+                helpText.style.color = '#ef4444';
             }
         });
     </script>
