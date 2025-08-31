@@ -25,11 +25,8 @@ jobs:
       with:
         version: latest
     
-    - name: Create virtual environment
-      run: uv venv --python 3.11
-    
     - name: Install ruff
-      run: uv add ruff
+      run: uv pip install --system ruff
       
     - name: Run ruff formatting check
       run: |
