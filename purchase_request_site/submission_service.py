@@ -1,20 +1,19 @@
 """
 Submission service module for uploading session data to Supabase storage.
 
-This module handles uploading session folders (Excel files, invoices, signatures) 
+This module handles uploading session folders (Excel files, invoices, signatures)
 to Supabase storage buckets.
 """
 
 import mimetypes
 import os
-import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from dotenv import load_dotenv
-from supabase import create_client, Client
 from logging_utils import setup_logger
+from supabase import Client, create_client
 
 # Load environment variables from .env file (check parent directory too)
 load_dotenv()  # Current directory
@@ -33,7 +32,7 @@ class SupabaseSubmissionClient:
 
     def __init__(self):
         """Initialize the Supabase client using environment variables"""
-        self.client: Optional[Client] = None
+        self.client: Client | None = None
         self.bucket_name = "purchase_request_submissions"
 
     def _initialize_client(self) -> bool:
@@ -55,25 +54,6 @@ class SupabaseSubmissionClient:
             logger.exception(f"Failed to initialize Supabase client: {e}")
             return False
 
-    def test_connection(self) -> bool:
-        """
-        Test the Supabase connection
-
-        Returns:
-            bool: True if connection is successful, False otherwise
-        """
-        try:
-            if not self.client:
-                if not self._initialize_client():
-                    return False
-
-            # Test connection by trying to list buckets
-            response = self.client.storage.list_buckets()
-            logger.info("✅ Supabase connection test successful")
-            return True
-        except Exception as e:
-            logger.exception(f"Supabase connection test failed: {e}")
-            return False
 
     def upload_session_folder(
         self, session_folder_path: str, user_info: dict[str, Any]
@@ -89,9 +69,8 @@ class SupabaseSubmissionClient:
             bool: True if upload was successful, False otherwise
         """
         try:
-            if not self.client:
-                if not self._initialize_client():
-                    return False
+            if not self.client and not self._initialize_client():
+                return False
 
             session_path = Path(session_folder_path)
             if not session_path.exists():
@@ -162,7 +141,7 @@ class SupabaseSubmissionClient:
                 content_type = "application/octet-stream"
 
             # Upload to Supabase storage
-            response = self.client.storage.from_(self.bucket_name).upload(
+            self.client.storage.from_(self.bucket_name).upload(
                 path=storage_path,
                 file=file_content,
                 file_options={"content-type": content_type}
@@ -188,9 +167,8 @@ class SupabaseSubmissionClient:
             bool: True if download was successful, False otherwise
         """
         try:
-            if not self.client:
-                if not self._initialize_client():
-                    return False
+            if not self.client and not self._initialize_client():
+                return False
 
             # Download file content
             response = self.client.storage.from_(self.bucket_name).download(storage_path)
@@ -227,8 +205,7 @@ class SupabaseSubmissionClient:
             list[str]: List of file paths in the session folder
         """
         try:
-            if not self.client:
-                if not self._initialize_client():
+            if not self.client and not self._initialize_client():
                     return []
 
             folder_path = f"{year}/{month}/{day}/{session_id}"
@@ -313,16 +290,3 @@ def list_session_files_from_supabase(
     """
     return submission_client.list_session_files(year, month, day, session_id)
 
-
-def test_supabase_connection():
-    """Test function to verify Supabase integration"""
-    if submission_client.test_connection():
-        return True
-    else:
-        logger.exception("❌ Supabase connection failed")
-        return False
-
-
-if __name__ == "__main__":
-    # Test the connection
-    test_supabase_connection()

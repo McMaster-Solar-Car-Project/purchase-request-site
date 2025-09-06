@@ -26,12 +26,12 @@ from google_drive import (
     download_file_from_drive,
     upload_session_to_drive,
 )
-from submission_service import upload_session_to_supabase
 from google_sheets import sheets_client
 from logging_utils import setup_logger
 from request_logging import RequestLoggingMiddleware
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
+from submission_service import upload_session_to_supabase
 from user_service import (
     get_user_by_email,
     get_user_signature_as_data_url,
