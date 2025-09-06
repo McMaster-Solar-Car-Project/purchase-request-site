@@ -115,7 +115,7 @@ class SupabaseSubmissionClient:
                 )
                 return False
 
-        except Exception as e:
+        except Exception:
             relative_path = file_path.relative_to(session_path)
             relative_posix = relative_path.as_posix()
             storage_path = f"{supabase_folder_path}/{relative_posix}"

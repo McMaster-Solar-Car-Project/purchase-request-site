@@ -562,7 +562,7 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             logger.exception("Failed to start Supabase upload (continuing anyway)")
 
         # Clean up session folder if at least one upload was successful
-        if drive_upload_success or supabase_upload_success:
+        if drive_upload_success and supabase_upload_success:
             try:
                 shutil.rmtree(session_folder)
                 logger.info(f"🗑️ Cleaned up session folder: {session_folder}")
