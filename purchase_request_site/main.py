@@ -26,6 +26,7 @@ from google_drive import (
     download_file_from_drive,
     upload_session_to_drive,
 )
+from submission_service import upload_session_to_supabase
 from google_sheets import sheets_client
 from logging_utils import setup_logger
 from request_logging import RequestLoggingMiddleware
@@ -543,16 +544,25 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             logger.exception("Failed to log to Google Sheets (continuing anyway)")
 
         # Upload files to Google Drive (in background)
-        upload_success = False
+        drive_upload_success = False
         try:
-            upload_success = upload_session_to_drive(
+            drive_upload_success = upload_session_to_drive(
                 session_folder, user_info, drive_folder_id
             )
         except Exception:
             logger.exception("Failed to start Google Drive upload (continuing anyway)")
 
-        # Clean up session folder if upload was successful
-        if upload_success:
+        # Upload files to Supabase (in background)
+        supabase_upload_success = False
+        try:
+            supabase_upload_success = upload_session_to_supabase(
+                session_folder, user_info
+            )
+        except Exception:
+            logger.exception("Failed to start Supabase upload (continuing anyway)")
+
+        # Clean up session folder if at least one upload was successful
+        if drive_upload_success or supabase_upload_success:
             try:
                 shutil.rmtree(session_folder)
                 logger.info(f"🗑️ Cleaned up session folder: {session_folder}")

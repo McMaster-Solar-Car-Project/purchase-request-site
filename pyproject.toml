@@ -20,6 +20,7 @@ dependencies = [
     "sqlalchemy>=2.0.41",
     "psycopg2-binary>=2.9.0",
     "ruff>=0.1.0",
+    "supabase>=2.18.1",
 ]
 
 [tool.ruff]
