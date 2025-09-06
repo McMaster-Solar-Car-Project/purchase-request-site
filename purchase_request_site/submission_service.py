@@ -202,9 +202,8 @@ class SupabaseSubmissionClient:
             list[str]: List of file paths in the session folder
         """
         try:
-            if not self.client:
-                if not self._initialize_client():
-                    return []
+            if not self.client and not self._initialize_client():
+                return []
 
             folder_path = f"{month_year}/{session_id}"
             response = self.client.storage.from_(self.bucket_name).list(folder_path)

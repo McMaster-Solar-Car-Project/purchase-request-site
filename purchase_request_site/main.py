@@ -547,7 +547,7 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
         # Upload files to both Google Drive and Supabase concurrently
         drive_upload_success = False
         supabase_upload_success = False
-        
+
         def upload_to_drive():
             """Upload to Google Drive and return success status"""
             try:
@@ -555,7 +555,7 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             except Exception:
                 logger.exception("Failed to start Google Drive upload (continuing anyway)")
                 return False
-        
+
         def upload_to_supabase():
             """Upload to Supabase and return success status"""
             try:
@@ -563,14 +563,14 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             except Exception:
                 logger.exception("Failed to start Supabase upload (continuing anyway)")
                 return False
-        
+
         # Run both uploads concurrently
         logger.info("Starting concurrent uploads to Google Drive and Supabase...")
         with ThreadPoolExecutor(max_workers=2) as executor:
             # Submit both upload tasks
             drive_future = executor.submit(upload_to_drive)
             supabase_future = executor.submit(upload_to_supabase)
-            
+
             # Wait for both to complete and collect results
             for future in as_completed([drive_future, supabase_future]):
                 try:
