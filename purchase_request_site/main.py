@@ -564,25 +564,18 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
                 logger.exception("Failed to start Supabase upload (continuing anyway)")
                 return False
 
-        # Run both uploads concurrently
+        # Run both uploads concurrently without blocking the event loop
         logger.info("Starting concurrent uploads to Google Drive and Supabase...")
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            # Submit both upload tasks
-            drive_future = executor.submit(upload_to_drive)
-            supabase_future = executor.submit(upload_to_supabase)
-
-            # Wait for both to complete and collect results
-            for future in as_completed([drive_future, supabase_future]):
-                try:
-                    result = future.result()
-                    if future == drive_future:
-                        drive_upload_success = result
-                        logger.info(f"Google Drive upload completed: {'✅ Success' if result else '❌ Failed'}")
-                    elif future == supabase_future:
-                        supabase_upload_success = result
-                        logger.info(f"Supabase upload completed: {'✅ Success' if result else '❌ Failed'}")
-                except Exception as e:
-                    logger.exception(f"Unexpected error in upload task: {e}")
+        try:
+            drive_task = asyncio.to_thread(upload_to_drive)
+            supabase_task = asyncio.to_thread(upload_to_supabase)
+            drive_upload_success, supabase_upload_success = await asyncio.gather(
+                drive_task, supabase_task
+            )
+            logger.info(f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}")
+            logger.info(f"Supabase upload completed: {'✅ Success' if supabase_upload_success else '❌ Failed'}")
+        except Exception as e:
+            logger.exception(f"Unexpected error in upload task: {e}")
 
         # Clean up session folder if at least one upload was successful
         if drive_upload_success or supabase_upload_success:
