@@ -116,8 +116,9 @@ class SupabaseSubmissionClient:
                 return False
 
         except Exception as e:
-            logger.exception(f"Failed to upload session folder to Supabase: {e}")
-            return False
+            relative_path = file_path.relative_to(session_path)
+            relative_posix = relative_path.as_posix()
+            storage_path = f"{supabase_folder_path}/{relative_posix}"
 
     def _upload_file(self, local_file_path: Path, storage_path: str) -> bool:
         """
