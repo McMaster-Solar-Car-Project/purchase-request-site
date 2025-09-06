@@ -543,26 +543,41 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
         except Exception:
             logger.exception("Failed to log to Google Sheets (continuing anyway)")
 
-        # Upload files to Google Drive (in background)
+        # Upload files to both Google Drive and Supabase concurrently
         drive_upload_success = False
-        try:
-            drive_upload_success = upload_session_to_drive(
-                session_folder, user_info, drive_folder_id
-            )
-        except Exception:
-            logger.exception("Failed to start Google Drive upload (continuing anyway)")
-
-        # Upload files to Supabase (in background)
         supabase_upload_success = False
+
+        def upload_to_drive():
+            """Upload to Google Drive and return success status"""
+            try:
+                return upload_session_to_drive(session_folder, user_info, drive_folder_id)
+            except Exception:
+                logger.exception("Failed to start Google Drive upload (continuing anyway)")
+                return False
+
+        def upload_to_supabase():
+            """Upload to Supabase and return success status"""
+            try:
+                return upload_session_to_supabase(session_folder, user_info)
+            except Exception:
+                logger.exception("Failed to start Supabase upload (continuing anyway)")
+                return False
+
+        # Run both uploads concurrently without blocking the event loop
+        logger.info("Starting concurrent uploads to Google Drive and Supabase...")
         try:
-            supabase_upload_success = upload_session_to_supabase(
-                session_folder, user_info
+            drive_task = asyncio.to_thread(upload_to_drive)
+            supabase_task = asyncio.to_thread(upload_to_supabase)
+            drive_upload_success, supabase_upload_success = await asyncio.gather(
+                drive_task, supabase_task
             )
-        except Exception:
-            logger.exception("Failed to start Supabase upload (continuing anyway)")
+            logger.info(f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}")
+            logger.info(f"Supabase upload completed: {'✅ Success' if supabase_upload_success else '❌ Failed'}")
+        except Exception as e:
+            logger.exception(f"Unexpected error in upload task: {e}")
 
         # Clean up session folder if at least one upload was successful
-        if drive_upload_success and supabase_upload_success:
+        if drive_upload_success or supabase_upload_success:
             try:
                 shutil.rmtree(session_folder)
                 logger.info(f"🗑️ Cleaned up session folder: {session_folder}")

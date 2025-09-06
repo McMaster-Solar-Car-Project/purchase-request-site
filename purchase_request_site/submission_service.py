@@ -78,13 +78,11 @@ class SupabaseSubmissionClient:
                 return False
 
             # Create a folder structure in Supabase storage
-            # Format: year/month/day/session_id/
+            # Format: Month Year/session_id/
             now = datetime.now()
-            year = now.strftime("%Y")
-            month = now.strftime("%m")
-            day = now.strftime("%d")
+            month_year = now.strftime("%B %Y")  # e.g., "September 2025"
             session_id = session_path.name
-            supabase_folder_path = f"{year}/{month}/{day}/{session_id}"
+            supabase_folder_path = f"{month_year}/{session_id}"
 
             logger.info(f"Uploading session folder to Supabase: {supabase_folder_path}")
 
@@ -192,14 +190,12 @@ class SupabaseSubmissionClient:
             logger.exception(f"Failed to download file {storage_path}: {e}")
             return False
 
-    def list_session_files(self, year: str, month: str, day: str, session_id: str) -> list[str]:
+    def list_session_files(self, month_year: str, session_id: str) -> list[str]:
         """
         List files in a session folder in Supabase storage
 
         Args:
-            year: Year in YYYY format
-            month: Month in MM format
-            day: Day in DD format
+            month_year: Month and year in "Month YYYY" format (e.g., "September 2025")
             session_id: Session ID
 
         Returns:
@@ -207,9 +203,9 @@ class SupabaseSubmissionClient:
         """
         try:
             if not self.client and not self._initialize_client():
-                    return []
+                return []
 
-            folder_path = f"{year}/{month}/{day}/{session_id}"
+            folder_path = f"{month_year}/{session_id}"
             response = self.client.storage.from_(self.bucket_name).list(folder_path)
 
             if isinstance(response, list):
@@ -273,21 +269,4 @@ def download_file_from_supabase(storage_path: str, local_path: str) -> bool:
         bool: True if download was successful, False otherwise
     """
     return submission_client.download_file(storage_path, local_path)
-
-
-def list_session_files_from_supabase(
-    year: str, month: str, day: str, session_id: str
-) -> list[str]:
-    """List files in a session folder in Supabase storage
-
-    Args:
-        year: Year in YYYY format
-        month: Month in MM format
-        day: Day in DD format
-        session_id: Session ID
-
-    Returns:
-        list[str]: List of file paths in the session folder
-    """
-    return submission_client.list_session_files(year, month, day, session_id)
 
