@@ -2,6 +2,7 @@ import asyncio
 import os
 import secrets
 import shutil
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import asynccontextmanager
 from datetime import datetime
 
@@ -23,7 +24,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from google_drive import (
     create_drive_folder_and_get_url,
-    download_file_from_drive,
     upload_session_to_drive,
 )
 from google_sheets import sheets_client
@@ -253,14 +253,40 @@ async def home(request: Request):
 @app.get("/download-excel")
 async def download_excel(
     request: Request,
-    drive_folder_id: str,
+    session_id: str,
     excel_file: str,
     _: None = Depends(require_auth),
 ):
-    """Download the generated Excel file from Google Drive"""
+    """Download the generated Excel file from Supabase"""
     try:
-        # Download file content from Google Drive
-        file_content = download_file_from_drive(drive_folder_id, excel_file)
+        from datetime import datetime
+
+        from submission_service import download_file_from_supabase
+
+        # Get current month and year for folder structure
+        now = datetime.now()
+        month_year = now.strftime("%B %Y")
+
+        # Construct the storage path in Supabase
+        storage_path = f"{month_year}/{session_id}/{excel_file}"
+
+        # Download file content from Supabase
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_path = temp_file.name
+
+        success = download_file_from_supabase(storage_path, temp_path)
+
+        if not success:
+            raise HTTPException(status_code=404, detail="Excel file not found in Supabase")
+
+        # Read the downloaded file content
+        with open(temp_path, "rb") as f:
+            file_content = f.read()
+
+        # Clean up temp file
+        import os
+        os.unlink(temp_path)
 
         # Return the file content as a streaming response
         from fastapi.responses import Response
@@ -272,9 +298,9 @@ async def download_excel(
         )
 
     except Exception:
-        logger.exception(f"Failed to download {excel_file} from Google Drive")
+        logger.exception(f"Failed to download {excel_file} from Supabase")
         raise HTTPException(
-            status_code=404, detail="Excel file not found in Google Drive"
+            status_code=404, detail="Excel file not found in Supabase"
         ) from None
 
 
@@ -563,18 +589,25 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
                 logger.exception("Failed to start Supabase upload (continuing anyway)")
                 return False
 
-        # Run both uploads concurrently without blocking the event loop
+        # Run both uploads concurrently
         logger.info("Starting concurrent uploads to Google Drive and Supabase...")
-        try:
-            drive_task = asyncio.to_thread(upload_to_drive)
-            supabase_task = asyncio.to_thread(upload_to_supabase)
-            drive_upload_success, supabase_upload_success = await asyncio.gather(
-                drive_task, supabase_task
-            )
-            logger.info(f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}")
-            logger.info(f"Supabase upload completed: {'✅ Success' if supabase_upload_success else '❌ Failed'}")
-        except Exception as e:
-            logger.exception(f"Unexpected error in upload task: {e}")
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            # Submit both upload tasks
+            drive_future = executor.submit(upload_to_drive)
+            supabase_future = executor.submit(upload_to_supabase)
+
+            # Wait for both to complete and collect results
+            for future in as_completed([drive_future, supabase_future]):
+                try:
+                    result = future.result()
+                    if future == drive_future:
+                        drive_upload_success = result
+                        logger.info(f"Google Drive upload completed: {'✅ Success' if result else '❌ Failed'}")
+                    elif future == supabase_future:
+                        supabase_upload_success = result
+                        logger.info(f"Supabase upload completed: {'✅ Success' if result else '❌ Failed'}")
+                except Exception as e:
+                    logger.exception(f"Unexpected error in upload task: {e}")
 
         # Clean up session folder if at least one upload was successful
         if drive_upload_success or supabase_upload_success:
@@ -592,9 +625,12 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             status_code=303,
         )
 
+    # Get session ID from session folder path
+    session_id = os.path.basename(session_folder)
+
     # Redirect back to home with success message and session info for download
     return RedirectResponse(
-        url=f"/success?drive_folder_id={drive_folder_id}&excel_file=purchase_request.xlsx&user_email={email}",
+        url=f"/success?session_id={session_id}&excel_file=purchase_request.xlsx&user_email={email}",
         status_code=303,
     )
 
@@ -602,7 +638,7 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
 @app.get("/success")
 async def success_page(
     request: Request,
-    drive_folder_id: str = None,
+    session_id: str = None,
     excel_file: str = None,
     user_email: str = None,
     _: None = Depends(require_auth),
@@ -611,11 +647,11 @@ async def success_page(
     download_info = None
     current_time = datetime.now()
 
-    if drive_folder_id and excel_file:
+    if session_id and excel_file:
         download_info = {
-            "drive_folder_id": drive_folder_id,
+            "session_id": session_id,
             "excel_file": excel_file,
-            "download_url": f"/download-excel?drive_folder_id={drive_folder_id}&excel_file={excel_file}",
+            "download_url": f"/download-excel?session_id={session_id}&excel_file={excel_file}",
         }
 
     return templates.TemplateResponse(
