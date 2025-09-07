@@ -42,7 +42,11 @@ class GoogleSheetsClient:
     def test_connection(self) -> bool:
         """Test the connection to Google Sheets by reading sheet metadata"""
         if not self.service:
-            self.service = self.auth_client.get_service()
+            try:
+                self.service = self.auth_client.get_service()
+            except Exception as e:
+                logger.exception(f"Failed to authenticate with Google Sheets: {e}")
+                return False
 
         try:
             # Try to get sheet metadata
