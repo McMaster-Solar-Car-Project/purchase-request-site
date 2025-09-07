@@ -412,69 +412,43 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
 
         # Extract financial data based on currency
         if currency == "USD":
-            # For USD, use simplified breakdown
             us_total = float(form_data.get(f"us_total_{form_num}") or 0)
             usd_taxes = float(form_data.get(f"usd_taxes_{form_num}") or 0)
             canadian_amount = float(form_data.get(f"canadian_amount_{form_num}") or 0)
-
-            # Set other fields to 0 for USD
-            subtotal_amount = 0
-            discount_amount = 0
-            hst_gst_amount = usd_taxes  # Use USD taxes as the tax amount
-            shipping_amount = 0
-            total_amount = (
-                canadian_amount  # Use Canadian amount as total for reimbursement
-            )
+            subtotal_amount = discount_amount = shipping_amount = 0
+            hst_gst_amount = usd_taxes
+            total_amount = canadian_amount
         else:
-            # For CAD, use detailed breakdown
             subtotal_amount = float(form_data.get(f"subtotal_amount_{form_num}") or 0)
             discount_amount = float(form_data.get(f"discount_amount_{form_num}") or 0)
             hst_gst_amount = float(form_data.get(f"hst_gst_amount_{form_num}") or 0)
             shipping_amount = float(form_data.get(f"shipping_amount_{form_num}") or 0)
             total_amount = float(form_data.get(f"total_amount_{form_num}") or 0)
-
-            # Set USD fields to 0 for CAD
-            us_total = 0
-            usd_taxes = 0
-            canadian_amount = 0
+            us_total = usd_taxes = canadian_amount = 0
 
         # Extract items for this form
         items = []
-        item_num = 1
-        while True:
+        for item_num in range(1, 50):  # Reasonable limit
             item_name = form_data.get(f"item_name_{form_num}_{item_num}")
             if not item_name:
                 break
-
             item_usage = form_data.get(f"item_usage_{form_num}_{item_num}")
             item_quantity = form_data.get(f"item_quantity_{form_num}_{item_num}")
             item_price = form_data.get(f"item_price_{form_num}_{item_num}")
             item_total = form_data.get(f"item_total_{form_num}_{item_num}")
-
+            
             if item_name and item_usage and item_quantity and item_price:
-                parsed_total = float(item_total) if item_total else 0
-                items.append(
-                    {
-                        "name": item_name,
-                        "usage": item_usage,
-                        "quantity": int(item_quantity),
-                        "unit_price": float(item_price),
-                        "total": parsed_total,
-                    }
-                )
-
-            item_num += 1
+                items.append({
+                    "name": item_name, "usage": item_usage, "quantity": int(item_quantity),
+                    "unit_price": float(item_price), "total": float(item_total or 0)
+                })
 
         # Skip forms with no items
         if not items:
             continue
 
         # Save uploaded invoice file in session folder
-        invoice_extension = (
-            invoice_file.filename.split(".")[-1]
-            if "." in invoice_file.filename
-            else "pdf"
-        )
+        invoice_extension = invoice_file.filename.split(".")[-1] if "." in invoice_file.filename else "pdf"
         invoice_filename = f"{form_num}_{vendor_name}.{invoice_extension}"
         invoice_file_location = f"{session_folder}/{invoice_filename}"
 
@@ -484,27 +458,13 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             file_object.write(content)
 
         # Save proof of payment file only for USD currency
-        proof_of_payment_filename = None
-        proof_of_payment_location = None
-        if (
-            currency == "USD"
-            and proof_of_payment_file
-            and hasattr(proof_of_payment_file, "filename")
-        ):
-            payment_extension = (
-                proof_of_payment_file.filename.split(".")[-1]
-                if "." in proof_of_payment_file.filename
-                else "pdf"
-            )
-            proof_of_payment_filename = (
-                f"{form_num}_proof_of_payment.{payment_extension}"
-            )
+        proof_of_payment_filename = proof_of_payment_location = None
+        if currency == "USD" and proof_of_payment_file and hasattr(proof_of_payment_file, "filename"):
+            payment_extension = proof_of_payment_file.filename.split(".")[-1] if "." in proof_of_payment_file.filename else "pdf"
+            proof_of_payment_filename = f"{form_num}_proof_of_payment.{payment_extension}"
             proof_of_payment_location = f"{session_folder}/{proof_of_payment_filename}"
-
-            # Save the proof of payment file
             with open(proof_of_payment_location, "wb") as file_object:
-                content = await proof_of_payment_file.read()
-                file_object.write(content)
+                file_object.write(await proof_of_payment_file.read())
 
         # Store form data
         form_submission = {
