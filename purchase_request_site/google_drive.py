@@ -180,7 +180,11 @@ class GoogleDriveClient:
         retry_delay = 1  # seconds
 
         if not self.service:
-            self.service = self.auth_client.get_service()
+            try:
+                self.service = self.auth_client.get_service()
+            except Exception as e:
+                logger.exception(f"Failed to authenticate for {file_path}: {e}")
+                return None
 
         for attempt in range(max_retries):
             try:
