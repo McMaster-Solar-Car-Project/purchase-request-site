@@ -23,8 +23,14 @@ def copy_expense_report_template(session_folder, user_info, submitted_forms):
     try:
         # Create destination filename with format: MonthDay-Year-ExpenseReport-FullName
         now = datetime.now()
-        month_name, day, year = now.strftime("%B"), now.strftime("%d").lstrip("0"), now.strftime("%Y")
-        pascal_name = "".join(word.capitalize() for word in user_info.get("name", "UnknownUser").split())
+        month_name, day, year = (
+            now.strftime("%B"),
+            now.strftime("%d").lstrip("0"),
+            now.strftime("%Y"),
+        )
+        pascal_name = "".join(
+            word.capitalize() for word in user_info.get("name", "UnknownUser").split()
+        )
         output_filename = f"{month_name}{day}-{year}-ExpenseReport-{pascal_name}.xlsx"
         output_path = f"{session_folder}/{output_filename}"
 
@@ -87,14 +93,18 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
             ws[f"C{row}"] = form.get("vendor_name", "")  # Vendor name
 
             if currency == "CAD":
-                ws[f"F{row}"] = form.get("subtotal_amount", 0) - form.get("discount_amount", 0) # Subtotal
+                ws[f"F{row}"] = form.get("subtotal_amount", 0)  # Subtotal
                 ws[f"G{row}"] = form.get("total_amount", 0)  # Total
                 ws[f"H{row}"] = form.get("hst_gst_amount", 0)  # HST/GST
             else:  # USD
                 us_total = form.get("us_total", 0)
                 canadian_amount = form.get("canadian_amount", 0)
                 ws[f"D{row}"] = us_total  # US total
-                ws[f"E{row}"] = canadian_amount / us_total if us_total > 0 and canadian_amount > 0 else 0  # Exchange rate
+                ws[f"E{row}"] = (
+                    canadian_amount / us_total
+                    if us_total > 0 and canadian_amount > 0
+                    else 0
+                )  # Exchange rate
                 ws[f"F{row}"] = ws[f"G{row}"] = canadian_amount  # Canadian amount
                 ws[f"H{row}"] = 0  # No HST for US
 
