@@ -12,22 +12,19 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
+from google_auth import create_drive_client
 from logging_utils import setup_logger
 
-# Load environment variables from .env file (check parent directory too)
-load_dotenv()  # Current directory
-load_dotenv("../.env")  # Parent directory
+# Load environment variables
+load_dotenv()
+load_dotenv("../.env")
 
 # Set up logger
 logger = setup_logger(__name__)
 
 # Google Drive configuration
-DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"]
-# Use specific folder ID for "My Drive / Test_automation"
 PARENT_FOLDER_ID = os.getenv(
     "GOOGLE_DRIVE_FOLDER_ID", "1fH2GB4LtYjGGhusqbjOLftB7jqgLNehW"
 )  # gitleaks: allowlist
@@ -38,71 +35,9 @@ class GoogleDriveClient:
 
     def __init__(self):
         """Initialize the Google Drive client using environment variables"""
+        self.auth_client = create_drive_client()
         self.service = None
         self.parent_folder_id = None
-
-    def _get_credentials_from_env(self) -> dict[str, str]:
-        """
-        Build service account credentials from environment variables
-
-        Returns:
-            Dict containing the service account information
-        """
-        # Get credentials from environment variables
-        project_id = os.getenv("GOOGLE_SETTINGS__PROJECT_ID")
-        private_key_id = os.getenv("GOOGLE_SETTINGS__PRIVATE_KEY_ID")
-        private_key = os.getenv("GOOGLE_SETTINGS__PRIVATE_KEY")
-        client_email = os.getenv("GOOGLE_SETTINGS__CLIENT_EMAIL")
-        client_id = os.getenv("GOOGLE_SETTINGS__CLIENT_ID")
-        client_x509_cert_url = os.getenv("GOOGLE_SETTINGS__CLIENT_X509_CERT_URL")
-
-        # Check if all required variables are present
-        required_vars = {
-            "GOOGLE_SETTINGS__PROJECT_ID": project_id,
-            "GOOGLE_SETTINGS__PRIVATE_KEY": private_key,
-            "GOOGLE_SETTINGS__CLIENT_EMAIL": client_email,
-        }
-
-        missing_vars = [var for var, value in required_vars.items() if not value]
-        if missing_vars:
-            raise ValueError(
-                f"Missing required environment variables: {', '.join(missing_vars)}"
-            )
-
-        # Build the service account info dictionary
-        service_account_info = {
-            "type": "service_account",
-            "project_id": project_id,
-            "private_key_id": private_key_id,
-            "private_key": private_key.replace(
-                "\\n", "\n"
-            ),  # Fix newlines in private key
-            "client_email": client_email,
-            "client_id": client_id,
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": client_x509_cert_url,
-        }
-
-        return service_account_info
-
-    def _authenticate(self):
-        """Authenticate with Google Drive API using environment variables"""
-        try:
-            service_account_info = self._get_credentials_from_env()
-            credentials = Credentials.from_service_account_info(
-                service_account_info, scopes=DRIVE_SCOPES
-            )
-            self.service = build("drive", "v3", credentials=credentials)
-            # Authentication successful
-            return True
-        except ValueError as e:
-            logger.exception(f"Environment variable error: {e}")
-            return False
-        except Exception as e:
-            logger.exception(f"Failed to authenticate with Google Drive API: {e}")
-            return False
 
     def _ensure_parent_folder(self) -> str:
         """
@@ -114,8 +49,8 @@ class GoogleDriveClient:
         if self.parent_folder_id:
             return self.parent_folder_id
 
-        if not self.service and not self._authenticate():
-            raise Exception("Failed to authenticate with Google Drive")
+        if not self.service:
+            self.service = self.auth_client.get_service()
 
         try:
             # Use the configured folder ID directly
@@ -244,9 +179,8 @@ class GoogleDriveClient:
         max_retries = 3
         retry_delay = 1  # seconds
 
-        if not self.service and not self._authenticate():
-            logger.exception(f"Failed to authenticate for {file_path}")
-            return None
+        if not self.service:
+            self.service = self.auth_client.get_service()
 
         for attempt in range(max_retries):
             try:
@@ -303,8 +237,8 @@ class GoogleDriveClient:
         Returns:
             tuple: (success: bool, folder_url: str, folder_id: str)
         """
-        if not self.service and not self._authenticate():
-            return False, "", ""
+        if not self.service:
+            self.service = self.auth_client.get_service()
 
         try:
             # Ensure parent folder exists (Test_automation)
@@ -352,8 +286,8 @@ class GoogleDriveClient:
         Returns:
             bool: True if successful, False otherwise
         """
-        if not self.service and not self._authenticate():
-            return False
+        if not self.service:
+            self.service = self.auth_client.get_service()
 
         try:
             # Create session folder name with user info and timestamp (always needed for logging)
@@ -417,8 +351,8 @@ class GoogleDriveClient:
 
     def test_connection(self) -> bool:
         """Test the connection to Google Drive"""
-        if not self.service and not self._authenticate():
-            return False
+        if not self.service:
+            self.service = self.auth_client.get_service()
 
         try:
             # Try to get Drive storage info
@@ -450,8 +384,8 @@ class GoogleDriveClient:
         Raises:
             Exception: If download fails
         """
-        if not self.service and not self._authenticate():
-            raise Exception("Failed to authenticate with Google Drive")
+        if not self.service:
+            self.service = self.auth_client.get_service()
 
         try:
             # Download the file
@@ -482,8 +416,8 @@ class GoogleDriveClient:
         Returns:
             str: File ID if found, empty string if not found
         """
-        if not self.service and not self._authenticate():
-            return ""
+        if not self.service:
+            self.service = self.auth_client.get_service()
 
         try:
             # Search for the file in the specific folder
