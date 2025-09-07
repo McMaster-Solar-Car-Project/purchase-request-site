@@ -90,32 +90,52 @@ class GoogleAuthClient:
             credentials = Credentials.from_service_account_info(
                 service_account_info, scopes=self.scopes
             )
+                )
 
-            # Build the appropriate service based on scopes
-            if "drive" in self.scopes[0]:
-                self.service = build("drive", "v3", credentials=credentials)
-            elif "spreadsheets" in self.scopes[0]:
-                self.service = build("sheets", "v4", credentials=credentials, cache_discovery=False)
+                # Determine API from any provided scope
+                api_name, api_version = None, None
+                for scope in self.scopes:
+                    if "drive" in scope:
+                        api_name, api_version = "drive", "v3"
+                        break
+                    if "spreadsheets" in scope:
+                        api_name, api_version = "sheets", "v4"
+                        break
 
-            logger.info("✅ Successfully authenticated with Google APIs")
-            return True
-        except ValueError as e:
-            logger.exception(f"Environment variable error: {e}")
-            return False
-        except Exception as e:
-            logger.exception(f"Failed to authenticate with Google APIs: {e}")
-            return False
+                if not api_name:
+                    logger.error(f"Unsupported or unknown scopes: {self.scopes}")
+                    return False
 
-    def get_service(self):
-        """
-        Get the authenticated service object
+                # Build the appropriate service
+                if api_name == "sheets":
+                    self.service = build(api_name, api_version, credentials=credentials, cache_discovery=False)
+                else:
+                    self.service = build(api_name, api_version, credentials=credentials)
 
-        Returns:
-            The authenticated Google API service object
-        """
-        if not self.service and not self.authenticate():
-            raise Exception("Failed to authenticate with Google APIs")
-        return self.service
+                if not self.service:
+                    logger.error("Failed to initialize Google API service")
+                    return False
+
+                logger.info("✅ Successfully authenticated with Google APIs")
+                return True
+            except ValueError as e:
+                logger.exception(f"Environment variable error: {e}")
+                return False
+            except Exception as e:
+                logger.exception(f"Failed to authenticate with Google APIs: {e}")
+                return False
+
+        def get_service(self):
+            """
+            Get the authenticated service object
+    
+            Returns:
+                The authenticated Google API service object
+            """
+            if self.service:
+                return self.service
+            if not self.authenticate() or not self.service:
+                raise Exception("Failed to authenticate with Google APIs")
 
 
 def create_drive_client() -> GoogleAuthClient:
