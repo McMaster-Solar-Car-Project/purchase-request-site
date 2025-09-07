@@ -87,7 +87,7 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
             ws[f"C{row}"] = form.get("vendor_name", "")  # Vendor name
 
             if currency == "CAD":
-                ws[f"F{row}"] = form.get("subtotal_amount", 0)  # Subtotal
+                ws[f"F{row}"] = form.get("subtotal_amount", 0) - form.get("discount_amount", 0) # Subtotal
                 ws[f"G{row}"] = form.get("total_amount", 0)  # Total
                 ws[f"H{row}"] = form.get("hst_gst_amount", 0)  # HST/GST
             else:  # USD
