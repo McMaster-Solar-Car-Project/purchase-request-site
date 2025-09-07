@@ -591,6 +591,8 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
 
         # Run both uploads concurrently
         logger.info("Starting concurrent uploads to Google Drive and Supabase...")
+        drive_upload_success = False
+        supabase_upload_success = False
         with ThreadPoolExecutor(max_workers=2) as executor:
             # Submit both upload tasks
             drive_future = executor.submit(upload_to_drive)
@@ -600,14 +602,16 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             for future in as_completed([drive_future, supabase_future]):
                 try:
                     result = future.result()
-                    if future == drive_future:
-                        drive_upload_success = result
-                        logger.info(f"Google Drive upload completed: {'✅ Success' if result else '❌ Failed'}")
-                    elif future == supabase_future:
-                        supabase_upload_success = result
-                        logger.info(f"Supabase upload completed: {'✅ Success' if result else '❌ Failed'}")
                 except Exception as e:
                     logger.exception(f"Unexpected error in upload task: {e}")
+                    result = False
+
+                if future == drive_future:
+                    drive_upload_success = result
+                    logger.info(f"Google Drive upload completed: {'✅ Success' if result else '❌ Failed'}")
+                elif future == supabase_future:
+                    supabase_upload_success = result
+                    logger.info(f"Supabase upload completed: {'✅ Success' if result else '❌ Failed'}")
 
         # Clean up session folder if at least one upload was successful
         if drive_upload_success or supabase_upload_success:
