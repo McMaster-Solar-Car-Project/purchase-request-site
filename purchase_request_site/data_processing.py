@@ -85,7 +85,7 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
             currency = form.get("currency", "CAD")
             ws[f"B{row}"] = current_date  # Date
             ws[f"C{row}"] = form.get("vendor_name", "")  # Vendor name
-            
+
             if currency == "CAD":
                 ws[f"F{row}"] = form.get("subtotal_amount", 0)  # Subtotal
                 ws[f"G{row}"] = form.get("total_amount", 0)  # Total

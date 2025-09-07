@@ -436,7 +436,7 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             item_quantity = form_data.get(f"item_quantity_{form_num}_{item_num}")
             item_price = form_data.get(f"item_price_{form_num}_{item_num}")
             item_total = form_data.get(f"item_total_{form_num}_{item_num}")
-            
+
             if item_name and item_usage and item_quantity and item_price:
                 items.append({
                     "name": item_name, "usage": item_usage, "quantity": int(item_quantity),
