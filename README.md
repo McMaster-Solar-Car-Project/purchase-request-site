@@ -14,34 +14,14 @@ A FastAPI web application for managing purchase requests and expense reports. Us
 
 ### 1. Install Dependencies
 
-These setup instructions are for macOS and WSL.
+These setup instructions are for macOS and WSL. If you are using Windows, please use WSL and install Brew before running the setup instructions.
 
-**macOS:**
+
 ```bash
 # Install system dependencies
 brew install uv gitleaks lefthook
-```
 
-**WSL/Linux:**
-```bash
-# Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install gitleaks
-curl -sSL \
-  https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz \
-  -o gitleaks.tar.gz
-tar -xvzf gitleaks.tar.gz
-sudo mv gitleaks /usr/local/bin/
-rm gitleaks.tar.gz
-
-# Install lefthook
-pip install lefthook
-```
-
-**All platforms:**
-```bash
-# Clone the repo
+# Clone the repo (you can use https instead of ssh if you prefer)
 git clone git@github.com:McMaster-Solar-Car-Project/purchase-request-site.git
 cd purchase-request-site
 
@@ -56,18 +36,8 @@ uv sync
 
 # Install git hooks
 lefthook install
-```
 
-### 2. Environment Variables
-
-Reach out to Raj for environment variables.
-
-
-### 3. Run the Application
-
-From the project root directory:
-
-```bash
+# Reach out to Raj for environment variables before running the application.
 uv run run.py
 ```
 
@@ -95,5 +65,5 @@ This project relies of a few key API's and Services.
   - Place API (Address Autocomplete, not needed but nice to have)
 - Google Service Account (Accessing Drive files)
 - Gmail Account (Emailing warnings)
-- Google Cloud Run (Building/Storing/Deploying the Docker image)
-- Supabase (Store credentials so any container can access them)
+- Google Cloud Run (Deploying the Docker image)
+- Supabase (Store credentials and backup data)
