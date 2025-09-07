@@ -6,7 +6,6 @@ eliminating code duplication between google_drive.py and google_sheets.py.
 """
 
 import os
-from typing import Dict, List
 
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
@@ -24,23 +23,23 @@ logger = setup_logger(__name__)
 class GoogleAuthClient:
     """Shared authentication client for Google APIs"""
 
-    def __init__(self, scopes: List[str]):
+    def __init__(self, scopes: list[str]):
         """
         Initialize the Google authentication client
-        
+
         Args:
             scopes: List of Google API scopes to request
         """
         self.scopes = scopes
         self.service = None
 
-    def _get_credentials_from_env(self) -> Dict[str, str]:
+    def _get_credentials_from_env(self) -> dict[str, str]:
         """
         Build service account credentials from environment variables
-        
+
         Returns:
             Dict containing the service account information
-            
+
         Raises:
             ValueError: If required environment variables are missing
         """
@@ -82,7 +81,7 @@ class GoogleAuthClient:
     def authenticate(self) -> bool:
         """
         Authenticate with Google APIs using environment variables
-        
+
         Returns:
             bool: True if authentication was successful, False otherwise
         """
@@ -91,13 +90,13 @@ class GoogleAuthClient:
             credentials = Credentials.from_service_account_info(
                 service_account_info, scopes=self.scopes
             )
-            
+
             # Build the appropriate service based on scopes
             if "drive" in self.scopes[0]:
                 self.service = build("drive", "v3", credentials=credentials)
             elif "spreadsheets" in self.scopes[0]:
                 self.service = build("sheets", "v4", credentials=credentials, cache_discovery=False)
-            
+
             logger.info("✅ Successfully authenticated with Google APIs")
             return True
         except ValueError as e:
@@ -110,7 +109,7 @@ class GoogleAuthClient:
     def get_service(self):
         """
         Get the authenticated service object
-        
+
         Returns:
             The authenticated Google API service object
         """
