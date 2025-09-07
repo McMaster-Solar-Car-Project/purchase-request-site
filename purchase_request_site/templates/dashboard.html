@@ -30,7 +30,7 @@
         </div>
         {% endif %}
 
-        <p class="subtitle">Fill out up to 10 separate purchase requests and submit them all together</p>
+        <p class="subtitle">Fill out up to 25 separate purchase requests and submit them all together</p>
 
         <div class="user-info">
             <div class="info-summary">
@@ -62,7 +62,7 @@
                     submit.</p>
 
                 <div class="forms-container">
-                    {% for form_num in range(1, 11) %}
+                    {% for form_num in range(1, 26) %}
                     <div class="form-accordion">
                         <div class="form-accordion-header" onclick="toggleForm({{ form_num }})">
                             <h3>Invoice #{{ form_num }}</h3>
@@ -298,7 +298,7 @@
         let isSubmitting = false;
 
         // Initialize item counts
-        for (let i = 1; i <= 10; i++) {
+        for (let i = 1; i <= 25; i++) {
             itemCounts[i] = 1;
         }
 
@@ -529,7 +529,7 @@
             const errors = [];
 
             // Check each form for completeness
-            for (let formNumber = 1; formNumber <= 10; formNumber++) {
+            for (let formNumber = 1; formNumber <= 25; formNumber++) {
                 const vendorName = document.getElementById(`vendor_name_${formNumber}`);
                 const invoiceFile = document.getElementById(`invoice_file_${formNumber}`);
                 const currencySelect = document.getElementById(`currency_${formNumber}`);
@@ -589,7 +589,7 @@
 
             // Check that total Canadian price is greater than $100 for each completed form
             let totalCanadianAmount = 0;
-            for (let formNumber = 1; formNumber <= 10; formNumber++) {
+            for (let formNumber = 1; formNumber <= 25; formNumber++) {
                 const vendorName = document.getElementById(`vendor_name_${formNumber}`);
                 const currencySelect = document.getElementById(`currency_${formNumber}`);
                 
@@ -720,7 +720,7 @@
         // Initialize the dashboard when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize all forms
-            for (let i = 1; i <= 10; i++) {
+            for (let i = 1; i <= 25; i++) {
                 const content = document.getElementById(`form-${i}`);
                 content.style.display = 'none';
 

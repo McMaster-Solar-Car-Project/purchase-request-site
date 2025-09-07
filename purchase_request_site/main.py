@@ -271,13 +271,16 @@ async def download_excel(
 
         # Download file content from Supabase
         import tempfile
+
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             temp_path = temp_file.name
 
         success = download_file_from_supabase(storage_path, temp_path)
 
         if not success:
-            raise HTTPException(status_code=404, detail="Excel file not found in Supabase")
+            raise HTTPException(
+                status_code=404, detail="Excel file not found in Supabase"
+            )
 
         # Read the downloaded file content
         with open(temp_path, "rb") as f:
@@ -285,6 +288,7 @@ async def download_excel(
 
         # Clean up temp file
         import os
+
         os.unlink(temp_path)
 
         # Return the file content as a streaming response
@@ -388,8 +392,8 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
 
     submitted_forms = []
 
-    # Process each of the 10 possible forms
-    for form_num in range(1, 11):
+    # Process each of the 25 possible forms
+    for form_num in range(1, 26):
         vendor_name = form_data.get(f"vendor_name_{form_num}")
         invoice_file = form_data.get(f"invoice_file_{form_num}")
         proof_of_payment_file = form_data.get(f"proof_of_payment_{form_num}")
@@ -438,17 +442,26 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             item_total = form_data.get(f"item_total_{form_num}_{item_num}")
 
             if item_name and item_usage and item_quantity and item_price:
-                items.append({
-                    "name": item_name, "usage": item_usage, "quantity": int(item_quantity),
-                    "unit_price": float(item_price), "total": float(item_total or 0)
-                })
+                items.append(
+                    {
+                        "name": item_name,
+                        "usage": item_usage,
+                        "quantity": int(item_quantity),
+                        "unit_price": float(item_price),
+                        "total": float(item_total or 0),
+                    }
+                )
 
         # Skip forms with no items
         if not items:
             continue
 
         # Save uploaded invoice file in session folder
-        invoice_extension = invoice_file.filename.split(".")[-1] if "." in invoice_file.filename else "pdf"
+        invoice_extension = (
+            invoice_file.filename.split(".")[-1]
+            if "." in invoice_file.filename
+            else "pdf"
+        )
         invoice_filename = f"{form_num}_{vendor_name}.{invoice_extension}"
         invoice_file_location = f"{session_folder}/{invoice_filename}"
 
@@ -459,9 +472,19 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
 
         # Save proof of payment file only for USD currency
         proof_of_payment_filename = proof_of_payment_location = None
-        if currency == "USD" and proof_of_payment_file and hasattr(proof_of_payment_file, "filename"):
-            payment_extension = proof_of_payment_file.filename.split(".")[-1] if "." in proof_of_payment_file.filename else "pdf"
-            proof_of_payment_filename = f"{form_num}_proof_of_payment.{payment_extension}"
+        if (
+            currency == "USD"
+            and proof_of_payment_file
+            and hasattr(proof_of_payment_file, "filename")
+        ):
+            payment_extension = (
+                proof_of_payment_file.filename.split(".")[-1]
+                if "." in proof_of_payment_file.filename
+                else "pdf"
+            )
+            proof_of_payment_filename = (
+                f"{form_num}_proof_of_payment.{payment_extension}"
+            )
             proof_of_payment_location = f"{session_folder}/{proof_of_payment_filename}"
             with open(proof_of_payment_location, "wb") as file_object:
                 file_object.write(await proof_of_payment_file.read())
@@ -535,9 +558,13 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
         def upload_to_drive():
             """Upload to Google Drive and return success status"""
             try:
-                return upload_session_to_drive(session_folder, user_info, drive_folder_id)
+                return upload_session_to_drive(
+                    session_folder, user_info, drive_folder_id
+                )
             except Exception:
-                logger.exception("Failed to start Google Drive upload (continuing anyway)")
+                logger.exception(
+                    "Failed to start Google Drive upload (continuing anyway)"
+                )
                 return False
 
         def upload_to_supabase():
@@ -560,8 +587,12 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             drive_upload_success, supabase_upload_success = await asyncio.gather(
                 drive_task, supabase_task
             )
-            logger.info(f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}")
-            logger.info(f"Supabase upload completed: {'✅ Success' if supabase_upload_success else '❌ Failed'}")
+            logger.info(
+                f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"
+            )
+            logger.info(
+                f"Supabase upload completed: {'✅ Success' if supabase_upload_success else '❌ Failed'}"
+            )
         except Exception as e:
             logger.exception(f"Unexpected error in upload task: {e}")
 
