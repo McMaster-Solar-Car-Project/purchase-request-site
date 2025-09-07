@@ -79,19 +79,10 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
         start_row = 6  # Starting at row 6 as specified
         current_row = start_row
 
-        # Separate Canadian and US forms
-        canadian_forms = [
-            form for form in submitted_forms if form.get("currency") == "CAD"
-        ]
-        us_forms = [form for form in submitted_forms if form.get("currency") == "USD"]
-
-        # Populating expense report forms
-
-        # Process all forms (CAD first, then USD)
-        all_forms = [(form, "CAD") for form in canadian_forms] + [(form, "USD") for form in us_forms]
-        
-        for i, (form, currency) in enumerate(all_forms):
+        # Process forms in the order they appear
+        for i, form in enumerate(submitted_forms):
             row = current_row + i
+            currency = form.get("currency", "CAD")
             ws[f"B{row}"] = current_date  # Date
             ws[f"C{row}"] = form.get("vendor_name", "")  # Vendor name
             
