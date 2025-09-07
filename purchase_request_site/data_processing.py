@@ -22,15 +22,9 @@ def copy_expense_report_template(session_folder, user_info, submitted_forms):
 
     try:
         # Create destination filename with format: MonthDay-Year-ExpenseReport-FullName
-        current_date = datetime.now()
-        month_name = current_date.strftime("%B")  # Full month name (e.g., "July")
-        day = current_date.strftime("%d").lstrip("0")  # Day without leading zero
-        year = current_date.strftime("%Y")  # YYYY format
-
-        # Convert full name to Pascal case (remove spaces, capitalize each word)
-        full_name = user_info.get("name", "UnknownUser")
-        pascal_name = "".join(word.capitalize() for word in full_name.split())
-
+        now = datetime.now()
+        month_name, day, year = now.strftime("%B"), now.strftime("%d").lstrip("0"), now.strftime("%Y")
+        pascal_name = "".join(word.capitalize() for word in user_info.get("name", "UnknownUser").split())
         output_filename = f"{month_name}{day}-{year}-ExpenseReport-{pascal_name}.xlsx"
         output_path = f"{session_folder}/{output_filename}"
 
@@ -85,80 +79,24 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
         start_row = 6  # Starting at row 6 as specified
         current_row = start_row
 
-        # Separate Canadian and US forms
-        canadian_forms = [
-            form for form in submitted_forms if form.get("currency") == "CAD"
-        ]
-        us_forms = [form for form in submitted_forms if form.get("currency") == "USD"]
-
-        # Populating expense report forms
-
-        # Process Canadian forms first
-        for i, form in enumerate(canadian_forms):
+        # Process forms in the order they appear
+        for i, form in enumerate(submitted_forms):
             row = current_row + i
+            currency = form.get("currency", "CAD")
+            ws[f"B{row}"] = current_date  # Date
+            ws[f"C{row}"] = form.get("vendor_name", "")  # Vendor name
 
-            # B6, B7, B8... - Date of Receipt
-            ws[f"B{row}"] = current_date
-
-            # C6, C7, C8... - Vendor name
-            ws[f"C{row}"] = form.get("vendor_name", "")
-
-            # For CAD: D column stays empty, E column stays empty
-
-            # F6, F7, F8... - CDN amount without GST (subtotal)
-            subtotal = form.get("subtotal_amount", 0)
-            ws[f"F{row}"] = subtotal
-
-            # G6, G7, G8... - CDN amount with GST (total)
-            total = form.get("total_amount", 0)
-            ws[f"G{row}"] = total
-
-            # H6, H7, H8... - GST/HST amount
-            hst_gst = form.get("hst_gst_amount", 0)
-            ws[f"H{row}"] = hst_gst
-
-            # CAD form row populated
-
-        # Update current row for US forms
-        current_row += len(canadian_forms)
-
-        # Process US forms
-        for i, form in enumerate(us_forms):
-            row = current_row + i
-
-            # B6+, B7+, B8+... - Date of Receipt
-            ws[f"B{row}"] = current_date
-
-            # C6+, C7+, C8+... - Vendor name
-            ws[f"C{row}"] = form.get("vendor_name", "")
-
-            # D6+, D7+, D8+... - Total foreign amount including taxes (us_total)
-            us_total = form.get("us_total", 0)
-            ws[f"D{row}"] = us_total
-
-            # E6+, E7+, E8+... - Exchange rate (CAD/USD)
-            # Calculate exchange rate from canadian_amount / us_total if both exist
-            canadian_amount = form.get("canadian_amount", 0)
-            if us_total > 0 and canadian_amount > 0:
-                exchange_rate = canadian_amount / us_total
-                ws[f"E{row}"] = exchange_rate
-            else:
-                exchange_rate = 0
-                ws[f"E{row}"] = 0
-                logger.warning(
-                    f"Could not calculate exchange rate for {form.get('vendor_name', '')} - us_total: {us_total}, canadian_amount: {canadian_amount}"
-                )
-
-            # F6+, F7+, F8+... - Canadian amount paid (same as G column for US)
-            ws[f"F{row}"] = canadian_amount
-
-            # G6+, G7+, G8+... - Canadian amount paid (same as F column for US)
-            ws[f"G{row}"] = canadian_amount
-
-            # H6+, H7+, H8+... - HST amount (0 for US purchases)
-            ws[f"H{row}"] = 0
-
-            # USD form row populated
+            if currency == "CAD":
+                ws[f"F{row}"] = form.get("subtotal_amount", 0)  # Subtotal
+                ws[f"G{row}"] = form.get("total_amount", 0)  # Total
+                ws[f"H{row}"] = form.get("hst_gst_amount", 0)  # HST/GST
+            else:  # USD
+                us_total = form.get("us_total", 0)
+                canadian_amount = form.get("canadian_amount", 0)
+                ws[f"D{row}"] = us_total  # US total
+                ws[f"E{row}"] = canadian_amount / us_total if us_total > 0 and canadian_amount > 0 else 0  # Exchange rate
+                ws[f"F{row}"] = ws[f"G{row}"] = canadian_amount  # Canadian amount
+                ws[f"H{row}"] = 0  # No HST for US
 
         return True
 
