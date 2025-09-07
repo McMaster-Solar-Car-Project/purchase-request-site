@@ -105,9 +105,10 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
 
             # For CAD: D column stays empty, E column stays empty
 
-            # F6, F7, F8... - CDN amount without GST (subtotal)
+            # F6, F7, F8... - CDN amount without GST (subtotal minus discount)
             subtotal = form.get("subtotal_amount", 0)
-            ws[f"F{row}"] = subtotal
+            discount = form.get("discount_amount", 0)
+            ws[f"F{row}"] = subtotal - discount
 
             # G6, G7, G8... - CDN amount with GST (total)
             total = form.get("total_amount", 0)
