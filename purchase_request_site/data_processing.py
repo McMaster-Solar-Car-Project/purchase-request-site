@@ -88,18 +88,18 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
         # Process forms in the order they appear
         for i, form in enumerate(submitted_forms):
             row = current_row + i
-            currency = form.get("currency", "CAD")
+            subtotal = form.get("subtotal_amount", 0)
+            discount = form.get("discount_amount", 0)
+            final_subtotal = subtotal - discount
             ws[f"B{row}"] = current_date  # Date
             ws[f"C{row}"] = form.get("vendor_name", "")  # Vendor name
 
-            if currency == "CAD":
-                ws[f"F{row}"] = form.get("subtotal_amount", 0) - form.get(
-                    "discount_amount", 0
-                )  # Subtotal
+            if form.get("currency", "CAD") == "CAD":
+                ws[f"F{row}"] = final_subtotal
                 ws[f"G{row}"] = form.get("total_amount", 0)  # Total
                 ws[f"H{row}"] = form.get("hst_gst_amount", 0)  # HST/GST
             else:  # USD
-                us_total = form.get("us_total", 0)
+                us_total = form.get("us_total", 1)
                 canadian_amount = form.get("canadian_amount", 0)
                 ws[f"D{row}"] = us_total  # US total
                 ws[f"E{row}"] = (
