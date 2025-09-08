@@ -6,7 +6,7 @@ A FastAPI web application for managing purchase requests and expense reports. Us
 
 - **Purchase Request Forms**: Submit up to 10 invoices per session with vendor details, items, and file uploads
 - **Automatic Excel Generation**: Creates purchase request and expense report spreadsheets
-- **Google Integration**: Uploads files to Google Drive and logs session data to Google Sheets
+- **Google Integration**: Uploads files to Google Drive/Supabase and emails users their forms
 - **Multi-Currency Support**: Handles both CAD and USD purchases with exchange rate calculations
 - **Digital Signatures**: Processes and crops signature images for reports
 
