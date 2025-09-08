@@ -118,13 +118,14 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
 
 
 def create_excel_report(user_info, submitted_forms, session_folder):
-    """Create Excel file using the template with multiple tabs for each submitted form"""
+    """Create Purchase Request file using the template with multiple tabs for each submitted form"""
 
     template_path = "excel_templates/purchase_request_template.xlsx"
 
     # Check if template exists
     if not os.path.exists(template_path):
-        raise FileNotFoundError(f"Template file not found: {template_path}")
+        logger.exception(f"Purchase request template not found: {template_path}")
+        return False
 
     # Create single output file
     output_filename = "purchase_request.xlsx"
