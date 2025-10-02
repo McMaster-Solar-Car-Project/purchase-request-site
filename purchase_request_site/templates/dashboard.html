@@ -755,16 +755,55 @@
                 submitBtn.disabled = true;
                 submitBtn.textContent = "Submitting… (This may take a few minutes)";
 
-                // If you want to guard against the user navigating away and then coming back
-                // you could also set a short timeout to re-enable in case of unexpected failure:
-                setTimeout(() => {
-                    // safety net: if submission didn't go through after, say, 30s, re-enable
-                    if (isSubmitting) {
-                        isSubmitting = false;
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = "Submit All Purchase Requests";
+                // Handle Render sleep/wake cycle with retry logic
+                let retryCount = 0;
+                const maxRetries = 3;
+                
+                const submitWithRetry = async () => {
+                    try {
+                        // First, wake up the app with a health check
+                        await fetch('/health', { method: 'GET' });
+                        
+                        // Wait a moment for the app to fully wake up
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // Now submit the form
+                        const formData = new FormData(form);
+                        const response = await fetch('/submit-all-requests', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            // Success - redirect to success page
+                            window.location.href = response.url || '/success';
+                        } else {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                    } catch (error) {
+                        console.log(`Submit attempt ${retryCount + 1} failed:`, error);
+                        retryCount++;
+                        
+                        if (retryCount < maxRetries) {
+                            // Wait before retry (exponential backoff)
+                            const delay = Math.pow(2, retryCount) * 1000;
+                            submitBtn.textContent = `Retrying in ${delay/1000}s... (${retryCount}/${maxRetries})`;
+                            setTimeout(submitWithRetry, delay);
+                        } else {
+                            // All retries failed
+                            alert('Submission failed after multiple attempts. Please try again.');
+                            isSubmitting = false;
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = "Submit All Purchase Requests";
+                        }
                     }
-                }, 45000);
+                };
+                
+                // Start the submission process
+                submitWithRetry();
+                
+                // Prevent default form submission since we're handling it with fetch
+                e.preventDefault();
             });
         });
     </script>
