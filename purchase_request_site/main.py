@@ -207,18 +207,11 @@ async def login(
 
         # Check if user profile is complete
         if is_user_profile_complete(user):
-            # Create a session folder with existing user data
-            session_folder = create_session_folder(user.name)
-
-            # Save user's signature to session folder for dashboard use
-            signature_filename = "signature.png"
-            signature_path = f"{session_folder}/{signature_filename}"
-            if save_signature_to_file(user, signature_path):
-                # Redirect directly to dashboard, skipping user info form
-                return RedirectResponse(
-                    url=f"/dashboard?user_email={email}&session_folder={session_folder}&signature={signature_filename}",
-                    status_code=303,
-                )
+            # Redirect directly to dashboard
+            return RedirectResponse(
+                url=f"/dashboard?user_email={email}",
+                status_code=303,
+            )
 
         # If profile incomplete, go to edit profile page
         return RedirectResponse(
@@ -271,13 +264,16 @@ async def download_excel(
 
         # Download file content from Supabase
         import tempfile
+
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             temp_path = temp_file.name
 
         success = download_file_from_supabase(storage_path, temp_path)
 
         if not success:
-            raise HTTPException(status_code=404, detail="Excel file not found in Supabase")
+            raise HTTPException(
+                status_code=404, detail="Excel file not found in Supabase"
+            )
 
         # Read the downloaded file content
         with open(temp_path, "rb") as f:
@@ -285,6 +281,7 @@ async def download_excel(
 
         # Clean up temp file
         import os
+
         os.unlink(temp_path)
 
         # Return the file content as a streaming response
@@ -319,9 +316,6 @@ def create_session_folder(name):
 async def dashboard(
     request: Request,
     user_email: str,
-    session_folder: str = None,
-    signature: str = None,
-    use_saved: bool = False,
     updated: bool = False,
     error: str = None,
     db: Session = Depends(get_db),
@@ -332,17 +326,6 @@ async def dashboard(
     if not user:
         logger.exception(f"User not found in database: {user_email}")
         raise HTTPException(status_code=404, detail="User not found")
-
-    # If use_saved is True, create session folder and signature for existing user
-    if use_saved and not session_folder:
-        session_folder = create_session_folder(user.name)
-        signature_filename = "signature.png"
-        signature_path = f"{session_folder}/{signature_filename}"
-        if save_signature_to_file(user, signature_path):
-            signature = signature_filename
-        else:
-            logger.warning(f"Could not save signature for user {user_email}")
-            signature = "signature.png"  # Default filename
 
     error_message = None
     success_message = None
@@ -364,8 +347,6 @@ async def dashboard(
             "e_transfer_email": user.personal_email,
             "address": user.address,
             "team": user.team,
-            "session_folder": session_folder,
-            "signature": signature,
             "error_message": error_message,
             "success_message": success_message,
         },
@@ -373,7 +354,9 @@ async def dashboard(
 
 
 @app.post("/submit-all-requests")
-async def submit_all_requests(request: Request, _: None = Depends(require_auth)):
+async def submit_all_requests(
+    request: Request, db: Session = Depends(get_db), _: None = Depends(require_auth)
+):
     # Get form data
     form_data = await request.form()
 
@@ -383,8 +366,22 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
     e_transfer_email = form_data.get("e_transfer_email")
     address = form_data.get("address")
     team = form_data.get("team")
-    session_folder = form_data.get("session_folder")
-    signature_filename = form_data.get("signature")
+
+    # Create session folder dynamically
+    session_folder = create_session_folder(name)
+
+    # Get user from database to fetch signature
+    user = get_user_by_email(db, email)
+    if not user:
+        logger.exception(f"User not found in database: {email}")
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Save user's signature to session folder
+    signature_filename = "signature.png"
+    signature_path = f"{session_folder}/{signature_filename}"
+    if not save_signature_to_file(user, signature_path):
+        logger.warning(f"Could not save signature for user {email}, using default")
+        signature_filename = "signature.png"  # Default filename
 
     submitted_forms = []
 
@@ -438,17 +435,26 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             item_total = form_data.get(f"item_total_{form_num}_{item_num}")
 
             if item_name and item_usage and item_quantity and item_price:
-                items.append({
-                    "name": item_name, "usage": item_usage, "quantity": int(item_quantity),
-                    "unit_price": float(item_price), "total": float(item_total or 0)
-                })
+                items.append(
+                    {
+                        "name": item_name,
+                        "usage": item_usage,
+                        "quantity": int(item_quantity),
+                        "unit_price": float(item_price),
+                        "total": float(item_total or 0),
+                    }
+                )
 
         # Skip forms with no items
         if not items:
             continue
 
         # Save uploaded invoice file in session folder
-        invoice_extension = invoice_file.filename.split(".")[-1] if "." in invoice_file.filename else "pdf"
+        invoice_extension = (
+            invoice_file.filename.split(".")[-1]
+            if "." in invoice_file.filename
+            else "pdf"
+        )
         invoice_filename = f"{form_num}_{vendor_name}.{invoice_extension}"
         invoice_file_location = f"{session_folder}/{invoice_filename}"
 
@@ -459,9 +465,19 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
 
         # Save proof of payment file only for USD currency
         proof_of_payment_filename = proof_of_payment_location = None
-        if currency == "USD" and proof_of_payment_file and hasattr(proof_of_payment_file, "filename"):
-            payment_extension = proof_of_payment_file.filename.split(".")[-1] if "." in proof_of_payment_file.filename else "pdf"
-            proof_of_payment_filename = f"{form_num}_proof_of_payment.{payment_extension}"
+        if (
+            currency == "USD"
+            and proof_of_payment_file
+            and hasattr(proof_of_payment_file, "filename")
+        ):
+            payment_extension = (
+                proof_of_payment_file.filename.split(".")[-1]
+                if "." in proof_of_payment_file.filename
+                else "pdf"
+            )
+            proof_of_payment_filename = (
+                f"{form_num}_proof_of_payment.{payment_extension}"
+            )
             proof_of_payment_location = f"{session_folder}/{proof_of_payment_filename}"
             with open(proof_of_payment_location, "wb") as file_object:
                 file_object.write(await proof_of_payment_file.read())
@@ -535,9 +551,13 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
         def upload_to_drive():
             """Upload to Google Drive and return success status"""
             try:
-                return upload_session_to_drive(session_folder, user_info, drive_folder_id)
+                return upload_session_to_drive(
+                    session_folder, user_info, drive_folder_id
+                )
             except Exception:
-                logger.exception("Failed to start Google Drive upload (continuing anyway)")
+                logger.exception(
+                    "Failed to start Google Drive upload (continuing anyway)"
+                )
                 return False
 
         def upload_to_supabase():
@@ -560,8 +580,12 @@ async def submit_all_requests(request: Request, _: None = Depends(require_auth))
             drive_upload_success, supabase_upload_success = await asyncio.gather(
                 drive_task, supabase_task
             )
-            logger.info(f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}")
-            logger.info(f"Supabase upload completed: {'✅ Success' if supabase_upload_success else '❌ Failed'}")
+            logger.info(
+                f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"
+            )
+            logger.info(
+                f"Supabase upload completed: {'✅ Success' if supabase_upload_success else '❌ Failed'}"
+            )
         except Exception as e:
             logger.exception(f"Unexpected error in upload task: {e}")
 
@@ -714,7 +738,7 @@ async def edit_profile_post(
         db.commit()
 
         # Redirect back to dashboard with success message
-        redirect_url = f"/dashboard?user_email={email}&use_saved=true&updated=true"
+        redirect_url = f"/dashboard?user_email={email}&updated=true"
         return RedirectResponse(url=redirect_url, status_code=303)
 
     except Exception as e:
