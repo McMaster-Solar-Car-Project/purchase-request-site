@@ -1,0 +1,37 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /home/raj/purchase-request-site
+            echo "Starting deployment for commit: ${{ github.sha }}"
+            
+            # Force pull latest changes from main branch
+            git fetch origin
+            git reset --hard origin/main
+            
+            # Install/update dependencies
+            uv sync
+            
+            # Kill existing process if running
+            pkill -f "uv run run.py" || true
+            
+            # Start the application
+            nohup uv run run.py > nohup.out 2>&1 &
+            
+            echo "Deployment completed successfully"
+            echo "Application is running on http://0.0.0.0:8000"
