@@ -10,25 +10,75 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /home/raj/purchase-request-site
-            echo "Starting deployment for commit: ${{ github.sha }}"
-            
-            git fetch origin
-            git reset --hard origin/main
-            
-            uv sync
-            
-            pkill -f "uv run run.py" || true
-            
-            nohup uv run run.py > nohup.out 2>&1 &
-            
-            sleep 15  # Wait for the process to start
-            
-            echo "Deployment completed successfully"
+     - name: Deploy to server
+       uses: appleboy/ssh-action@v1.0.3
+       with:
+         host: ${{ secrets.HOST }}
+         username: ${{ secrets.USERNAME }}
+         key: ${{ secrets.SSH_KEY }}
+         command_timeout: 20m  # Increased to avoid timeout
+         debug: true  # Enable debug logging for SSH action
+         script: |
+           cd /home/raj/purchase-request-site
+           echo "Starting deployment for commit: ${{ github.sha }}"
+           
+           echo "Fetching latest commits..."
+           git fetch origin
+           git reset --hard origin/main
+           
+           echo "Running uv sync..."
+           uv sync --verbose > uv-sync.log 2>&1
+           UV_EXIT_CODE=$?
+           if [ $UV_EXIT_CODE -ne 0 ]; then
+             echo "Error: uv sync failed with exit code $UV_EXIT_CODE. See uv-sync.log for details."
+             cat uv-sync.log
+             exit 1
+           else
+             echo "uv sync completed successfully"
+             cat uv-sync.log
+           fi
+           
+           echo "Checking for running uv run run.py processes before pkill..."
+           pgrep -f "uv run run.py" > before_pkill.log 2>&1
+           if [ $? -eq 0 ]; then
+             echo "Found processes before pkill:"
+             cat before_pkill.log
+           else
+             echo "No uv run run.py processes found before pkill"
+           fi
+           
+           echo "Running pkill..."
+           pkill -f "uv run run.py"
+           PKILL_EXIT_CODE=$?
+           if [ $PKILL_EXIT_CODE -eq 0 ]; then
+             echo "pkill successfully terminated processes"
+           else
+             echo "pkill found no matching processes or failed (exit code $PKILL_EXIT_CODE)"
+           fi
+           
+           echo "Checking for running uv run run.py processes after pkill..."
+           pgrep -f "uv run run.py" > after_pkill.log 2>&1
+           if [ $? -eq 0 ]; then
+             echo "Processes still running after pkill:"
+             cat after_pkill.log
+             exit 1  # Fail if processes remain
+           else
+             echo "No uv run run.py processes found after pkill"
+           fi
+           
+           echo "Starting application..."
+           nohup uv run run.py > nohup.out 2>&1 &
+           APP_PID=$!
+           
+           sleep 15
+           
+           echo "Checking if application is running..."
+           if ps -p $APP_PID > /dev/null; then
+             echo "Application started successfully with PID $APP_PID"
+           else
+             echo "Error: Application failed to start. Check nohup.out for details."
+             cat nohup.out
+             exit 1
+           fi
+           
+           echo "Deployment completed successfully"
