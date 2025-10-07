@@ -59,3 +59,5 @@ This project relies of a few key API's and Services.
 - Gmail Account (Emailing warnings)
 - Google Cloud Run (Deploying the Docker image)
 - Supabase (Store credentials and backup data)
+ This line was added by Janet as part of her first open-source contribution.
+
