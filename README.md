@@ -11,7 +11,7 @@ These setup instructions are for macOS and WSL. If you are using Windows, please
 
 ```bash
 # Install system dependencies
-brew install uv gitleaks lefthook
+brew install uv gitleaks lefthook ruff
 
 # Clone the repo (you can use https instead of ssh if you prefer)
 git clone git@github.com:McMaster-Solar-Car-Project/purchase-request-site.git
