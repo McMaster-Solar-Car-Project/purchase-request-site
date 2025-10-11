@@ -41,7 +41,8 @@ class GoogleDriveClient:
         self.service = None
         self.parent_folder_id = None
 
-    def _get_credentials_from_env(self) -> dict[str, str]:
+    @staticmethod
+    def _get_credentials_from_env() -> dict[str, str]:
         """
         Build service account credentials from environment variables
 
@@ -89,6 +90,8 @@ class GoogleDriveClient:
 
     def _authenticate(self):
         """Authenticate with Google Drive API using environment variables"""
+        if self.service:
+            return True
         try:
             service_account_info = self._get_credentials_from_env()
             credentials = Credentials.from_service_account_info(
@@ -510,9 +513,11 @@ class GoogleDriveClient:
             logger.exception(f"Error searching for {file_name}: {e}")
             return ""
 
-
-# Global instance
-drive_client = GoogleDriveClient()
+    def close(self):
+        """Close the Google Drive client"""
+        self.parent_folder_id = None
+        self.service.close()
+        self.service = None
 
 
 def create_drive_folder_and_get_url(
@@ -529,9 +534,11 @@ def create_drive_folder_and_get_url(
         tuple: (folder_url: str, folder_id: str) or ("", "") if failed
     """
     try:
+        drive_client = GoogleDriveClient()
         success, folder_url, folder_id = drive_client.create_session_folder_structure(
             session_folder_path, user_info
         )
+        drive_client.close()
         if success:
             return folder_url, folder_id
         else:
@@ -560,9 +567,11 @@ def upload_session_to_drive(
         logger.info(
             f"Starting synchronous upload to Google Drive: {session_folder_path}"
         )
+        drive_client = GoogleDriveClient()
         success = drive_client.upload_session_folder(
             session_folder_path, user_info, session_folder_id
         )
+        drive_client.close()
         if success:
             logger.info("✅ Upload to Google Drive completed successfully")
             return True
@@ -571,35 +580,4 @@ def upload_session_to_drive(
             return False
     except Exception as e:
         logger.exception(f"Unexpected error in upload to Google Drive: {e}")
-        return False
-
-
-def download_file_from_drive(folder_id: str, file_name: str) -> bytes:
-    """Download a file from Google Drive by folder ID and file name
-
-    Args:
-        folder_id: Google Drive folder ID where the file is located
-        file_name: Name of the file to download
-
-    Returns:
-        bytes: File content as bytes
-
-    Raises:
-        Exception: If file not found or download fails
-    """
-    # First find the file in the folder
-    file_id = drive_client.find_file_in_folder(folder_id, file_name)
-    if not file_id:
-        raise Exception(f"File '{file_name}' not found in Google Drive folder")
-
-    # Download the file
-    return drive_client.download_file(file_id, file_name)
-
-
-def test_google_drive_connection():
-    """Test function to verify Google Drive integration"""
-    if drive_client.test_connection():
-        return True
-    else:
-        logger.exception("❌ Google Drive connection failed")
         return False

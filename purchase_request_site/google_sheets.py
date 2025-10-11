@@ -89,6 +89,8 @@ class GoogleSheetsClient:
 
     def _authenticate(self):
         """Authenticate with Google Sheets API using environment variables"""
+        if self.service:
+            return True
         try:
             service_account_info = self._get_credentials_from_env()
             credentials = Credentials.from_service_account_info(
@@ -259,6 +261,7 @@ class GoogleSheetsClient:
             logger.exception(f"Error logging session data: {e}")
             return False
 
-
-# Global instance
-sheets_client = GoogleSheetsClient()
+    def close(self):
+        """Close the Google Sheets client"""
+        self.service.close()
+        self.service = None
