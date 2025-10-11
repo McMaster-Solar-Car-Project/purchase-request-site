@@ -259,6 +259,7 @@ class GoogleSheetsClient:
             logger.exception(f"Error logging session data: {e}")
             return False
 
-
-# Global instance
-sheets_client = GoogleSheetsClient()
+    def close(self):
+        """Close the Google Sheets client"""
+        self.service.close()
+        self.service = None

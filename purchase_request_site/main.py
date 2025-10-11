@@ -25,7 +25,7 @@ from google_drive import (
     create_drive_folder_and_get_url,
     upload_session_to_drive,
 )
-from google_sheets import sheets_client
+from google_sheets import GoogleSheetsClient
 from logging_utils import setup_logger
 from request_logging import RequestLoggingMiddleware
 from sqlalchemy.orm import Session
@@ -538,9 +538,11 @@ async def submit_all_requests(
 
         # Log to Google Sheets (with Drive folder URL)
         try:
+            sheets_client = GoogleSheetsClient()
             sheets_client.log_purchase_request(
                 user_info, submitted_forms, session_folder, drive_folder_url
             )
+            sheets_client.close()
         except Exception:
             logger.exception("Failed to log to Google Sheets (continuing anyway)")
 
