@@ -1,4 +1,3 @@
-# ruff: noqa: B019
 """
 Google Sheets integration module for the Purchase Request Site.
 
