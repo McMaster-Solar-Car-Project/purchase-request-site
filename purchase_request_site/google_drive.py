@@ -9,7 +9,6 @@ import mimetypes
 import os
 import time
 from datetime import datetime
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -43,7 +42,8 @@ class GoogleDriveClient:
         self.service = None
         self.parent_folder_id = None
 
-    def _get_credentials_from_env(self) -> dict[str, str]:
+    @staticmethod
+    def _get_credentials_from_env() -> dict[str, str]:
         """
         Build service account credentials from environment variables
 
@@ -89,9 +89,10 @@ class GoogleDriveClient:
 
         return service_account_info
 
-    @lru_cache(maxsize=1)
     def _authenticate(self):
         """Authenticate with Google Drive API using environment variables"""
+        if self.service:
+            return True
         try:
             service_account_info = self._get_credentials_from_env()
             credentials = Credentials.from_service_account_info(
