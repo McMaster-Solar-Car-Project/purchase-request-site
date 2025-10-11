@@ -57,5 +57,6 @@ This project relies of a few key API's and Services.
   - Place API (Address Autocomplete, not needed but nice to have)
 - Google Service Account (Accessing Drive files)
 - Gmail Account (Emailing warnings)
-- Google Cloud Run (Deploying the Docker image)
+- Digital Ocean (Deploying the site)
+- Google Cloud Run (preview environment)
 - Supabase (Store credentials and backup data)
