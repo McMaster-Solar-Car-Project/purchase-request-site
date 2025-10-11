@@ -1,3 +1,4 @@
+# ruff: noqa: B019
 """
 Google Drive integration module for the Purchase Request Site.
 
@@ -8,6 +9,7 @@ import mimetypes
 import os
 import time
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -87,6 +89,7 @@ class GoogleDriveClient:
 
         return service_account_info
 
+    @lru_cache(maxsize=1)
     def _authenticate(self):
         """Authenticate with Google Drive API using environment variables"""
         try:

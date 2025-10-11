@@ -1,3 +1,4 @@
+# ruff: noqa: B019
 """
 Google Sheets integration module for the Purchase Request Site.
 
@@ -9,6 +10,7 @@ import random
 import ssl
 import time
 from datetime import datetime
+from functools import lru_cache
 from typing import Any
 
 from dotenv import load_dotenv
@@ -87,6 +89,7 @@ class GoogleSheetsClient:
 
         return service_account_info
 
+    @lru_cache(maxsize=1)
     def _authenticate(self):
         """Authenticate with Google Sheets API using environment variables"""
         try:
