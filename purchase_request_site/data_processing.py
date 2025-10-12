@@ -261,7 +261,7 @@ def create_expense_report_non_mcmaster(user_info, submitted_forms, session_folde
         logger.exception(f"Expense report template not found: {template_path}")
         return False
     # Create single output file
-    output_filename = "purchase_request.xlsx"
+    output_filename = "purchase_request_non_mcmaster.xlsx"
     output_path = f"{session_folder}/{output_filename}"
 
     # Copy template to session folder
