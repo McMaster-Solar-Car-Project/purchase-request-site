@@ -5,7 +5,7 @@ import shutil
 from contextlib import asynccontextmanager
 from datetime import datetime
 
-from data_processing import copy_expense_report_template, create_excel_report
+from data_processing import create_expense_report, create_purchase_request
 from database import get_db, init_database
 from dotenv import load_dotenv
 from fastapi import (
@@ -515,12 +515,14 @@ async def submit_all_requests(
             "team": team,
             "signature": signature_filename,
         }
-
-        create_excel_report(user_info, submitted_forms, session_folder)
+        try:
+            create_purchase_request(user_info, submitted_forms, session_folder)
+        except Exception:
+            logger.exception("Failed to create purchase request (continuing anyway)")
 
         # Copy expense report template to session folder
         try:
-            copy_expense_report_template(session_folder, user_info, submitted_forms)
+            create_expense_report(session_folder, user_info, submitted_forms)
         except Exception:
             logger.exception(
                 "Failed to copy and populate expense report template (continuing anyway)"
