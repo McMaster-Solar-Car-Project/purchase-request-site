@@ -23,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from google_drive import (
     create_drive_folder_and_get_url,
+    download_file_from_drive,
     upload_session_to_drive,
 )
 from google_sheets import GoogleSheetsClient
@@ -30,7 +31,6 @@ from logging_utils import setup_logger
 from request_logging import RequestLoggingMiddleware
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
-from submission_service import upload_session_to_supabase
 from user_service import (
     get_user_by_email,
     get_user_signature_as_data_url,
@@ -245,45 +245,13 @@ async def home(request: Request):
 @app.get("/download-excel")
 async def download_excel(
     request: Request,
-    session_id: str,
+    drive_folder_id: str,
     excel_file: str,
     _: None = Depends(require_auth),
 ):
-    """Download the generated Excel file from Supabase"""
+    """Download the generated Excel file from Google Drive"""
     try:
-        from datetime import datetime
-
-        from submission_service import download_file_from_supabase
-
-        # Get current month and year for folder structure
-        now = datetime.now()
-        month_year = now.strftime("%B %Y")
-
-        # Construct the storage path in Supabase
-        storage_path = f"{month_year}/{session_id}/{excel_file}"
-
-        # Download file content from Supabase
-        import tempfile
-
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            temp_path = temp_file.name
-
-        success = download_file_from_supabase(storage_path, temp_path)
-
-        if not success:
-            raise HTTPException(
-                status_code=404, detail="Excel file not found in Supabase"
-            )
-
-        # Read the downloaded file content
-        with open(temp_path, "rb") as f:
-            file_content = f.read()
-
-        # Clean up temp file
-        import os
-
-        os.unlink(temp_path)
-
+        file_content = download_file_from_drive(drive_folder_id, excel_file)
         # Return the file content as a streaming response
         from fastapi.responses import Response
 
@@ -294,9 +262,9 @@ async def download_excel(
         )
 
     except Exception:
-        logger.exception(f"Failed to download {excel_file} from Supabase")
+        logger.exception(f"Failed to download {excel_file} from Google Drive")
         raise HTTPException(
-            status_code=404, detail="Excel file not found in Supabase"
+            status_code=404, detail="Excel file not found in Google Drive"
         ) from None
 
 
@@ -564,31 +532,14 @@ async def submit_all_requests(
                 )
                 return False
 
-        def upload_to_supabase():
-            """Upload to Supabase and return success status"""
-            try:
-                return upload_session_to_supabase(session_folder, user_info)
-            except Exception:
-                logger.exception("Failed to start Supabase upload (continuing anyway)")
-                return False
-
         # Run both uploads concurrently
         logger.info("Starting concurrent uploads to Google Drive and Supabase...")
         drive_upload_success = False
         supabase_upload_success = False
         try:
-            drive_task = asyncio.to_thread(upload_to_drive)
-            supabase_task = asyncio.to_thread(upload_to_supabase)
-
-            # await allows the event loop to handle other tasks
-            drive_upload_success, supabase_upload_success = await asyncio.gather(
-                drive_task, supabase_task
-            )
+            drive_upload_success = upload_to_drive()
             logger.info(
                 f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"
-            )
-            logger.info(
-                f"Supabase upload completed: {'✅ Success' if supabase_upload_success else '❌ Failed'}"
             )
         except Exception as e:
             logger.exception(f"Unexpected error in upload task: {e}")
@@ -609,12 +560,9 @@ async def submit_all_requests(
             status_code=303,
         )
 
-    # Get session ID from session folder path
-    session_id = os.path.basename(session_folder)
-
     # Redirect back to home with success message and session info for download
     return RedirectResponse(
-        url=f"/success?session_id={session_id}&excel_file=purchase_request.xlsx&user_email={email}",
+        url=f"/success?drive_folder_id={drive_folder_id}&excel_file=purchase_request.xlsx&user_email={email}",
         status_code=303,
     )
 
@@ -622,7 +570,7 @@ async def submit_all_requests(
 @app.get("/success")
 async def success_page(
     request: Request,
-    session_id: str = None,
+    drive_folder_id: str = None,
     excel_file: str = None,
     user_email: str = None,
     _: None = Depends(require_auth),
@@ -631,11 +579,11 @@ async def success_page(
     download_info = None
     current_time = datetime.now()
 
-    if session_id and excel_file:
+    if drive_folder_id and excel_file:
         download_info = {
-            "session_id": session_id,
+            "drive_folder_id": drive_folder_id,
             "excel_file": excel_file,
-            "download_url": f"/download-excel?session_id={session_id}&excel_file={excel_file}",
+            "download_url": f"/download-excel?drive_folder_id={drive_folder_id}&excel_file={excel_file}",
         }
 
     return templates.TemplateResponse(
