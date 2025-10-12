@@ -537,7 +537,7 @@ async def submit_all_requests(
 
         # Copy expense report template to session folder
         try:
-            create_expense_report(session_folder, user_info, submitted_forms)
+            create_expense_report(user_info, submitted_forms, session_folder)
         except Exception:
             logger.exception(
                 "Failed to copy and populate expense report template (continuing anyway)"

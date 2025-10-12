@@ -10,7 +10,7 @@ from openpyxl import load_workbook
 logger = setup_logger(__name__)
 
 
-def create_expense_report(session_folder, user_info, submitted_forms):
+def create_expense_report(user_info, submitted_forms, session_folder):
     """Copy the expense report template to the session folder and populate with user data"""
 
     template_path = "excel_templates/expense_report_template.xlsx"
