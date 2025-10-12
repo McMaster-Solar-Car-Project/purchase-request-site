@@ -581,3 +581,36 @@ def upload_session_to_drive(
     except Exception as e:
         logger.exception(f"Unexpected error in upload to Google Drive: {e}")
         return False
+
+
+def download_file_from_drive(folder_id: str, file_name: str) -> bytes:
+    """Download a file from Google Drive by folder ID and file name
+
+    Args:
+        folder_id: Google Drive folder ID where the file is located
+        file_name: Name of the file to download
+
+    Returns:
+        bytes: File content as bytes
+
+    Raises:
+        Exception: If file not found or download fails
+    """
+    try:
+        drive_client = GoogleDriveClient()
+
+        # First find the file in the folder
+        file_id = drive_client.find_file_in_folder(folder_id, file_name)
+        if not file_id:
+            logger.exception(f"File '{file_name}' not found in Google Drive folder")
+            return None
+
+        # Download the file
+        file_info = drive_client.download_file(file_id, file_name)
+
+        drive_client.close()
+        return file_info
+
+    except Exception as e:
+        logger.exception(f"Error downloading {file_name} from Google Drive: {e}")
+        return None
