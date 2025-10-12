@@ -54,7 +54,6 @@ class SupabaseSubmissionClient:
             logger.exception(f"Failed to initialize Supabase client: {e}")
             return False
 
-
     def upload_session_folder(
         self, session_folder_path: str, user_info: dict[str, Any]
     ) -> bool:
@@ -143,7 +142,7 @@ class SupabaseSubmissionClient:
             self.client.storage.from_(self.bucket_name).upload(
                 path=storage_path,
                 file=file_content,
-                file_options={"content-type": content_type}
+                file_options={"content-type": content_type},
             )
 
             # If we get here without an exception, the upload was successful
@@ -170,7 +169,9 @@ class SupabaseSubmissionClient:
                 return False
 
             # Download file content
-            response = self.client.storage.from_(self.bucket_name).download(storage_path)
+            response = self.client.storage.from_(self.bucket_name).download(
+                storage_path
+            )
 
             if isinstance(response, bytes):
                 # Create directory if it doesn't exist
@@ -227,37 +228,6 @@ class SupabaseSubmissionClient:
 submission_client = SupabaseSubmissionClient()
 
 
-def upload_session_to_supabase(
-    session_folder_path: str, user_info: dict[str, Any]
-) -> bool:
-    """
-    Upload session data to Supabase storage synchronously
-
-    Args:
-        session_folder_path: Local path to the session folder
-        user_info: User information dictionary
-
-    Returns:
-        bool: True if upload was successful, False otherwise
-    """
-    try:
-        logger.info(
-            f"Starting synchronous upload to Supabase: {session_folder_path}"
-        )
-        success = submission_client.upload_session_folder(
-            session_folder_path, user_info
-        )
-        if success:
-            logger.info("✅ Upload to Supabase completed successfully")
-            return True
-        else:
-            logger.warning("❌ Upload to Supabase failed")
-            return False
-    except Exception as e:
-        logger.exception(f"Unexpected error in upload to Supabase: {e}")
-        return False
-
-
 def download_file_from_supabase(storage_path: str, local_path: str) -> bool:
     """Download a file from Supabase storage
 
@@ -269,4 +239,3 @@ def download_file_from_supabase(storage_path: str, local_path: str) -> bool:
         bool: True if download was successful, False otherwise
     """
     return submission_client.download_file(storage_path, local_path)
-
