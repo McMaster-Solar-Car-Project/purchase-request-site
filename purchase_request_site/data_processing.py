@@ -282,18 +282,20 @@ def create_expense_report_non_mcmaster(user_info, submitted_forms, session_folde
             item["unit_price"] * item["quantity"] for item in form["items"]
         )
         if form["currency"] == "USD":
-            us_tax_rate = form.get("us_total", 0) / invoice_subtotal
+            invoice_total_us = invoice_subtotal + form.get("hst_gst_amount", 0)
+            canadian_total = form.get("canadian_amount", 0)
+
+            us_tax_rate = invoice_total_us / invoice_subtotal
+
         for item in form["items"]:
             ws[f"C{row}"] = item["usage"]
             if form["currency"] == "USD":
                 ws[f"L{row}"] = item["unit_price"] * item["quantity"] * us_tax_rate
-                ws[f"N{row}"] = item["canadian_amount"] / (
-                    item["unit_price"] * item["quantity"] * us_tax_rate
-                )
-                ws[f"P{row}"] = form["canadian_amount"] * (
+                ws[f"N{row}"] = canadian_total / invoice_total_us
+                ws[f"P{row}"] = canadian_total * (
                     item["unit_price"] * item["quantity"] / invoice_subtotal
                 )
-                ws[f"R{row}"] = form["canadian_amount"] * (
+                ws[f"R{row}"] = canadian_total * (
                     item["unit_price"] * item["quantity"] / invoice_subtotal
                 )
             else:
