@@ -138,6 +138,21 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
 
+
+# Health check endpoint for Render
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for load balancers and monitoring"""
+    return {"status": "healthy", "message": "Purchase Request Site is running"}
+
+
+# Root endpoint for health checks
+@app.get("/")
+async def root():
+    """Root endpoint for health checks and basic info"""
+    return RedirectResponse(url="/login", status_code=303)
+
+
 # Add request logging middleware
 app.add_middleware(RequestLoggingMiddleware)
 
