@@ -249,3 +249,67 @@ def create_purchase_request(user_info, submitted_forms, session_folder):
         "forms_processed": len(submitted_forms),
         "tabs_used": [f"Receipt{form['form_number']}" for form in submitted_forms],
     }
+
+
+def create_expense_report_non_mcmaster(user_info, submitted_forms, session_folder):
+    """Create expense report for non-MCMaster users"""
+
+    template_path = "excel_templates/expense_report_template_non_mcmaster.xlsx"
+
+    # Check if template exists
+    if not os.path.exists(template_path):
+        logger.exception(f"Expense report template not found: {template_path}")
+        return False
+    # Create single output file
+    output_filename = "purchase_request.xlsx"
+    output_path = f"{session_folder}/{output_filename}"
+
+    # Copy template to session folder
+    shutil.copy2(template_path, output_path)
+
+    # Load the copied template
+    wb = load_workbook(output_path)
+
+    ws = wb.active
+
+    ws["A11"] = user_info["name"]
+    ws["A14"] = user_info["address"]
+    ws["L14"] = user_info["e_transfer_email"]
+
+    row = 21
+    for form in submitted_forms:
+        invoice_subtotal = sum(
+            item["unit_price"] * item["quantity"] for item in form["items"]
+        )
+        if form["currency"] == "USD":
+            us_tax_rate = form.get("us_total", 0) / invoice_subtotal
+        for item in form["items"]:
+            ws[f"C{row}"] = item["usage"]
+            if form["currency"] == "USD":
+                ws[f"L{row}"] = item["unit_price"] * item["quantity"] * us_tax_rate
+                ws[f"N{row}"] = item["canadian_amount"] / (
+                    item["unit_price"] * item["quantity"] * us_tax_rate
+                )
+                ws[f"P{row}"] = form["canadian_amount"] * (
+                    item["unit_price"] * item["quantity"] / invoice_subtotal
+                )
+                ws[f"R{row}"] = form["canadian_amount"] * (
+                    item["unit_price"] * item["quantity"] / invoice_subtotal
+                )
+            else:
+                ws[f"P{row}"] = item["unit_price"] * item["quantity"]
+                ws[f"R{row}"] = item["unit_price"] * item["quantity"]
+                ws[f"T{row}"] = form["hst_gst_amount"] * (
+                    item["unit_price"] * item["quantity"] / invoice_subtotal
+                )
+
+            row += 1
+
+    wb.save(output_path)
+    wb.close()
+
+    return {
+        "filename": output_filename,
+        "filepath": output_path,
+        "forms_processed": len(submitted_forms),
+    }

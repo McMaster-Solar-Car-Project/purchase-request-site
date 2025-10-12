@@ -5,7 +5,11 @@ import shutil
 from contextlib import asynccontextmanager
 from datetime import datetime
 
-from data_processing import create_expense_report, create_purchase_request
+from data_processing import (
+    create_expense_report,
+    create_expense_report_non_mcmaster,
+    create_purchase_request,
+)
 from database import get_db, init_database
 from dotenv import load_dotenv
 from fastapi import (
@@ -511,6 +515,15 @@ async def submit_all_requests(
                 "Failed to copy and populate expense report template (continuing anyway)"
             )
 
+        try:
+            create_expense_report_non_mcmaster(
+                user_info, submitted_forms, session_folder
+            )
+        except Exception:
+            logger.exception(
+                "Failed to create expense report for non-MCMaster users (continuing anyway)"
+            )
+
         # Create Google Drive folder and get URL
         drive_folder_url = ""
         drive_folder_id = ""
@@ -533,7 +546,6 @@ async def submit_all_requests(
 
         # Upload files to both Google Drive and Supabase concurrently
         drive_upload_success = False
-        supabase_upload_success = False
 
         def upload_to_drive():
             """Upload to Google Drive and return success status"""
@@ -548,9 +560,8 @@ async def submit_all_requests(
                 return False
 
         # Run both uploads concurrently
-        logger.info("Starting concurrent uploads to Google Drive and Supabase...")
+        logger.info("Starting uploads to Google Drive...")
         drive_upload_success = False
-        supabase_upload_success = False
         try:
             drive_upload_success = upload_to_drive()
             logger.info(
@@ -560,7 +571,7 @@ async def submit_all_requests(
             logger.exception(f"Unexpected error in upload task: {e}")
 
         # Clean up session folder if at least one upload was successful
-        if drive_upload_success or supabase_upload_success:
+        if drive_upload_success:
             try:
                 shutil.rmtree(session_folder)
                 logger.info(f"🗑️ Cleaned up session folder: {session_folder}")
