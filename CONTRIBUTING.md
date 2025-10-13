@@ -67,19 +67,19 @@ Contact Raj for the required environment variables before running the applicatio
 ### 4. Run the Application
 
 ```bash
-# Start the development server
+# Only run the application this way if you want to make changes that get reflected instantly
 uv run run.py
 ```
 
 ### 5. Run the Application with Docker
 
-**Important**: Even though you can run the application locally, it is recommended to use Docker to run the application. 
+**Important**: Even though you can run the application locally, it is recommended to use Docker to run the application since this is how it's run in production
 
 ```bash
 docker-compose --env-file .env up --build
 ```
 
-The application will be available at `http://localhost:80` (or the port specified in your configuration).
+The application will be available at `http://localhost:8000` (or the port specified in your configuration).
 
 ## Making Changes
 
@@ -106,10 +106,8 @@ git checkout -b fix/issue-description
 ### 3. Test Your Changes
 
 ```bash
-# Run the application locally to test your changes
-uv run run.py
-
-# Test all functionality that your changes affect
+# Run docker compose locally and test the funcionality of your changes
+docker-compose --env-file .env up --build
 ```
 
 ### 4. Commit Your Changes
