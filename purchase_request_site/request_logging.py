@@ -58,22 +58,3 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 f"failed after {process_time:.3f}s - {str(e)}"
             )
             raise
-
-
-def log_form_submission(form_data: dict, user_info: dict):
-    """Log form submissions with user information."""
-    request_logger.info(
-        f"📝 {user_info.get('name', 'Unknown')} submitted "
-        f"{len(form_data.get('submitted_forms', []))} forms"
-    )
-
-
-def log_google_drive_upload(folder_url: str, user_name: str):
-    """Log Google Drive upload events."""
-    request_logger.info(f"☁️ Drive upload: {user_name}")
-
-
-def log_email_notification(recipient: str, subject: str, success: bool):
-    """Log email notification attempts."""
-    if not success:  # Only log failures
-        request_logger.exception(f"📧 Email failed to {recipient}")
