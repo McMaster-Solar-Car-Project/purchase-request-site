@@ -1,62 +1,17 @@
-# Purchase Request Site
+<p align="center">
+  <img alt="Purchase Request Site" src="https://www.appliedprecision.ca/wp-content/uploads/2023/06/Png-Logo.png" width="600">
+</p>
 
-A FastAPI web application for managing purchase requests and expense reports. Users can submit purchase requests with invoices, which automatically generates Excel reports and uploads files to Google Drive.
+[Purchase Request Site](https://github.com/McMaster-Solar-Car-Project/purchase-request-site) is a FastAPI web application designed to streamline purchase request and expense report management for the McMaster Solar Car Project. Automatically generate expense reports and purchase requests to quickly get members their money back.
 
-## Setup
+Development of this application is done by the Operations and Finance team at McMaster Solar Car, if you want to get involved, you can join us when applications open [here](https://www.mcmastersolarcar.com/join).
 
-### 1. Install Dependencies
+## Getting Started
 
-These setup instructions are for macOS and WSL. If you are using Windows, please use WSL and install Brew before running the setup instructions.
+Visit the [CONTRIBUTING.md](./CONTRIBUTING.md) file for more information on how to contribute to the project.
 
+## Community & Support
 
-```bash
-# Install system dependencies
-brew install uv gitleaks lefthook ruff
+- Report issues and request features through [GitHub Issues](https://github.com/McMaster-Solar-Car-Project/purchase-request-site/issues)
+- View our [contributing guidelines](./CONTRIBUTING.md) to get involved
 
-# Clone the repo (you can use https instead of ssh if you prefer)
-git clone git@github.com:McMaster-Solar-Car-Project/purchase-request-site.git
-cd purchase-request-site
-
-# Create a venv
-uv venv
-
-# Activate the venv
-source .venv/bin/activate
-
-# Install project dependencies
-uv sync
-
-# Install git hooks
-lefthook install
-
-# Reach out to Raj for environment variables before running the application.
-uv run run.py
-```
-
-Alternatively, you can run the application using the Docker build instructions below. For Docker, you will need to access the site at the first port in the port mapping.
-```bash
-docker build -t purchase-request-site .
-docker run -p 8000:80 purchase-request-site
-
-# If you encounter errors with environment variables, you can include them in the docker run command.
-docker run -e GOOGLE_CLIENT_ID=... -e DATABASE_URL=... -p 8000:80 purchase-request-site
-
-```
-
-### 4. Contributing to the Project
-
-To contribute to this project, please make a separate branch and make your changes there. After pushing these changes, create a Pull Request on the GitHub repo. For the staging environment to run, you will need write access to the repository. After the build has finished (this may take a few minutes due to caching/propagation), you should be able to access the PR deployment at [https://purchase-request-site-staging-864928778234.northamerica-northeast2.run.app/login](https://purchase-request-site-staging-864928778234.northamerica-northeast2.run.app/login). Only the latest commit to any given pull request will be visible at this URL. **DO NOT MERGE WITHOUT APPROVAL AND AT LEAST ONE REVIEWER**
-
-### 5. Long Term Maintenance
-
-This project relies of a few key API's and Services.
-
-- Google API's
-  - Drive API (Access, update, and modify files in Google Drive)
-  - Sheets API (Access, update, and modify values in Google Sheets)
-  - Place API (Address Autocomplete, not needed but nice to have)
-- Google Service Account (Accessing Drive files)
-- Gmail Account (Emailing warnings)
-- Digital Ocean (Deploying the site)
-- Google Cloud Run (preview environment)
-- Supabase (Store credentials and backup data)
