@@ -22,13 +22,12 @@ def main():
     os.chdir(app_dir)
 
     # Run the application using uvicorn
-    # Check if we're in production (no --reload, use port 8000)
+    # Check if we're in production (no --reload, use PORT env var)
     is_production = os.getenv("ENVIRONMENT") == "production"
 
     try:
         if is_production:
-            # Production: No reload, port 8000, use direct uvicorn
-            # Use sys.executable to get the current Python interpreter path
+            # Production: No reload, use PORT env var or default to 80
             subprocess.run(
                 [
                     sys.executable,

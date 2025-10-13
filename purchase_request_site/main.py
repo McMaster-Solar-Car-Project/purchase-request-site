@@ -144,7 +144,7 @@ app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
 app.add_middleware(RequestLoggingMiddleware)
 
 # Generate a random secret key for this session (Note: users will be logged out on restart)
-session_secret = os.getenv("SESSION_SECRET_KEY") or secrets.token_urlsafe(32)
+session_secret = secrets.token_urlsafe(32)
 
 # Add session middleware for authentication
 app.add_middleware(
