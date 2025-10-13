@@ -92,8 +92,6 @@ def create_or_update_user(
         if signature_file:
             signature_data = signature_file.file.read()
             existing_user.signature_data = signature_data
-            existing_user.signature_filename = signature_file.filename
-            existing_user.signature_content_type = signature_file.content_type
 
         db.commit()
         db.refresh(existing_user)
@@ -101,8 +99,6 @@ def create_or_update_user(
     else:
         # Create new user
         signature_data = signature_file.file.read()
-        signature_filename = signature_file.filename
-        signature_content_type = signature_file.content_type
 
         new_user = User(
             name=name,
@@ -112,8 +108,6 @@ def create_or_update_user(
             team=team,
             password=password,
             signature_data=signature_data,
-            signature_filename=signature_filename,
-            signature_content_type=signature_content_type,
         )
 
         db.add(new_user)
@@ -124,9 +118,9 @@ def create_or_update_user(
 
 def get_user_signature_as_data_url(user: User) -> str | None:
     """Get user's signature as a data URL for HTML display"""
-    if user.signature_data and user.signature_content_type:
+    if user.signature_data:
         base64_data = base64.b64encode(user.signature_data).decode("utf-8")
-        return f"data:{user.signature_content_type};base64,{base64_data}"
+        return f"data:image/png;base64,{base64_data}"
     return None
 
 
