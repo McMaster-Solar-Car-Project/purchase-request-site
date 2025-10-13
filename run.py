@@ -8,8 +8,11 @@ import os
 import subprocess
 import sys
 
+from dotenv import load_dotenv
+
 
 def main():
+    load_dotenv()
     # Change to the purchase_request-site directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
     app_dir = os.path.join(script_dir, "purchase_request_site")
@@ -22,13 +25,12 @@ def main():
     os.chdir(app_dir)
 
     # Run the application using uvicorn
-    # Check if we're in production (no --reload, use port 8000)
+    # Check if we're in production (no --reload, use PORT env var)
     is_production = os.getenv("ENVIRONMENT") == "production"
 
     try:
         if is_production:
-            # Production: No reload, port 8000, use direct uvicorn
-            # Use sys.executable to get the current Python interpreter path
+            # Production: No reload, use PORT env var or default to 80
             subprocess.run(
                 [
                     sys.executable,
@@ -38,7 +40,7 @@ def main():
                     "--host",
                     "0.0.0.0",
                     "--port",
-                    "80",
+                    "8000",
                     "--workers",
                     "1",
                 ],

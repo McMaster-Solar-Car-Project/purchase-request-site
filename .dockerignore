@@ -1,6 +1,7 @@
 # Git
 .git
 .gitignore
+.github
 
 # Environment files
 .env
@@ -16,6 +17,9 @@ __pycache__
 .venv
 venv/
 .pytest_cache
+.ruff_cache
+.gitleaks.toml
+lefthook.yml
 
 # IDE
 .vscode
@@ -37,6 +41,7 @@ sessions/
 # Documentation
 README.md
 *.md
+CONTRIBUTING.md
 
 # Build artifacts
 dist/

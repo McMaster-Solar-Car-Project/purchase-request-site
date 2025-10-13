@@ -36,15 +36,12 @@ brew install uv gitleaks lefthook ruff
 
 ## Development Setup
 
-### 1. Fork and Clone the Repository
+### 1. Clone the Repository
 
 ```bash
-# Fork the repository on GitHub, then clone your fork
-git clone git@github.com:YOUR_USERNAME/purchase-request-site.git
+# 
+git clone git@github.com:McMaster-Solar-Car-Project/purchase-request-site.git
 cd purchase-request-site
-
-# Add the upstream repository
-git remote add upstream git@github.com:McMaster-Solar-Car-Project/purchase-request-site.git
 ```
 
 ### 2. Environment Setup
@@ -65,7 +62,7 @@ lefthook install
 
 ### 3. Environment Variables
 
-**Important**: Contact Raj for the required environment variables before running the application. 
+Contact Raj for the required environment variables before running the application. 
 
 ### 4. Run the Application
 
@@ -74,7 +71,15 @@ lefthook install
 uv run run.py
 ```
 
-The application will be available at `http://localhost:8000` (or the port specified in your configuration).
+### 5. Run the Application with Docker
+
+**Important**: Even though you can run the application locally, it is recommended to use Docker to run the application. 
+
+```bash
+docker-compose --env-file .env up --build
+```
+
+The application will be available at `http://localhost:80` (or the port specified in your configuration).
 
 ## Making Changes
 
