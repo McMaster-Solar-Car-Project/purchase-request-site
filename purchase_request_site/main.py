@@ -244,6 +244,12 @@ async def home(request: Request):
     return RedirectResponse(url="/login", status_code=303)
 
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Docker health monitoring"""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+
 @app.get("/download-excel")
 async def download_excel(
     request: Request,
