@@ -4,12 +4,28 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+  pull_request:
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
+     - name: Checkout code
+       uses: actions/checkout@v4
+       
+     - name: Set up Docker Buildx
+       uses: docker/setup-buildx-action@v3
+       
+     - name: Build Docker image
+       run: |
+         docker build -t purchase-request-site:${{ github.sha }} .
+         docker tag purchase-request-site:${{ github.sha }} purchase-request-site:latest
+       
+     - name: Save Docker image
+       run: |
+         docker save purchase-request-site:latest | gzip > purchase-request-site.tar.gz
+       
      - name: Deploy to server
        uses: appleboy/ssh-action@v1.0.3
        with:
@@ -22,24 +38,59 @@ jobs:
            cd /home/raj/purchase-request-site
            echo "Starting deployment for commit: ${{ github.sha }}"
            
+           # Stop existing container if running
+           docker-compose down || true
+           
+           # Remove old image to free up space
+           docker rmi purchase-request-site:latest || true
+           
+           echo "Waiting for new image to be uploaded..."
+           
+     - name: Upload Docker image
+       uses: appleboy/scp-action@v0.1.4
+       with:
+         host: ${{ secrets.HOST }}
+         username: ${{ secrets.USERNAME }}
+         key: ${{ secrets.SSH_KEY }}
+         source: "purchase-request-site.tar.gz"
+         target: "/home/raj/purchase-request-site/"
+         
+     - name: Load and deploy Docker image
+       uses: appleboy/ssh-action@v1.0.3
+       with:
+         host: ${{ secrets.HOST }}
+         username: ${{ secrets.USERNAME }}
+         key: ${{ secrets.SSH_KEY }}
+         command_timeout: 10m
+         debug: true
+         script: |
+           cd /home/raj/purchase-request-site
+           
+           # Load the Docker image
+           echo "Loading Docker image..."
+           gunzip -c purchase-request-site.tar.gz | docker load
+           
+           # Clean up the tar file
+           rm purchase-request-site.tar.gz
+           
+           # Update git repository
            git fetch origin
            git reset --hard origin/main
            
-           echo "Running uv sync..."
-           uv sync --verbose > uv-sync.log 2>&1
-           if [ $? -ne 0 ]; then
-             echo "Error: uv sync failed. See uv-sync.log for details."
-             cat uv-sync.log
-             exit 1
-           fi
+           # Start the application with docker-compose
+           echo "Starting application with docker-compose..."
+           docker-compose up -d
            
-           systemctl restart purchase-request
-           systemctl is-active --quiet purchase-request
-           if [ $? -eq 0 ]; then
-             echo "Application restarted successfully"
+           # Wait a moment for the container to start
+           sleep 10
+           
+           # Check if container is running
+           if docker-compose ps | grep -q "Up"; then
+             echo "Application started successfully"
+             docker-compose logs --tail=20
            else
              echo "Error: Application failed to start"
-             systemctl status purchase-request
+             docker-compose logs
              exit 1
            fi
            

@@ -26,5 +26,5 @@ RUN mkdir -p sessions logs static templates excel_templates && \
 ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
-EXPOSE 80
+EXPOSE 8000
 CMD ["python", "run.py"]

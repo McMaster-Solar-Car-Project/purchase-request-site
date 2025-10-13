@@ -30,7 +30,8 @@ def main():
 
     try:
         if is_production:
-            # Production: No reload, use PORT env var or default to 80
+            # Production: No reload, use PORT env var or default to 8000
+            port = os.getenv("PORT", "8000")
             subprocess.run(
                 [
                     sys.executable,
@@ -40,7 +41,7 @@ def main():
                     "--host",
                     "0.0.0.0",
                     "--port",
-                    "8000",
+                    port,
                     "--workers",
                     "1",
                 ],
