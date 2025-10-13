@@ -43,9 +43,7 @@ class User(Base):
     password = Column(String(255), nullable=False)  # User password
     signature_data = Column(
         LargeBinary, nullable=True
-    )  # Store signature image as binary
-    signature_filename = Column(String(255), nullable=True)
-    signature_content_type = Column(String(100), nullable=True)
+    )  # Store signature image as binary (always PNG, always named signature.png)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
