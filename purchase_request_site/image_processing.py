@@ -47,136 +47,103 @@ def convert_signature_to_png(signature_path, output_path):
         return False
 
 
-def insert_signature_into_worksheet(ws, user_info, form, session_folder):
-    """Insert signature image into Excel worksheet"""
-    # Look for signature files in order of preference:
-    # 1. signature.png (cropped/processed version)
-    # 2. signature_original.png (original PNG without cropping)
-    # 3. Original signature file
+def _find_signature_file(session_folder, user_info=None):
+    """Find the best available signature file in order of preference
 
+    Args:
+        session_folder: Path to session folder containing signature files
+        user_info: Optional user info dict containing 'signature' key for original file check
+
+    Returns:
+        tuple: (signature_path, signature_type) or (None, None) if no file found
+    """
     processed_signature_path = f"{session_folder}/signature.png"
     original_png_signature_path = f"{session_folder}/signature_original.png"
-    original_signature_path = f"{session_folder}/{user_info['signature']}"
 
-    signature_path = None
-    signature_type = None
-
+    # Check for signature files in order of preference
     if os.path.exists(processed_signature_path):
-        signature_path = processed_signature_path
-        signature_type = "processed"
+        return processed_signature_path, "processed"
     elif os.path.exists(original_png_signature_path):
-        signature_path = original_png_signature_path
-        signature_type = "original_png"
-    elif os.path.exists(original_signature_path):
-        signature_path = original_signature_path
-        signature_type = "original"
+        return original_png_signature_path, "original_png"
+    elif user_info and "signature" in user_info:
+        original_signature_path = f"{session_folder}/{user_info['signature']}"
+        if os.path.exists(original_signature_path):
+            return original_signature_path, "original"
 
-    logger.debug(f"Signature files check for form {form['form_number']}:")
-    logger.debug(
-        f"  - Processed (signature.png): {'exists' if os.path.exists(processed_signature_path) else 'missing'}"
-    )
-    logger.debug(
-        f"  - Original PNG (signature_original.png): {'exists' if os.path.exists(original_png_signature_path) else 'missing'}"
-    )
-    logger.debug(
-        f"  - Original file ({user_info['signature']}): {'exists' if os.path.exists(original_signature_path) else 'missing'}"
-    )
-    logger.debug(f"  - Using: {signature_type} ({signature_path})")
+    return None, None
 
-    if signature_path:
-        # Use the signature.png file directly (it's already PNG and processed)
-        signature_png_path = f"{session_folder}/signature.png"
 
-        if signature_path == processed_signature_path:
-            # Already the processed PNG file, no conversion needed
-            conversion_success = True
-        elif signature_path.endswith(".png"):
-            # PNG file but not the processed one, copy it to the processed location
-            if os.path.abspath(signature_path) != os.path.abspath(signature_png_path):
-                try:
-                    shutil.copy2(signature_path, signature_png_path)
-                    conversion_success = True
-                    logger.debug(f"Copied {signature_type} PNG to processed location")
-                except Exception as e:
-                    logger.exception(f"Could not copy signature PNG: {e}")
-                    conversion_success = False
-            else:
-                conversion_success = True
-        else:
-            # Convert to PNG
-            conversion_success = convert_signature_to_png(
-                signature_path, signature_png_path
-            )
+def _prepare_signature_for_insertion(session_folder, signature_path, signature_type):
+    """Prepare signature file for insertion by ensuring it's in PNG format
 
-        if conversion_success:
+    Args:
+        session_folder: Path to session folder
+        signature_path: Path to the signature file to prepare
+        signature_type: Type of signature file (processed, original_png, original)
+
+    Returns:
+        str: Path to the prepared PNG file, or None if preparation failed
+    """
+    signature_png_path = f"{session_folder}/signature.png"
+
+    if signature_type == "processed":
+        # Already the processed PNG file, no conversion needed
+        return signature_png_path
+    elif signature_type == "original_png":
+        # PNG file but not the processed one, copy it to the processed location
+        if os.path.abspath(signature_path) != os.path.abspath(signature_png_path):
             try:
-                # Insert signature image at cell B33 (signature area)
-                img = image.Image(signature_png_path)
-                img.anchor = "B33"  # Position at cell B33
-                img.width = 280  # Set width for 5 cells wide (approximately)
-                img.height = 70  # Set height for 3 cells high (approximately)
-                ws.add_image(img)
-                return True
+                shutil.copy2(signature_path, signature_png_path)
+                logger.debug(f"Copied {signature_type} PNG to processed location")
+                return signature_png_path
             except Exception as e:
-                logger.exception(
-                    f"Error inserting signature for form {form['form_number']}: {e}"
-                )
-                return False
+                logger.exception(f"Could not copy signature PNG: {e}")
+                return None
         else:
-            logger.warning(
-                f"Failed to convert signature for form {form['form_number']}"
-            )
-            return False
-    else:
-        logger.warning(f"No signature file found for form {form['form_number']}")
-        return False
+            return signature_png_path
+    else:  # original (non-PNG)
+        # Convert to PNG
+        if convert_signature_to_png(signature_path, signature_png_path):
+            return signature_png_path
+        else:
+            return None
 
 
 def insert_signature_at_cell(
     ws, session_folder, cell_location="A19", width=200, height=60
 ):
     """Insert signature image into Excel worksheet at specified cell location"""
-
-    # Look for signature files in order of preference:
-    # 1. signature.png (cropped/processed version)
-    # 2. signature_original.png (original PNG without cropping)
-
-    processed_signature_path = f"{session_folder}/signature.png"
-    original_png_signature_path = f"{session_folder}/signature_original.png"
-
-    signature_path = None
-    signature_type = None
-
-    if os.path.exists(processed_signature_path):
-        signature_path = processed_signature_path
-        signature_type = "processed"
-    elif os.path.exists(original_png_signature_path):
-        signature_path = original_png_signature_path
-        signature_type = "original_png"
+    signature_path, signature_type = _find_signature_file(session_folder)
 
     logger.debug(f"Signature files check for cell {cell_location}:")
-    logger.debug(
-        f"  - Processed (signature.png): {'exists' if os.path.exists(processed_signature_path) else 'missing'}"
+    processed_exists = (
+        "exists" if os.path.exists(f"{session_folder}/signature.png") else "missing"
     )
-    logger.debug(
-        f"  - Original PNG (signature_original.png): {'exists' if os.path.exists(original_png_signature_path) else 'missing'}"
-    )
+    logger.debug(f"  - Processed (signature.png): {processed_exists}")
     logger.debug(f"  - Using: {signature_type} ({signature_path})")
 
     if signature_path:
-        try:
-            # Insert signature image at specified cell
-            img = image.Image(signature_path)
-            img.anchor = cell_location
-            img.width = width
-            img.height = height
-            ws.add_image(img)
-            logger.info(
-                f"Signature inserted at {cell_location} (using {signature_type})"
-            )
-            return True
-        except Exception as e:
-            logger.exception(f"Error inserting signature at {cell_location}: {e}")
+        prepared_path = _prepare_signature_for_insertion(
+            session_folder, signature_path, signature_type
+        )
+
+        if prepared_path:
+            try:
+                # Insert signature image at specified cell
+                img = image.Image(prepared_path)
+                img.anchor = cell_location
+                img.width = width
+                img.height = height
+                ws.add_image(img)
+                logger.info(
+                    f"Signature inserted at {cell_location} (using {signature_type})"
+                )
+                return True
+            except Exception as e:
+                logger.exception(f"Error inserting signature at {cell_location}: {e}")
+                return False
+        else:
+            logger.warning(f"Failed to prepare signature for cell {cell_location}")
             return False
     else:
         logger.warning(f"No signature file found for cell {cell_location}")
