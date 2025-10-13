@@ -8,8 +8,11 @@ import os
 import subprocess
 import sys
 
+from dotenv import load_dotenv
+
 
 def main():
+    load_dotenv()
     # Change to the purchase_request-site directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
     app_dir = os.path.join(script_dir, "purchase_request_site")
@@ -37,7 +40,7 @@ def main():
                     "--host",
                     "0.0.0.0",
                     "--port",
-                    "80",
+                    "8000",
                     "--workers",
                     "1",
                 ],
