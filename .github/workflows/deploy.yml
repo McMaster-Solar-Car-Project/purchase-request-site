@@ -39,10 +39,10 @@ jobs:
            echo "Starting deployment for commit: ${{ github.sha }}"
            
            # Stop existing container if running
-           sudo docker-compose down || true
+           docker-compose down || true
            
            # Remove old image to free up space
-           sudo docker rmi purchase-request-site:latest || true
+           docker rmi purchase-request-site:latest || true
            
            echo "Waiting for new image to be uploaded..."
            
@@ -68,7 +68,7 @@ jobs:
            
            # Load the Docker image
            echo "Loading Docker image..."
-           gunzip -c purchase-request-site.tar.gz | sudo docker load
+           gunzip -c purchase-request-site.tar.gz | docker load
            
            # Clean up the tar file
            rm purchase-request-site.tar.gz
@@ -79,18 +79,18 @@ jobs:
            
            # Start the application with docker-compose
            echo "Starting application with docker-compose..."
-           sudo docker-compose up -d
+           docker-compose up -d
            
            # Wait a moment for the container to start
            sleep 10
            
            # Check if container is running
-           if sudo docker-compose ps | grep -q "Up"; then
+           if docker-compose ps | grep -q "Up"; then
              echo "Application started successfully"
-             sudo docker-compose logs --tail=20
+             docker-compose logs --tail=20
            else
              echo "Error: Application failed to start"
-             sudo docker-compose logs
+             docker-compose logs
              exit 1
            fi
            
