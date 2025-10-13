@@ -12,7 +12,6 @@ Thank you for your interest in contributing to the Purchase Request Site! This d
 - [Code Style and Standards](#code-style-and-standards)
 - [Testing](#testing)
 - [Deployment](#deployment)
-- [Long-term Maintenance](#long-term-maintenance)
 
 ## Code of Conduct
 
