@@ -57,14 +57,11 @@ def create_expense_report(session_folder, user_info, submitted_forms):
                 f"Failed to populate expense rows from submitted forms: {e}"
             )
 
-        # Insert signature if available
-        signature_filename = user_info.get("signature")
-        if signature_filename:
-            try:
-                # Insert signature at cell A19
-                insert_signature_at_cell(ws, session_folder, "A19", 200, 60)
-            except Exception as e:
-                logger.warning(f"Failed to insert signature into expense report: {e}")
+        try:
+            # Insert signature at cell A19
+            insert_signature_at_cell(ws, session_folder, "A19", 200, 60)
+        except Exception as e:
+            logger.warning(f"Failed to insert signature into expense report: {e}")
 
         # Save the populated template
         wb.save(output_path)

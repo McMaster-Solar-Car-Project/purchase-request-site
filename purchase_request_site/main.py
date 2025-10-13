@@ -2,6 +2,7 @@ import asyncio
 import os
 import secrets
 import shutil
+import tempfile
 from contextlib import asynccontextmanager
 from datetime import datetime
 
@@ -27,6 +28,7 @@ from google_drive import (
     upload_session_to_drive,
 )
 from google_sheets import GoogleSheetsClient
+from image_processing import convert_signature_to_png
 from logging_utils import setup_logger
 from request_logging import RequestLoggingMiddleware
 from sqlalchemy.orm import Session
@@ -348,8 +350,7 @@ async def submit_all_requests(
     signature_filename = "signature.png"
     signature_path = f"{session_folder}/{signature_filename}"
     if not save_signature_to_file(user, signature_path):
-        logger.warning(f"Could not save signature for user {email}, using default")
-        signature_filename = "signature.png"  # Default filename
+        logger.warning(f"Could not save signature for user {email}")
 
     submitted_forms = []
 
@@ -683,8 +684,43 @@ async def edit_profile_post(
             # Read the signature file content
             signature_content = await signature.read()
             if signature_content:
-                # Save signature content directly to database as binary data
-                user.signature_data = signature_content
+                # Create a temporary file to save the uploaded signature
+                with tempfile.NamedTemporaryFile(
+                    delete=False, suffix=f".{signature.filename.split('.')[-1]}"
+                ) as temp_file:
+                    temp_file.write(signature_content)
+                    temp_signature_path = temp_file.name
+
+                # Create a temporary PNG file path
+                with tempfile.NamedTemporaryFile(
+                    delete=False, suffix=".png"
+                ) as temp_png_file:
+                    temp_png_path = temp_png_file.name
+
+                try:
+                    # Convert signature to PNG
+                    if convert_signature_to_png(temp_signature_path, temp_png_path):
+                        # Read the converted PNG content
+                        with open(temp_png_path, "rb") as png_file:
+                            png_content = png_file.read()
+                        # Save PNG content to database
+                        user.signature_data = png_content
+                        logger.info(
+                            f"Signature converted to PNG and saved for user {email}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Failed to convert signature to PNG for user {email}"
+                        )
+                        # Fallback: save original content
+                        user.signature_data = signature_content
+                finally:
+                    # Clean up temporary files
+                    try:
+                        os.unlink(temp_signature_path)
+                        os.unlink(temp_png_path)
+                    except OSError:
+                        pass  # Ignore cleanup errors
 
         # Save changes to database
         db.commit()
