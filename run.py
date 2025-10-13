@@ -27,20 +27,21 @@ def main():
     # Run the application using uvicorn
     # Check if we're in production (no --reload, use PORT env var)
     is_production = os.getenv("ENVIRONMENT") == "production"
+    port = os.getenv("PORT", "8000")
 
     try:
         if is_production:
-            # Production: No reload, use PORT env var or default to 80
+            # Production: No reload, use PORT env var or default to 8000
             subprocess.run(
                 [
-                    sys.executable,
-                    "-m",
+                    "uv",
+                    "run",
                     "uvicorn",
                     "main:app",
                     "--host",
                     "0.0.0.0",
                     "--port",
-                    "8000",
+                    port,
                     "--workers",
                     "1",
                 ],
@@ -58,7 +59,7 @@ def main():
                     "--host",
                     "0.0.0.0",
                     "--port",
-                    "8000",
+                    port,
                 ],
                 check=True,
             )
