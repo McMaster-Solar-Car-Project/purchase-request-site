@@ -2,7 +2,7 @@ import os
 import shutil
 from datetime import datetime
 
-from image_processing import insert_signature_at_cell, insert_signature_into_worksheet
+from image_processing import insert_signature_at_cell
 from logging_utils import setup_logger
 from openpyxl import load_workbook
 
@@ -62,7 +62,7 @@ def create_expense_report(session_folder, user_info, submitted_forms):
         if signature_filename:
             try:
                 # Insert signature at cell A19
-                insert_signature_at_cell(ws, session_folder, "A19")
+                insert_signature_at_cell(ws, session_folder, "A19", 200, 60)
             except Exception as e:
                 logger.warning(f"Failed to insert signature into expense report: {e}")
 
@@ -236,7 +236,7 @@ def create_purchase_request(user_info, submitted_forms, session_folder):
                 ws["D7"] = 0
 
         # Insert signature image
-        insert_signature_into_worksheet(ws, user_info, form, session_folder)
+        insert_signature_at_cell(ws, session_folder, "B33", 280, 70)
 
     # Save the modified workbook
     wb.save(output_path)
