@@ -4,14 +4,14 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "80:80"
+      - "8000:8000"
     env_file:
       - .env
     environment:
-      - ENVIRONMENT=production
+      - ENVIRONMENT=${ENVIRONMENT}
       - PYTHONUNBUFFERED=1
       - HOST=0.0.0.0
-      - PORT=80
+      - PORT=8000
       - DATABASE_URL=${DATABASE_URL}
       - GOOGLE_SHEET_ID=${GOOGLE_SHEET_ID}
       - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY}

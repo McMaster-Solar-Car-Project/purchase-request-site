@@ -24,10 +24,7 @@ RUN mkdir -p sessions logs static templates excel_templates && \
     cp -r purchase_request_site/excel_templates/* excel_templates/ || true
 
 ENV PATH="/opt/venv/bin:$PATH"
-ENV ENVIRONMENT=production
 ENV PYTHONUNBUFFERED=1
-ENV HOST=0.0.0.0
-ENV PORT=80
 
 EXPOSE 80
 CMD ["python", "run.py"]
