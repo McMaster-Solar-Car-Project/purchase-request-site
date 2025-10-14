@@ -84,7 +84,7 @@ def _setup_file_handler() -> logging.Handler:
         return file_handler
 
     except Exception as e:
-        raise Exception(f"Could not set up file handler: {e}") from e
+        print(f"CRITICAL: Could not set up file handler: {e}")
 
 
 def _setup_email_handler() -> logging.Handler:
@@ -148,5 +148,5 @@ Purchase Request Site Error Notification System
 
     except Exception as e:
         # Don't let email setup failure break the application
-        print(f"Could not set up email handler: {e}")
+        print(f"CRITICAL: Could not set up email handler: {e}")
         return None
