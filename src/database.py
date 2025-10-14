@@ -14,7 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from logging_utils import setup_logger
+from core.logging_utils import setup_logger
 
 # Set up the logger
 logger = setup_logger(__name__)
