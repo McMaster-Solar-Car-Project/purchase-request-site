@@ -17,12 +17,12 @@ RUN apt-get update && \
 
 COPY --from=builder /opt/venv /opt/venv
 WORKDIR /app
-COPY purchase_request_site/ ./purchase_request_site/
+COPY src/ ./src/
 COPY run.py ./
 RUN mkdir -p sessions logs static templates excel_templates && \
-    cp -r purchase_request_site/static/* static/ || true && \
-    cp -r purchase_request_site/templates/* templates/ || true && \
-    cp -r purchase_request_site/excel_templates/* excel_templates/ || true
+    cp -r src/static/* static/ || true && \
+    cp -r src/templates/* templates/ || true && \
+    cp -r src/excel_templates/* excel_templates/ || true
 
 ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1

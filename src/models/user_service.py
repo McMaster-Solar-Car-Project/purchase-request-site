@@ -2,10 +2,11 @@ import base64
 import io
 import os
 
-from database import User
 from fastapi import UploadFile
-from logging_utils import setup_logger
 from sqlalchemy.orm import Session
+
+from core.logging_utils import setup_logger
+from db.schema import User
 
 # Set up logger
 logger = setup_logger(__name__)
@@ -162,8 +163,9 @@ def is_user_profile_complete(user: User) -> bool:
 
 if __name__ == "__main__":
     # Example usage - you can copy this code to create users programmatically
-    from database import get_db, init_database
     from dotenv import load_dotenv
+
+    from db.schema import get_db, init_database
 
     # Load environment variables and initialize database
     load_dotenv()

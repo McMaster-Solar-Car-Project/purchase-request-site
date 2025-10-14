@@ -6,8 +6,6 @@ import tempfile
 from contextlib import asynccontextmanager
 from datetime import datetime
 
-from data_processing import create_expense_report, create_purchase_request
-from database import get_db, init_database
 from dotenv import load_dotenv
 from fastapi import (
     Depends,
@@ -22,6 +20,12 @@ from fastapi import (
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+from starlette.middleware.sessions import SessionMiddleware
+
+from core.logging_utils import setup_logger
+from data_processing import create_expense_report, create_purchase_request
+from db.schema import get_db, init_database
 from google_drive import (
     create_drive_folder_and_get_url,
     download_file_from_drive,
@@ -29,16 +33,13 @@ from google_drive import (
 )
 from google_sheets import GoogleSheetsClient
 from image_processing import convert_signature_to_png
-from logging_utils import setup_logger
-from request_logging import RequestLoggingMiddleware
-from sqlalchemy.orm import Session
-from starlette.middleware.sessions import SessionMiddleware
-from user_service import (
+from models.user_service import (
     get_user_by_email,
     get_user_signature_as_data_url,
     is_user_profile_complete,
     save_signature_to_file,
 )
+from request_logging import RequestLoggingMiddleware
 
 # Load environment variables
 load_dotenv()
@@ -121,7 +122,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager - runs on startup and shutdown"""
     global cleanup_task
 
-    logger.info(f"Starting application lifespan on {datetime.now().isoformat()}")
+    logger.info("Starting application")
 
     # Initialize database on startup
     init_database()
@@ -159,11 +160,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
 
 # Set up templates
-templates_dir = (
-    "purchase_request_site/templates"
-    if os.path.exists("purchase_request_site/templates")
-    else "templates"
-)
+templates_dir = "src/templates" if os.path.exists("src/templates") else "templates"
 templates = Jinja2Templates(directory=templates_dir)
 
 

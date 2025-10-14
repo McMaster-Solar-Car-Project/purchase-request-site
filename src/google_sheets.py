@@ -15,7 +15,8 @@ from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from logging_utils import setup_logger
+
+from core.logging_utils import setup_logger
 
 # Load environment variables from .env file (check parent directory too)
 load_dotenv()  # Current directory
