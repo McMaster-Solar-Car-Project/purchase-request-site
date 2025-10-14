@@ -1,3 +1,7 @@
+"""
+Dashboard router for the /dashboard and /submit-all-requests endpoints.
+"""
+
 import os
 import shutil
 from datetime import datetime

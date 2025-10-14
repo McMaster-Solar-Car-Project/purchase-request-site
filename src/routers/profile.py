@@ -1,3 +1,7 @@
+"""
+Profile router for the /edit-profile endpoints.
+"""
+
 import os
 import tempfile
 

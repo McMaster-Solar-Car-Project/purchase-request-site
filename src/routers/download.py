@@ -1,5 +1,5 @@
 """
-Download router for file downloads.
+Download router for the /download-excel.
 """
 
 from fastapi import APIRouter, Depends, Request

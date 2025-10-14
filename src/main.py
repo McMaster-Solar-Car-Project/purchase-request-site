@@ -59,7 +59,7 @@ app.include_router(download_router)
 @app.get("/")
 async def home():
     """Redirect home page to login"""
-    return RedirectResponse(url="/auth/login", status_code=303)
+    return RedirectResponse(url="/login", status_code=303)
 
 
 @app.get("/health")

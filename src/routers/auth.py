@@ -1,5 +1,5 @@
 """
-Authentication router for login/logout functionality.
+Authentication router for the /login and /logout endpoints.
 """
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -80,4 +80,4 @@ async def logout(request: Request):
     """Handle user logout"""
     request.session.clear()
     logger.info("🔓 User logged out")
-    return RedirectResponse(url="/auth/login", status_code=303)
+    return RedirectResponse(url="/login", status_code=303)
