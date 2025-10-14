@@ -19,7 +19,6 @@ def main():
 
     if not os.path.exists(app_dir):
         raise FileNotFoundError("Error: purchase_request-site directory not found!")
-        sys.exit(1)
 
     # Change to the app directory
     os.chdir(app_dir)
