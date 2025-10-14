@@ -388,13 +388,10 @@ class GoogleDriveClient:
                 logger.exception(f"Session folder not found: {session_folder_path}")
                 return False
 
-            # Define files to exclude from upload (e.g., signature as it's embedded)
-            excluded_files = ["signature.png"]
-
             # Get all files to upload, excluding specified ones
             files_to_upload = [
                 file_path for file_path in session_path.iterdir()
-                if file_path.is_file() and file_path.name not in excluded_files
+                if file_path.is_file() and file_path.name != "signature.png"
             ]
 
             if not files_to_upload:
