@@ -6,8 +6,8 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Request
 
-from core.logging_utils import setup_logger
-from routers.utils import require_auth, templates
+from src.core.logging_utils import setup_logger
+from src.routers.utils import require_auth, templates
 
 logger = setup_logger(__name__)
 

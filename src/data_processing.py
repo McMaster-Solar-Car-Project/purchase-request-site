@@ -4,8 +4,8 @@ from datetime import datetime
 
 from openpyxl import load_workbook
 
-from core.logging_utils import setup_logger
-from image_processing import insert_signature_at_cell
+from src.core.logging_utils import setup_logger
+from src.image_processing import insert_signature_at_cell
 
 # Set up logger
 logger = setup_logger(__name__)
@@ -14,7 +14,7 @@ logger = setup_logger(__name__)
 def create_expense_report(session_folder, user_info, submitted_forms):
     """Copy the expense report template to the session folder and populate with user data"""
 
-    template_path = "excel_templates/expense_report_template.xlsx"
+    template_path = "src/excel_templates/expense_report_template.xlsx"
 
     # Check if template exists
     if not os.path.exists(template_path):
@@ -118,7 +118,7 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
 def create_purchase_request(user_info, submitted_forms, session_folder):
     """Create Purchase Request using the template with multiple tabs for each submitted form"""
 
-    template_path = "excel_templates/purchase_request_template.xlsx"
+    template_path = "src/excel_templates/purchase_request_template.xlsx"
 
     # Check if template exists
     if not os.path.exists(template_path):

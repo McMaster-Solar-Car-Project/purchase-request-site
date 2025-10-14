@@ -10,11 +10,11 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from core.logging_utils import setup_logger
-from db.schema import get_db
-from image_processing import convert_signature_to_png
-from models.user_service import get_user_by_email, get_user_signature_as_data_url
-from routers.utils import require_auth, templates
+from src.core.logging_utils import setup_logger
+from src.db.schema import get_db
+from src.image_processing import convert_signature_to_png
+from src.models.user_service import get_user_by_email, get_user_signature_as_data_url
+from src.routers.utils import require_auth, templates
 
 logger = setup_logger(__name__)
 
