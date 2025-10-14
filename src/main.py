@@ -1,4 +1,3 @@
-import asyncio
 import os
 import secrets
 import shutil
@@ -47,98 +46,21 @@ load_dotenv()
 # Set up logger
 logger = setup_logger(__name__)
 
-# Configuration
-SESSION_CLEANUP_AGE_SECONDS = 60 * 24 * 60 * 60  # Delete sessions older than 60 days
-SESSION_CLEANUP_CHECK_INTERVAL = (
-    60 * 60
-)  # Check for old sessions every hour (3600 seconds)
-
 # Create required directories immediately (before mounting static files)
 required_dirs = ["sessions", "static", "templates", "excel_templates"]
 for directory in required_dirs:
     os.makedirs(directory, exist_ok=True)
 
 
-# Background task control
-cleanup_task = None
-
-
-async def cleanup_old_sessions():
-    """Background task to clean up session folders older than configured age"""
-    while True:
-        try:
-            current_time = datetime.now()
-            sessions_dir = "sessions"
-
-            if not os.path.exists(sessions_dir):
-                await asyncio.sleep(SESSION_CLEANUP_CHECK_INTERVAL)
-                continue
-
-            deleted_count = 0
-
-            # Check each session folder
-            for folder_name in os.listdir(sessions_dir):
-                folder_path = os.path.join(sessions_dir, folder_name)
-
-                # Skip if not a directory
-                if not os.path.isdir(folder_path):
-                    continue
-
-                # Get folder creation time
-                folder_creation_time = datetime.fromtimestamp(
-                    os.path.getctime(folder_path)
-                )
-
-                # Check if folder is older than configured age
-                age = current_time - folder_creation_time
-                if age.total_seconds() > SESSION_CLEANUP_AGE_SECONDS:
-                    try:
-                        shutil.rmtree(folder_path)
-                        deleted_count += 1
-                    except Exception:
-                        logger.exception(
-                            f"Failed to delete session folder {folder_name}"
-                        )
-
-            # Only log if many folders were deleted (indicates potential issue)
-            if deleted_count > 10:
-                logger.info(f"🧹 Deleted {deleted_count} old session folders")
-
-            # Wait before next cleanup check
-            await asyncio.sleep(SESSION_CLEANUP_CHECK_INTERVAL)
-
-        except Exception:
-            logger.exception("Error during session cleanup")
-
-            # Sleep for a bit to avoid tight loop in case of persistent error
-            await asyncio.sleep(60)
-        except asyncio.CancelledError:
-            logger.info("Session cleanup task cancelled")
-            break
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager - runs on startup and shutdown"""
-    global cleanup_task
-
     logger.info("Starting application")
 
     # Initialize database on startup
     init_database()
 
-    # Start background cleanup task
-    cleanup_task = asyncio.create_task(cleanup_old_sessions())
-
     yield  # Application runs here
-
-    # Shutdown: Stop cleanup task
-    if cleanup_task:
-        cleanup_task.cancel()
-        try:
-            await cleanup_task
-        except asyncio.CancelledError:
-            pass
 
 
 app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
