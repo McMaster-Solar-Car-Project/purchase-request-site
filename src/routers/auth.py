@@ -2,6 +2,8 @@
 Authentication router for login/logout functionality.
 """
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -20,6 +22,18 @@ router = APIRouter(tags=["authentication"])
 # Templates setup
 templates_dir = "templates"
 templates = Jinja2Templates(directory=templates_dir)
+
+
+@router.get("/")
+async def home(request: Request):
+    """Redirect home page to login"""
+    return RedirectResponse(url="/login", status_code=303)
+
+
+@router.get("/health")
+async def health_check():
+    """Health check endpoint for Docker health monitoring"""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 
 @router.get("/login")
