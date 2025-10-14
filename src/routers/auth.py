@@ -2,7 +2,7 @@
 Authentication router for login/logout functionality.
 """
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -81,3 +81,11 @@ async def logout(request: Request):
     request.session.clear()
     logger.info("🔓 User logged out")
     return RedirectResponse(url="/login", status_code=303)
+
+
+def require_auth(request: Request):
+    """Dependency to require authentication"""
+    if not request.session.get("authenticated", False):
+        raise HTTPException(
+            status_code=status.HTTP_302_FOUND, headers={"Location": "/login"}
+        )

@@ -26,7 +26,6 @@ from data_processing import create_expense_report, create_purchase_request
 from db.schema import get_db, init_database
 from google_drive import (
     create_drive_folder_and_get_url,
-    download_file_from_drive,
     upload_session_to_drive,
 )
 from google_sheets import GoogleSheetsClient
@@ -39,6 +38,7 @@ from models.user_service import (
 from request_logging import RequestLoggingMiddleware
 from routers.auth import router as auth_router
 from routers.home import router as home_router
+from routers.success import router as download_router
 
 # Load environment variables
 load_dotenv()
@@ -78,45 +78,7 @@ templates = Jinja2Templates(directory=templates_dir)
 # Include routers
 app.include_router(auth_router)
 app.include_router(home_router)
-
-
-def is_authenticated(request: Request) -> bool:
-    """Check if user is authenticated via session"""
-    return request.session.get("authenticated", False)
-
-
-def require_auth(request: Request):
-    """Dependency to require authentication"""
-    if not is_authenticated(request):
-        raise HTTPException(
-            status_code=status.HTTP_302_FOUND, headers={"Location": "/login"}
-        )
-
-
-@app.get("/download-excel")
-async def download_excel(
-    request: Request,
-    drive_folder_id: str,
-    excel_file: str,
-    _: None = Depends(require_auth),
-):
-    """Download the generated Excel file from Google Drive"""
-    try:
-        file_content = download_file_from_drive(drive_folder_id, excel_file)
-        # Return the file content as a streaming response
-        from fastapi.responses import Response
-
-        return Response(
-            content=file_content,
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": f"attachment; filename={excel_file}"},
-        )
-
-    except Exception:
-        logger.exception(f"Failed to download {excel_file} from Google Drive")
-        raise HTTPException(
-            status_code=404, detail="Excel file not found in Google Drive"
-        ) from None
+app.include_router(download_router)
 
 
 def create_session_folder(name):
@@ -129,6 +91,14 @@ def create_session_folder(name):
     os.makedirs(session_folder, exist_ok=True)
 
     return session_folder
+
+
+def require_auth(request: Request):
+    """Dependency to require authentication"""
+    if not request.session.get("authenticated", False):
+        raise HTTPException(
+            status_code=status.HTTP_302_FOUND, headers={"Location": "/login"}
+        )
 
 
 @app.get("/dashboard")
