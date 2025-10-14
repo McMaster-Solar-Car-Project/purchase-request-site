@@ -4,22 +4,18 @@ Authentication router for the /login and /logout endpoints.
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from core.logging_utils import setup_logger
 from db.schema import get_db
 from models.user_service import get_user_by_email, is_user_profile_complete
+from routers.utils import templates
 
 # Set up logger
 logger = setup_logger(__name__)
 
 # Create router
 router = APIRouter(tags=["authentication"])
-
-# Templates setup
-templates_dir = "templates"
-templates = Jinja2Templates(directory=templates_dir)
 
 
 @router.get("/login")

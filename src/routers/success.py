@@ -5,16 +5,13 @@ Success router for the /success endpoint.
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.templating import Jinja2Templates
 
 from core.logging_utils import setup_logger
-from routers.utils import require_auth
+from routers.utils import require_auth, templates
 
 logger = setup_logger(__name__)
 
 router = APIRouter(tags=["success"])
-templates_dir = "templates"
-templates = Jinja2Templates(directory=templates_dir)
 
 
 @router.get("/success")

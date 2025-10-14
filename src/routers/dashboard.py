@@ -13,7 +13,6 @@ from fastapi import (
     Request,
 )
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from core.logging_utils import setup_logger
@@ -28,13 +27,11 @@ from models.user_service import (
     get_user_by_email,
     save_signature_to_file,
 )
-from routers.utils import require_auth
+from routers.utils import require_auth, templates
 
 logger = setup_logger(__name__)
 
 router = APIRouter(tags=["dashboard"])
-templates_dir = "templates"
-templates = Jinja2Templates(directory=templates_dir)
 
 
 @router.get("/dashboard")
