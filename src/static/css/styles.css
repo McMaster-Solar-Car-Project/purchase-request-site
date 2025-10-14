@@ -740,6 +740,7 @@ h1 {
     background: #c82333;
     text-decoration: none;
     color: white;
+    transform: translateY(-1px);
 }
 
 .dashboard-success-message {
