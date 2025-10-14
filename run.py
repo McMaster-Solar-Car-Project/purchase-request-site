@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Simple runner script for the Purchase Request Site application.
-This script allows running the app from the project root while the code is in purchase_request-site/
+This script allows running the app from the project root while the code is in src/
 """
 
 import os
@@ -13,12 +13,12 @@ from dotenv import load_dotenv
 
 def main():
     load_dotenv()
-    # Change to the purchase_request-site directory
+    # Change to the src directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    app_dir = os.path.join(script_dir, "purchase_request_site")
+    app_dir = os.path.join(script_dir, "src")
 
     if not os.path.exists(app_dir):
-        raise FileNotFoundError("Error: purchase_request-site directory not found!")
+        raise FileNotFoundError("Error: src directory not found!")
 
     # Change to the app directory
     os.chdir(app_dir)

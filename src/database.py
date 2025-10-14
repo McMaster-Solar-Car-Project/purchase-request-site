@@ -2,7 +2,6 @@ import base64
 import os
 from datetime import datetime
 
-from logging_utils import setup_logger
 from sqlalchemy import (
     Column,
     DateTime,
@@ -14,6 +13,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
+from logging_utils import setup_logger
 
 # Set up the logger
 logger = setup_logger(__name__)
