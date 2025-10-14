@@ -1,4 +1,4 @@
-# Lefthook is used for configuring git hooks such as pre-commit, pre-push, etc.
+# Lefthook is used for configuring git hooks such as pre-commit, pre-push, etc...
 # Can read more here: https://github.com/evilmartians/lefthook
 ---
 pre-commit:

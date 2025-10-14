@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Set up logger
+# Set up the logger
 logger = setup_logger(__name__)
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
