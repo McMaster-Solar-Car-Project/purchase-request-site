@@ -24,7 +24,7 @@ from models.user_service import (
     get_user_by_email,
     save_signature_to_file,
 )
-from routers.auth import require_auth
+from routers.utils import require_auth
 
 logger = setup_logger(__name__)
 

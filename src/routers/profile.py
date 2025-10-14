@@ -11,15 +11,7 @@ from core.logging_utils import setup_logger
 from db.schema import get_db
 from image_processing import convert_signature_to_png
 from models.user_service import get_user_by_email, get_user_signature_as_data_url
-from routers.auth import require_auth
-
-logger = setup_logger(__name__)
-
-router = APIRouter(tags=["profile"])
-
-templates_dir = "templates"
-templates = Jinja2Templates(directory=templates_dir)
-
+from routers.utils import require_auth
 
 logger = setup_logger(__name__)
 

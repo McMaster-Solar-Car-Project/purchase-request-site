@@ -4,8 +4,8 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from core.logging_utils import setup_logger
@@ -13,6 +13,7 @@ from db.schema import init_database
 from request_logging import RequestLoggingMiddleware
 from routers.auth import router as auth_router
 from routers.dashboard import router as dashboard_router
+from routers.download import router as download_router
 from routers.profile import router as profile_router
 from routers.success import router as success_router
 
@@ -47,15 +48,24 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
 
-# Set up templates
-templates_dir = "src/templates" if os.path.exists("src/templates") else "templates"
-templates = Jinja2Templates(directory=templates_dir)
-
 # Include routers
 app.include_router(auth_router)
-app.include_router(success_router)
 app.include_router(dashboard_router)
 app.include_router(profile_router)
+app.include_router(success_router)
+app.include_router(download_router)
+
+
+@app.get("/")
+async def home():
+    """Redirect home page to login"""
+    return RedirectResponse(url="/auth/login", status_code=303)
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Docker health monitoring"""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 
 if __name__ == "__main__":
