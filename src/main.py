@@ -101,47 +101,6 @@ def require_auth(request: Request):
         )
 
 
-@app.get("/dashboard")
-async def dashboard(
-    request: Request,
-    user_email: str,
-    updated: bool = False,
-    error: str = None,
-    db: Session = Depends(get_db),
-    _: None = Depends(require_auth),
-):
-    # Get user from database
-    user = get_user_by_email(db, user_email)
-    if not user:
-        logger.exception(f"User not found in database: {user_email}")
-        raise HTTPException(status_code=404, detail="User not found")
-
-    error_message = None
-    success_message = None
-
-    if error == "no_forms":
-        error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, upload an invoice file, and add at least one item."
-    elif updated:
-        success_message = "✅ Your profile has been updated successfully!"
-
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {
-            "request": request,
-            "title": "Purchase Request Site",
-            "user_name": user.name,
-            "user_email": user.email,
-            "name": user.name,
-            "email": user.email,
-            "e_transfer_email": user.personal_email,
-            "address": user.address,
-            "team": user.team,
-            "error_message": error_message,
-            "success_message": success_message,
-        },
-    )
-
-
 @app.post("/submit-all-requests")
 async def submit_all_requests(
     request: Request, db: Session = Depends(get_db), _: None = Depends(require_auth)
@@ -384,36 +343,6 @@ async def submit_all_requests(
     return RedirectResponse(
         url=f"/success?drive_folder_id={drive_folder_id}&excel_file=purchase_request.xlsx&user_email={email}",
         status_code=303,
-    )
-
-
-@app.get("/success")
-async def success_page(
-    request: Request,
-    drive_folder_id: str = None,
-    excel_file: str = None,
-    user_email: str = None,
-    _: None = Depends(require_auth),
-):
-    """Display success page after purchase request submission"""
-    download_info = None
-    current_time = datetime.now()
-
-    if drive_folder_id and excel_file:
-        download_info = {
-            "drive_folder_id": drive_folder_id,
-            "excel_file": excel_file,
-            "download_url": f"/download-excel?drive_folder_id={drive_folder_id}&excel_file={excel_file}",
-        }
-
-    return templates.TemplateResponse(
-        "success.html",
-        {
-            "request": request,
-            "download_info": download_info,
-            "user_email": user_email,
-            "current_time": current_time,
-        },
     )
 
 
