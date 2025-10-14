@@ -2,6 +2,7 @@ import base64
 import os
 from datetime import datetime
 
+from logging_utils import setup_logger
 from sqlalchemy import (
     Column,
     DateTime,
@@ -14,11 +15,13 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+# Set up logger
+logger = setup_logger(__name__)
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -79,4 +82,4 @@ def get_db():
 def init_database():
     """Initialize database - create tables if they don't exist"""
     create_tables()
-    print("✅ Database initialized successfully")
+    logger.info("✅ Database initialized successfully")

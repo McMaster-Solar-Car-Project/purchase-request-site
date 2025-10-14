@@ -121,6 +121,8 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager - runs on startup and shutdown"""
     global cleanup_task
 
+    logger.info(f"Starting application lifespan on {datetime.now().isoformat()}")
+
     # Initialize database on startup
     init_database()
 
@@ -749,6 +751,7 @@ async def edit_profile_post(
 if __name__ == "__main__":
     import uvicorn
 
+    logger.info(f"Starting server at {datetime.now().isoformat()}")
     uvicorn.run(
         app,
         host=os.getenv("HOST", "0.0.0.0"),
