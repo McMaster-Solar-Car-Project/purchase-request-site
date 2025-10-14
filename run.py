@@ -18,8 +18,7 @@ def main():
     app_dir = os.path.join(script_dir, "purchase_request_site")
 
     if not os.path.exists(app_dir):
-        print("Error: purchase_request-site directory not found!")
-        sys.exit(1)
+        raise FileNotFoundError("Error: purchase_request-site directory not found!")
 
     # Change to the app directory
     os.chdir(app_dir)
@@ -64,10 +63,8 @@ def main():
                 check=True,
             )
     except subprocess.CalledProcessError as e:
-        print(f"Error running the application: {e}")
-        sys.exit(1)
+        raise RuntimeError(f"Error running the application: {e}") from e
     except KeyboardInterrupt:
-        print("\nApplication stopped by user")
         sys.exit(0)
 
 

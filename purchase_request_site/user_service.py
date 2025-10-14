@@ -4,7 +4,11 @@ import os
 
 from database import User
 from fastapi import UploadFile
+from logging_utils import setup_logger
 from sqlalchemy.orm import Session
+
+# Set up logger
+logger = setup_logger(__name__)
 
 
 class FileUploadFromPath:
@@ -134,7 +138,7 @@ def save_signature_to_file(user: User, file_path: str) -> bool:
             f.write(user.signature_data)
         return True
     except Exception as e:
-        print(f"Error saving signature to file {file_path}: {e}")
+        logger.exception(f"Error saving signature to file {file_path}: {e}")
         return False
 
 
@@ -181,9 +185,9 @@ if __name__ == "__main__":
             signature_path="static/img/default_signature.png",
         )
 
-        print(f"✅ User created: {user.name} ({user.email})")
+        logger.info(f"✅ User created: {user.name} ({user.email})")
 
     except Exception as e:
-        print(f"❌ Error: {e}")
+        logger.exception(f"❌ Error: {e}")
     finally:
         db.close()
