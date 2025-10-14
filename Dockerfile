@@ -18,11 +18,7 @@ RUN apt-get update && \
 COPY --from=builder /opt/venv /opt/venv
 WORKDIR /app
 COPY src/ ./src/
-RUN mkdir -p sessions logs static templates excel_templates && \
-    cp -r src/static/* static/ || true && \
-    cp -r src/templates/* templates/ || true && \
-    cp -r src/excel_templates/* excel_templates/ || true
-
+RUN mkdir -p sessions
 ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
