@@ -15,19 +15,19 @@ from fastapi import (
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from core.logging_utils import setup_logger
-from data_processing import create_expense_report, create_purchase_request
-from db.schema import get_db
-from google_drive import (
+from src.core.logging_utils import setup_logger
+from src.data_processing import create_expense_report, create_purchase_request
+from src.db.schema import get_db
+from src.google_drive import (
     create_drive_folder_and_get_url,
     upload_session_to_drive,
 )
-from google_sheets import GoogleSheetsClient
-from models.user_service import (
+from src.google_sheets import GoogleSheetsClient
+from src.models.user_service import (
     get_user_by_email,
     save_signature_to_file,
 )
-from routers.utils import require_auth, templates
+from src.routers.utils import require_auth, templates
 
 logger = setup_logger(__name__)
 

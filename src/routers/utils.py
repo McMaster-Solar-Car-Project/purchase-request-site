@@ -5,7 +5,7 @@ Shared helper utility functions for routers.
 from fastapi import HTTPException, Request, status
 from fastapi.templating import Jinja2Templates
 
-templates_dir = "templates"
+templates_dir = "src/templates"
 templates = Jinja2Templates(directory=templates_dir)
 
 

@@ -18,7 +18,6 @@ RUN apt-get update && \
 COPY --from=builder /opt/venv /opt/venv
 WORKDIR /app
 COPY src/ ./src/
-COPY run.py ./
 RUN mkdir -p sessions logs static templates excel_templates && \
     cp -r src/static/* static/ || true && \
     cp -r src/templates/* templates/ || true && \
@@ -28,4 +27,4 @@ ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
-CMD ["python", "run.py"]
+CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

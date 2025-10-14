@@ -4,7 +4,7 @@ import os
 from sqlalchemy import Integer, LargeBinary, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
-from core.logging_utils import setup_logger
+from src.core.logging_utils import setup_logger
 
 logger = setup_logger(__name__)
 

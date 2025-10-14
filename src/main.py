@@ -8,14 +8,14 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from core.logging_utils import setup_logger
-from db.schema import init_database
-from request_logging import RequestLoggingMiddleware
-from routers.auth import router as auth_router
-from routers.dashboard import router as dashboard_router
-from routers.download import router as download_router
-from routers.profile import router as profile_router
-from routers.success import router as success_router
+from src.core.logging_utils import setup_logger
+from src.db.schema import init_database
+from src.request_logging import RequestLoggingMiddleware
+from src.routers.auth import router as auth_router
+from src.routers.dashboard import router as dashboard_router
+from src.routers.download import router as download_router
+from src.routers.profile import router as profile_router
+from src.routers.success import router as success_router
 
 # Load environment variables
 load_dotenv()

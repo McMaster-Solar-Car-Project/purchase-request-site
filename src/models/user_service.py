@@ -5,8 +5,8 @@ import os
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
-from core.logging_utils import setup_logger
-from db.schema import User
+from src.core.logging_utils import setup_logger
+from src.db.schema import User
 
 # Set up logger
 logger = setup_logger(__name__)

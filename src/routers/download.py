@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.responses import Response
 
-from core.logging_utils import setup_logger
-from google_drive import download_file_from_drive
-from routers.utils import require_auth
+from src.core.logging_utils import setup_logger
+from src.google_drive import download_file_from_drive
+from src.routers.utils import require_auth
 
 logger = setup_logger(__name__)
 

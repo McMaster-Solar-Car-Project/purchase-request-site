@@ -6,10 +6,10 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from core.logging_utils import setup_logger
-from db.schema import get_db
-from models.user_service import get_user_by_email, is_user_profile_complete
-from routers.utils import templates
+from src.core.logging_utils import setup_logger
+from src.db.schema import get_db
+from src.models.user_service import get_user_by_email, is_user_profile_complete
+from src.routers.utils import templates
 
 # Set up logger
 logger = setup_logger(__name__)
