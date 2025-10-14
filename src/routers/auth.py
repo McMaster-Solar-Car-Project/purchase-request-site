@@ -15,7 +15,7 @@ from models.user_service import get_user_by_email, is_user_profile_complete
 logger = setup_logger(__name__)
 
 # Create router
-router = APIRouter(prefix="/auth", tags=["authentication"])
+router = APIRouter(tags=["authentication"])
 
 # Templates setup
 templates_dir = "templates"
@@ -80,4 +80,4 @@ async def logout(request: Request):
     """Handle user logout"""
     request.session.clear()
     logger.info("🔓 User logged out")
-    return RedirectResponse(url="/auth/login", status_code=303)
+    return RedirectResponse(url="/login", status_code=303)

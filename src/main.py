@@ -38,6 +38,7 @@ from models.user_service import (
 )
 from request_logging import RequestLoggingMiddleware
 from routers.auth import router as auth_router
+from routers.home import router as home_router
 
 # Load environment variables
 load_dotenv()
@@ -76,6 +77,7 @@ templates = Jinja2Templates(directory=templates_dir)
 
 # Include routers
 app.include_router(auth_router)
+app.include_router(home_router)
 
 
 def is_authenticated(request: Request) -> bool:
@@ -87,20 +89,8 @@ def require_auth(request: Request):
     """Dependency to require authentication"""
     if not is_authenticated(request):
         raise HTTPException(
-            status_code=status.HTTP_302_FOUND, headers={"Location": "/auth/login"}
+            status_code=status.HTTP_302_FOUND, headers={"Location": "/login"}
         )
-
-
-@app.get("/")
-async def home(request: Request):
-    """Redirect home page to login"""
-    return RedirectResponse(url="/auth/login", status_code=303)
-
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint for Docker health monitoring"""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 
 @app.get("/download-excel")
