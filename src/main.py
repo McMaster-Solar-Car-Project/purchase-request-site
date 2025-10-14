@@ -38,7 +38,7 @@ from models.user_service import (
 from request_logging import RequestLoggingMiddleware
 from routers.auth import router as auth_router
 from routers.home import router as home_router
-from routers.success import router as download_router
+from routers.success import router as success_router
 
 # Load environment variables
 load_dotenv()
@@ -78,7 +78,7 @@ templates = Jinja2Templates(directory=templates_dir)
 # Include routers
 app.include_router(auth_router)
 app.include_router(home_router)
-app.include_router(download_router)
+app.include_router(success_router)
 
 
 def create_session_folder(name):
