@@ -24,7 +24,7 @@ load_dotenv()
 logger = setup_logger(__name__)
 
 # Create required directories immediately (before mounting static files)
-required_dirs = ["sessions", "static", "templates", "excel_templates"]
+required_dirs = ["sessions"]
 for directory in required_dirs:
     os.makedirs(directory, exist_ok=True)
 
@@ -45,7 +45,7 @@ app.add_middleware(
 )
 
 # Mount static files (directories are guaranteed to exist now)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="src/static"), name="static")
 app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
 
 # Include routers
