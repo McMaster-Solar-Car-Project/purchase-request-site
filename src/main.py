@@ -25,7 +25,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from core.logging_utils import setup_logger
 from data_processing import create_expense_report, create_purchase_request
-from database import get_db, init_database
+from db.schema import get_db, init_database
 from google_drive import (
     create_drive_folder_and_get_url,
     download_file_from_drive,
@@ -33,13 +33,13 @@ from google_drive import (
 )
 from google_sheets import GoogleSheetsClient
 from image_processing import convert_signature_to_png
-from request_logging import RequestLoggingMiddleware
-from user_service import (
+from models.user_service import (
     get_user_by_email,
     get_user_signature_as_data_url,
     is_user_profile_complete,
     save_signature_to_file,
 )
+from request_logging import RequestLoggingMiddleware
 
 # Load environment variables
 load_dotenv()
