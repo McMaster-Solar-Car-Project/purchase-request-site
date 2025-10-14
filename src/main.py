@@ -2,7 +2,6 @@ import os
 import secrets
 import shutil
 import tempfile
-from contextlib import asynccontextmanager
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -52,18 +51,8 @@ for directory in required_dirs:
     os.makedirs(directory, exist_ok=True)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifespan manager - runs on startup and shutdown"""
-    logger.info("Starting application")
-
-    # Initialize database on startup
-    init_database()
-
-    yield  # Application runs here
-
-
-app = FastAPI(title="Purchase Request Site", lifespan=lifespan)
+init_database()
+app = FastAPI(title="Purchase Request Site")
 
 # Add request logging middleware
 app.add_middleware(RequestLoggingMiddleware)
