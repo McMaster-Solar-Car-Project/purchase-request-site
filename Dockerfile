@@ -1,4 +1,5 @@
-FROM python:3.11-bookworm AS builder
+# Use latest Python 3.14 images
+FROM python:3.14-bookworm AS builder
 
 # Fix hash sum issues and install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -13,10 +14,9 @@ ENV PATH="/root/.local/bin:$PATH"
 
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
-
 RUN uv sync --frozen
 
-FROM python:3.11-slim-bookworm AS production
+FROM python:3.14-bookworm AS production
 
 # Copy virtual environment from builder to the correct location
 COPY --from=builder /app/.venv /opt/venv

@@ -105,7 +105,7 @@ git checkout -b fix/issue-description
 
 ```bash
 # Run docker compose locally and test the funcionality of your changes
-docker-compose --env-file .env up --build
+docker compose --env-file .env up --build
 ```
 
 ### 4. Commit Your Changes
