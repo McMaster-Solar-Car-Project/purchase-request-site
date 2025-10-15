@@ -34,4 +34,6 @@ jobs:
         env:
           # GITHUB_TOKEN is required for private repos, and for public repos to prevent rate limiting
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE is required for organization repositories
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
         
