@@ -24,3 +24,8 @@ jobs:
       # Update output format to enable automatic inline annotations.
       - name: Run Ruff
         run: ruff check --output-format=github .
+
+      # Run gitleaks to scan for secrets
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        
