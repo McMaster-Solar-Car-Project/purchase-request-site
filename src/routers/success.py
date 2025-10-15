@@ -26,8 +26,8 @@ async def success_page(
 
     Parameters:
     - request: FastAPI request object
-    - drive_folder_id: optional Google Drive folder ID
-    - excel_file: optional Excel file name
+    - drive_folder_id: Google Drive folder ID
+    - excel_file: Excel file name
     - user_email: authenticated user's email
     """
     download_info = None
