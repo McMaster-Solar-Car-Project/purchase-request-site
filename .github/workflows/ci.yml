@@ -28,11 +28,11 @@ jobs:
       - name: Run Ruff
         run: ruff check --output-format=github .
 
-      # Run gitleaks to scan for secrets
+      # Run Gitleaks to scan for secrets
       - name: Install Gitleaks
         run: |
-          wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz
-            tar -xzf gitleaks_8.18.4_linux_x64.tar.gz
+          wget https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz
+            tar -xzf gitleaks_8.28.0_linux_x64.tar.gz
             sudo mv gitleaks /usr/local/bin/
 
       - name: Run Gitleaks
