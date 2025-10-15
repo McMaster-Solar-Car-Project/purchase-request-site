@@ -32,6 +32,7 @@ jobs:
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
-          GITLEAKS_TOKEN: ${{ secrets.GITLEAKS_TOKEN }}
+          # GITHUB_TOKEN is required for private repos, and for public repos to prevent rate limiting
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
         
