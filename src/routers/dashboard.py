@@ -16,7 +16,11 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from src.core.logging_utils import setup_logger
-from src.data_processing import create_expense_report, create_purchase_request
+from src.data_processing import (
+    create_expense_report,
+    create_expense_report_non_mcmaster,
+    create_purchase_request,
+)
 from src.db.schema import get_db
 from src.google_drive import (
     create_drive_folder_and_get_url,
@@ -255,10 +259,19 @@ async def submit_all_requests(
 
         # Copy expense report template to session folder
         try:
-            create_expense_report(session_folder, user_info, submitted_forms)
+            create_expense_report(user_info, submitted_forms, session_folder)
         except Exception:
             logger.exception(
-                "Failed to copy and populate expense report template (continuing anyway)"
+                "Failed to create and populate expense report template (continuing anyway)"
+            )
+
+        try:
+            create_expense_report_non_mcmaster(
+                user_info, submitted_forms, session_folder
+            )
+        except Exception:
+            logger.exception(
+                "Failed to create expense report non-mcmaster (continuing anyway)"
             )
 
         # Create Google Drive folder and get URL
@@ -281,9 +294,8 @@ async def submit_all_requests(
         except Exception:
             logger.exception("Failed to log to Google Sheets (continuing anyway)")
 
-        # Upload files to both Google Drive and Supabase concurrently
+        # Upload files to Google Drive
         drive_upload_success = False
-        supabase_upload_success = False
 
         def upload_to_drive():
             """Upload to Google Drive and return success status"""
@@ -298,9 +310,8 @@ async def submit_all_requests(
                 return False
 
         # Run both uploads concurrently
-        logger.info("Starting concurrent uploads to Google Drive and Supabase...")
+        logger.info("Starting uploads to Google Drive...")
         drive_upload_success = False
-        supabase_upload_success = False
         try:
             drive_upload_success = upload_to_drive()
             logger.info(
@@ -310,7 +321,7 @@ async def submit_all_requests(
             logger.exception(f"Unexpected error in upload task: {e}")
 
         # Clean up session folder if at least one upload was successful
-        if drive_upload_success or supabase_upload_success:
+        if drive_upload_success:
             try:
                 shutil.rmtree(session_folder)
                 logger.info(f"🗑️ Cleaned up session folder: {session_folder}")
