@@ -21,10 +21,6 @@ FROM python:3.11-slim-bookworm AS production
 # Copy virtual environment from builder to the correct location
 COPY --from=builder /app/.venv /opt/venv
 
-# Debug: Check what's in the venv
-RUN ls -la /opt/venv/bin/ || echo "No bin directory found"
-RUN find /opt/venv -name "uvicorn*" || echo "uvicorn not found"
-
 # Set environment variables
 ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
