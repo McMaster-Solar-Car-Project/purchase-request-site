@@ -32,9 +32,9 @@ jobs:
       - name: Install Gitleaks
         run: |
           wget https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz
-            tar -xzf gitleaks_8.28.0_linux_x64.tar.gz
-            sudo mv gitleaks /usr/local/bin/
+          tar -xzf gitleaks_8.28.0_linux_x64.tar.gz
+          sudo mv gitleaks /usr/local/bin/
 
       - name: Run Gitleaks
-        run: gitleaks detect --verbose --source . 
+        run: gitleaks detect --verbose --source .
         
