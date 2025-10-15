@@ -3,7 +3,7 @@ name = "purchase-request-site"
 version = "0.1.0"
 description = "Purchase request website for McMaster Solar Car members to submit purchase requests and get reimbursements"
 readme = "README.md"
-requires-python = "==3.11.*"
+requires-python = "==3.14.*"
 dependencies = [
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",

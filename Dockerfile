@@ -16,7 +16,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen
 
-FROM python:3.14-bookworm AS production
+FROM python:3.14-slim-bookworm AS production
 
 # Copy virtual environment from builder to the correct location
 COPY --from=builder /app/.venv /opt/venv
