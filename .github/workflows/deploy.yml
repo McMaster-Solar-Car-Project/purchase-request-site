@@ -78,8 +78,7 @@ jobs:
            
            # Start the application with docker-compose
            echo "Starting application with docker-compose..."
-           docker-compose up -d
-           
+           docker-compose --env-file .env up -d           
            # Wait a moment for the container to start
            sleep 10
            
