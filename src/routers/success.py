@@ -22,7 +22,14 @@ async def success_page(
     user_email: str = None,
     _: None = Depends(require_auth),
 ):
-    """Display success page after purchase request submission"""
+    """Display success page after purchase request submission.
+
+    Parameters:
+    - request: FastAPI request object
+    - drive_folder_id: optional Google Drive folder ID
+    - excel_file: optional Excel file name
+    - user_email: authenticated user's email
+    """
     download_info = None
     current_time = datetime.now()
 
