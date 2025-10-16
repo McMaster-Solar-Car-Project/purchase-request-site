@@ -3,28 +3,21 @@ name = "purchase-request-site"
 version = "0.1.0"
 description = "Purchase request website for McMaster Solar Car members to submit purchase requests and get reimbursements"
 readme = "README.md"
-requires-python = "==3.11.*"
+requires-python = "==3.13.*"
 dependencies = [
-    "fastapi>=0.104.0",
-    "uvicorn[standard]>=0.24.0",
-    "jinja2>=3.1.0",
-    "python-multipart>=0.0.6",
-    "python-dotenv>=1.0.0",
-    "openpyxl>=3.1.0",
-    "pillow>=11.3.0",
-    "google-api-python-client>=2.0.0",
-    "google-auth>=2.0.0",
-    "google-auth-oauthlib>=1.0.0",
-    "google-auth-httplib2>=0.2.0",
+    "fastapi[standard]>=0.119.0",
+    "google-api-python-client>=2.184.0",
     "itsdangerous>=2.2.0",
-    "sqlalchemy>=2.0.41",
-    "psycopg2-binary>=2.9.0",
-    "ruff>=0.1.0",
-    "supabase>=2.18.1",
+    "openpyxl>=3.1.5",
+    "pillow>=12.0.0",
+    "psycopg2-binary>=2.9.11",
+    "pydantic>=2.12.2",
+    "sqlalchemy>=2.0.44",
+    "supabase>=2.22.0",
 ]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py313"
 line-length = 88
 
 [tool.ruff.lint]
