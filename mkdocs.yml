@@ -1,4 +1,4 @@
-site_name: Purchase Request Site
+site_name: purchase-request-site
 theme:
   name: material
   palette:
@@ -32,4 +32,4 @@ nav:
   # - Examples: examples.md
   # - About: about.md
   - License: license.md
-  - GitHub: https://github.com/rajpandya737/PYTHML
+  - GitHub: https://github.com/McMaster-Solar-Car-Project/purchase-request-site
