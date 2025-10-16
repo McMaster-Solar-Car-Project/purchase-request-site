@@ -15,10 +15,13 @@ jobs:
        
      - name: Setup Blacksmith Builder
        uses: useblacksmith/setup-docker-builder@v1
+      
      - name: Build Docker image
-       run: |
-         docker build -t purchase-request-site:${{ github.sha }} .
-         docker tag purchase-request-site:${{ github.sha }} purchase-request-site:latest
+       uses: useblacksmith/build-push-action@v2
+       with:
+         push: false
+         tags: purchase-request-site:${{ github.sha }},purchase-request-site:latest
+         context: .
        
      - name: Save Docker image
        run: |
