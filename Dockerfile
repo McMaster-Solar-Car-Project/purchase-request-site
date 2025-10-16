@@ -26,8 +26,8 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
-COPY src/ ./src/
 RUN mkdir -p sessions
+COPY src/ ./src/
 
 EXPOSE 8000
 CMD ["/opt/venv/bin/python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
