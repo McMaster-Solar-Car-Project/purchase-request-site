@@ -117,13 +117,13 @@
                                         <div class="file-drop-area"
                                             ondragover="handleDragOver(event)"
                                             ondragleave="handleDragLeave(event)"
-                                            ondrop="handleFileDrop(event, 'invoice_file_{{ form_num }}', 'invoice-filename-{{ form_num }}')">
-                                            <input type="file" id="invoice_file_{{ form_num }}"
-                                                name="invoice_file_{{ form_num }}" 
+                                            ondrop="handleFileDrop(event, 'proof_of_payment_{{ form_num }}', 'payment-filename-{{ form_num }}')">
+                                            <input type="file" id="proof_of_payment_{{ form_num }}"
+                                                name="proof_of_payment_{{ form_num }}" 
                                                 accept=".pdf,.jpg,.jpeg,.png,.gif"
-                                                onchange="updateFileName(this, 'invoice-filename-{{ form_num }}')">
+                                                onchange="updateFileName(this, 'payment-filename-{{ form_num }}')">
                                             <p class="drop-text">
-                                                <span class="file-upload" onclick="document.getElementById('invoice_file_{{ form_num }}').click()">
+                                                <span class="file-upload" onclick="document.getElementById('proof_of_payment_{{ form_num }}').click()">
                                                     <b>Choose a file</b> or drag it here
                                                 </span>
                                             </p>
@@ -535,7 +535,7 @@
                 if (dropTextSpan) dropTextSpan.textContent = name;
             } else {
                 filenameSpan.textContent = 'No file chosen';
-                if (dropTextSpan) dropTextSpan.textContent = 'Choose a file';                
+                if (dropTextSpan) dropTextSpan.innerHTML = '<b>Choose a file</b> or drag it here';    
             }
         }
 
