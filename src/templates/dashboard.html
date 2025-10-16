@@ -88,12 +88,20 @@
                                 <div class="form-group">
                                     <label for="invoice_file_{{ form_num }}">Upload Invoice/Receipt</label>
                                     <div class="custom-file-upload">
-                                        <input type="file" id="invoice_file_{{ form_num }}"
-                                            name="invoice_file_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif"
-                                            onchange="updateFileName(this, 'invoice-filename-{{ form_num }}')">
-                                        <span class="file-upload-btn"
-                                            onclick="document.getElementById('invoice_file_{{ form_num }}').click()">Choose
-                                            File</span>
+                                        <div class="file-drop-area"
+                                            ondragover="handleDragOver(event)"
+                                            ondragleave="handleDragLeave(event)"
+                                            ondrop="handleFileDrop(event, 'invoice_file_{{ form_num }}', 'invoice-filename-{{ form_num }}')">
+                                            <input type="file" id="invoice_file_{{ form_num }}"
+                                                name="invoice_file_{{ form_num }}" 
+                                                accept=".pdf,.jpg,.jpeg,.png,.gif"
+                                                onchange="updateFileName(this, 'invoice-filename-{{ form_num }}')">
+                                            <p class="drop-text">
+                                                <span class="file-upload" onclick="document.getElementById('invoice_file_{{ form_num }}').click()">
+                                                    <b>Choose a file</b> or drag it here
+                                                </span>
+                                            </p>
+                                        </div>
                                         <span class="file-name" id="invoice-filename-{{ form_num }}">No file
                                             chosen</span>
                                     </div>
@@ -106,13 +114,21 @@
                                     <label for="proof_of_payment_{{ form_num }}">Proof of Payment (Required for USD
                                         purchases)</label>
                                     <div class="custom-file-upload">
-                                        <input type="file" id="proof_of_payment_{{ form_num }}"
-                                            name="proof_of_payment_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif"
-                                            onchange="updateFileName(this, 'payment-filename-{{ form_num }}')">
-                                        <span class="file-upload-btn"
-                                            onclick="document.getElementById('proof_of_payment_{{ form_num }}').click()">Choose
-                                            File</span>
-                                        <span class="file-name" id="payment-filename-{{ form_num }}">No file
+                                        <div class="file-drop-area"
+                                            ondragover="handleDragOver(event)"
+                                            ondragleave="handleDragLeave(event)"
+                                            ondrop="handleFileDrop(event, 'invoice_file_{{ form_num }}', 'invoice-filename-{{ form_num }}')">
+                                            <input type="file" id="invoice_file_{{ form_num }}"
+                                                name="invoice_file_{{ form_num }}" 
+                                                accept=".pdf,.jpg,.jpeg,.png,.gif"
+                                                onchange="updateFileName(this, 'invoice-filename-{{ form_num }}')">
+                                            <p class="drop-text">
+                                                <span class="file-upload" onclick="document.getElementById('invoice_file_{{ form_num }}').click()">
+                                                    <b>Choose a file</b> or drag it here
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <span class="file-name" id="invoice-filename-{{ form_num }}">No file
                                             chosen</span>
                                     </div>
                                     <small class="file-help">Upload a screenshot of your bank transaction or payment
@@ -511,10 +527,15 @@
 
         function updateFileName(input, spanId) {
             const filenameSpan = document.getElementById(spanId);
+            const dropTextSpan = input.closest('.file-drop-area').querySelector('.file-upload');
+
             if (input.files && input.files[0]) {
-                filenameSpan.textContent = input.files[0].name;
+                const name = input.files[0].name
+                filenameSpan.textContent = name;
+                if (dropTextSpan) dropTextSpan.textContent = name;
             } else {
                 filenameSpan.textContent = 'No file chosen';
+                if (dropTextSpan) dropTextSpan.textContent = 'Choose a file';                
             }
         }
 
@@ -709,6 +730,27 @@
             if (requiredIndicator) requiredIndicator.textContent = '';
 
             console.log(`Form ${formNumber} has been cleared successfully.`);
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('dragover')
+        }
+        
+        function handleFileDrop(event, inputId, spanId) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover')
+
+            const fileInput = document.getElementById(inputId);
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateFileName(fileInput, spanId)
+            }
         }
 
         // Initialize the dashboard when the page loads
