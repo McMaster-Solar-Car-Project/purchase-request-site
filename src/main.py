@@ -10,7 +10,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from src.core.logging_utils import setup_logger
-from src.core.templates import templates
 from src.db.schema import init_database
 from src.request_logging import RequestLoggingMiddleware
 from src.routers.auth import router as auth_router
@@ -19,6 +18,7 @@ from src.routers.download import router as download_router
 from src.routers.error import router as error_router
 from src.routers.profile import router as profile_router
 from src.routers.success import router as success_router
+from src.routers.utils import templates
 
 # Load environment variables
 load_dotenv()
@@ -90,13 +90,6 @@ async def generic_exception_handler(request: Request, exc: Exception):
         "error.html", {"request": request}, status_code=500
     )
 
-
-# deliberately raise a Python exception FOR TESTING USE ONLY
-"""
-@app.get("/cause-500")
-async def cause_500():
-    raise Exception("Deliberate server error for testing 500 page")
-"""
 
 if __name__ == "__main__":
     import uvicorn
