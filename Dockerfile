@@ -1,6 +1,8 @@
+# -------------------------------
+# Builder stage
+# -------------------------------
 FROM python:3.13-bookworm AS builder
 
-# Fix hash sum issues and install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential && \
         apt-get clean && \
@@ -15,9 +17,14 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen
 
+
+# -------------------------------
+# Production stage
+# -------------------------------
 FROM python:3.13-slim-bookworm AS production
 
-# Copy virtual environment from builder to the correct location
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/.venv /opt/venv
 
 # Set environment variables
