@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+
+from src.core.templates import templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="src/templates")
 
 
 @router.get("/404", response_class=HTMLResponse)
