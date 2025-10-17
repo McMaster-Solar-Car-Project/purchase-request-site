@@ -593,7 +593,7 @@ h1 {
 /* Custom file upload styling */
 .custom-file-upload {
     position: relative;
-    display: inline-block;
+    display: block;
     width: 100%;
 }
 
@@ -606,11 +606,44 @@ h1 {
     z-index: -1;
 }
 
+.custom-file-upload .file-drop-area {
+    width: 100%;
+    min-height: 170px;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.75rem;
+    border-radius: 4px;
+    padding: 1.5em;
+    text-align: center;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.custom-file-upload .file-drop-area.dragover {
+    background-color: #f0f8ff;
+    border-color: #007bff;
+}
+.custom-file-upload .file-drop-area input[type="file"] {
+    display: none; /* Hide default input */
+}
+.custom-file-upload .drop-text {
+    margin: 0;
+}
+
+.custom-file-upload .file-upload:hover {
+    cursor: pointer;
+}
+.custom-file-upload .file-upload:hover b{
+    color: #007bff;
+}
+
 .custom-file-upload .file-upload-btn {
     display: inline-block;
     background-color: #007bff;
     color: white;
-    padding: 10px 20px;
+    padding: 8px 18px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
