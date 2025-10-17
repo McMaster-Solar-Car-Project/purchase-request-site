@@ -313,6 +313,9 @@ h1 {
 }
 
 .item-input-group {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     display: flex;
     flex-direction: column;
 }
