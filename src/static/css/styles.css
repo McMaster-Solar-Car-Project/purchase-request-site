@@ -313,6 +313,9 @@ h1 {
 }
 
 .item-input-group {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     display: flex;
     flex-direction: column;
 }
@@ -587,6 +590,9 @@ h1 {
     
     .form-accordion-header h3 {
         font-size: 1em;
+    }
+    .dashboard-section, .items-section, .form-accordion-content {
+        padding: 0.5rem;
     }
 } 
 
