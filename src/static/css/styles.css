@@ -588,6 +588,9 @@ h1 {
     .form-accordion-header h3 {
         font-size: 1em;
     }
+    .dashboard-section, .items-section, .form-accordion-content {
+        padding: 0.5rem;
+    }
 } 
 
 /* Custom file upload styling */
