@@ -6,11 +6,11 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from src.core.logging_utils import setup_logger
+from src.core.templates import templates
 from src.db.schema import init_database
 from src.request_logging import RequestLoggingMiddleware
 from src.routers.auth import router as auth_router
@@ -59,9 +59,6 @@ app.include_router(success_router)
 app.include_router(download_router)
 app.include_router(error_router)
 
-# Include template directory
-templates = Jinja2Templates(directory="src/templates")
-
 
 @app.get("/")
 async def home():
@@ -76,7 +73,7 @@ async def health_check():
 
 
 @app.exception_handler(StarletteHTTPException)
-async def http_exceptin_handler(request: Request, exc: StarletteHTTPException):
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404:
         return templates.TemplateResponse(
             "404.html", {"request": request}, status_code=404
@@ -88,7 +85,7 @@ async def http_exceptin_handler(request: Request, exc: StarletteHTTPException):
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled exception: {exc}")
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return templates.TemplateResponse(
         "error.html", {"request": request}, status_code=500
     )
