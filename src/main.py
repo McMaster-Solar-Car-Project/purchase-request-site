@@ -3,9 +3,11 @@ import secrets
 from datetime import datetime
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from src.core.logging_utils import setup_logger
@@ -14,6 +16,7 @@ from src.request_logging import RequestLoggingMiddleware
 from src.routers.auth import router as auth_router
 from src.routers.dashboard import router as dashboard_router
 from src.routers.download import router as download_router
+from src.routers.error import router as error_router
 from src.routers.profile import router as profile_router
 from src.routers.success import router as success_router
 
@@ -54,6 +57,10 @@ app.include_router(dashboard_router)
 app.include_router(profile_router)
 app.include_router(success_router)
 app.include_router(download_router)
+app.include_router(error_router)
+
+# Include template directory
+templates = Jinja2Templates(directory="src/templates")
 
 
 @app.get("/")
@@ -67,6 +74,32 @@ async def health_check():
     """Health check endpoint for Docker health monitoring"""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exceptin_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        return templates.TemplateResponse(
+            "404.html", {"request": request}, status_code=404
+        )
+    return templates.TemplateResponse(
+        "error.html", {"request": request}, status_code=exc.status_code
+    )
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {exc}")
+    return templates.TemplateResponse(
+        "error.html", {"request": request}, status_code=500
+    )
+
+
+# deliberately raise a Python exception FOR TESTING USE ONLY
+"""
+@app.get("/cause-500")
+async def cause_500():
+    raise Exception("Deliberate server error for testing 500 page")
+"""
 
 if __name__ == "__main__":
     import uvicorn
