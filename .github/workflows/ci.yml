@@ -23,17 +23,14 @@ jobs:
       # Update output format to enable automatic inline annotations.
       - name: Run Ruff
         run: ruff check --output-format=github .
-      # Check YAML formatting
-      - name: Install yamlfmt
-        run: |
-          # Download and install yamlfmt binary
-          curl -L https://github.com/google/yamlfmt/releases/latest/download/yamlfmt_linux_amd64.tar.gz | tar -xz
-          sudo mv yamlfmt /usr/local/bin/
-          chmod +x /usr/local/bin/yamlfmt
-      - name: Check YAML formatting
-        run: |
-          # Check YAML formatting
-          yamlfmt -lint *.yml *.yaml .github/workflows/*.yml
+      # Check YAML formatting and linting
+      - name: yamllint
+        uses: reviewdog/action-yamllint@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_error: true
+      - name: yamlfmt
+        uses: yk-lab/yamlfmt-action@v1
       # Run Gitleaks to scan for secrets
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
