@@ -5,7 +5,7 @@
 }
 
 /* Default body styles (for general pages) */
-body:not(.login-body):not(.dashboard-body):not(.edit-profile-body):not(.success-body) {
+body:not(.login-body):not(.dashboard-body):not(.edit-profile-body):not(.success-body):not(.error-body) {
     font-family: Arial, sans-serif;
     max-width: 1200px;
     margin: 0 auto;
@@ -1496,3 +1496,36 @@ h1 {
     text-decoration: none;
     color: white;
 } 
+
+/* =================================================================
+   ERROR PAGE STYLES
+   ================================================================= */
+
+.error-body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    margin: 0;
+    background-color: #0a0a0c;
+    background-image: radial-gradient(circle at 50% 0%, #1a1a22 0%, #0a0a0c 70%);
+    min-height: 100vh;
+    min-width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #e4e4e7;
+    box-sizing: border-box;
+    overflow-y: auto;
+    font-size: 12px;
+}    
+
+.error-title {
+    font-size: 30px;
+    color: white;
+    font-weight: bold;
+    margin-bottom: 3rem;
+}
+.error-text {
+    font-size: 18px;
+    font-weight: normal;
+    line-height: 2rem;
+}

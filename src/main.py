@@ -3,9 +3,10 @@ import secrets
 from datetime import datetime
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from src.core.logging_utils import setup_logger
@@ -16,6 +17,7 @@ from src.routers.dashboard import router as dashboard_router
 from src.routers.download import router as download_router
 from src.routers.profile import router as profile_router
 from src.routers.success import router as success_router
+from src.routers.utils import templates
 
 # Load environment variables
 load_dotenv()
@@ -66,6 +68,25 @@ async def home():
 async def health_check():
     """Health check endpoint for Docker health monitoring"""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        return templates.TemplateResponse(
+            "404.html", {"request": request}, status_code=404
+        )
+    return templates.TemplateResponse(
+        "error.html", {"request": request}, status_code=exc.status_code
+    )
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return templates.TemplateResponse(
+        "error.html", {"request": request}, status_code=500
+    )
 
 
 if __name__ == "__main__":
