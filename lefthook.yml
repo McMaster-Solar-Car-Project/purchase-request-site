@@ -18,4 +18,5 @@ pre-commit:
       run: gitleaks protect --verbose --redact --staged
     yamlfmt:
       glob: "*.{yml,yaml}"
-      run: yamlfmt -w {staged_files}
+      run: yamlfmt {staged_files}
+      stage_fixed: true
