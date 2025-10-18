@@ -2,7 +2,7 @@ name: Docker Image Build Check
 
 on:
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
   docker-build-check:
@@ -13,6 +13,6 @@ jobs:
 
       - name: Setup Blacksmith Builder
         uses: useblacksmith/setup-docker-builder@v1
-      
+
       - name: Build Docker image
         run: docker build -t purchase-request-site:${{ github.sha }} .
