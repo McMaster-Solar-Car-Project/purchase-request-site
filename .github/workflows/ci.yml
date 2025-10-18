@@ -12,7 +12,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Fetch all history for all branches and tags
-      
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
         if: github.event_name == 'pull_request'
@@ -20,7 +19,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      
       - name: Cache pip dependencies
         uses: actions/cache@v4
         with:
@@ -28,7 +26,6 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -50,13 +47,11 @@ jobs:
           # GITHUB_TOKEN is required for private repos, and for public repos to prevent rate limiting
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
-      
       # Scan for Python package vulnerabilities
       - name: Run pip-audit
         run: |
           pip install pip-audit
           pip-audit --desc --format=json --output=audit-results.json || true
-      
       # Container vulnerability scanning
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -65,7 +60,6 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
-      
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
