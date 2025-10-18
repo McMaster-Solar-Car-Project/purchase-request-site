@@ -1,0 +1,94 @@
+name: Build and Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          command_timeout: 20m
+          debug: true
+          script: |
+            cd /home/raj/purchase-request-site
+            echo "Starting deployment for commit: ${{ github.sha }}"
+            echo "Pulling image: ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}"
+
+            # Update git repository
+            git fetch origin
+            git reset --hard origin/main
+
+            # Login to Docker Hub on server
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+            # Stop existing container if running
+            docker compose down || true
+
+            # Pull the latest image
+            echo "Pulling latest image from Docker Hub..."
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}
+
+            # Tag as latest for docker-compose
+            docker tag ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:latest
+
+            # Start the application with the pulled image
+            echo "Starting application with pulled image..."
+            docker compose --env-file .env up -d
+            sleep 10
+
+            # Check if container is running
+            if docker compose ps | grep -q "Up"; then
+              echo "Application started successfully"
+              docker compose logs --tail=20
+            else
+              echo "Error: Application failed to start"
+              docker compose logs
+              exit 1
+            fi
+
+            # Cleanup old Docker images and containers
+            echo "Cleaning up unused Docker data..."
+            docker system prune -af --volumes
+
+            echo "Deployment completed successfully"
