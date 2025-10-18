@@ -74,7 +74,7 @@ uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 **Important**: Even though you can run the application with uvicorn, it is recommended to use Docker to run the application since this is how it's run in production
 
 ```bash
-docker-compose --env-file .env up --build
+docker compose --env-file .env up --build
 ```
 
 The application will be available at `http://localhost:8000` (or the port specified in your configuration).
