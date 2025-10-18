@@ -24,7 +24,7 @@ async def login_page(request: Request, error: str = None):
     """Display login page"""
 
     error_messages = {
-        "ratelimit": "Too many login attempts. Please try again later.",
+        "ratelimit": "Too many login attempts. Please try again in 60 seconds.",
         "invalid": "Invalid email or password.",
     }
 
@@ -38,7 +38,7 @@ async def login_page(request: Request, error: str = None):
 
 
 @router.post("/login")
-@limiter.limit("5/minute")
+@limiter.limit("5/minute")  # Limit to 5 login attempts per minute per IP
 async def login(
     request: Request,
     email: str = Form(...),
