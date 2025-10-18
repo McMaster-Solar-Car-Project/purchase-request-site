@@ -10,7 +10,6 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.sessions import SessionMiddleware
 
 from src.core.logging_utils import setup_logger
-from src.core.rate_limit import limiter
 from src.db.schema import init_database
 from src.request_logging import RequestLoggingMiddleware
 from src.routers.auth import router as auth_router
@@ -18,6 +17,7 @@ from src.routers.dashboard import router as dashboard_router
 from src.routers.download import router as download_router
 from src.routers.profile import router as profile_router
 from src.routers.success import router as success_router
+from src.routers.utils import limiter
 
 # Load environment variables
 load_dotenv()
