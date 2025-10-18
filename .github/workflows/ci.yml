@@ -24,19 +24,10 @@ jobs:
       - name: Run Ruff
         run: ruff check --output-format=github .
       # Check YAML formatting
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-      - name: Install yamlfmt
-        run: |
-          go install github.com/google/yamlfmt/cmd/yamlfmt@latest
-          echo "$HOME/go/bin" >> $GITHUB_PATH
       - name: Check YAML formatting
-        run: |
-          yamlfmt -lint -dry-run .
-        # The -lint flag checks for formatting issues and exits with a non-zero code if issues are found.
-        # The -dry-run flag ensures no changes are applied, only reporting issues.
+        uses: docker://ghcr.io/google/yamlfmt:latest
+        with:
+          args: yamlfmt -lint .
       # Run Gitleaks to scan for secrets
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
