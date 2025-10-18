@@ -27,20 +27,20 @@ jobs:
             git reset --hard origin/main
 
             # Stop existing container if running
-            docker-compose down || true
+            docker compose down || true
 
             # Build and start the application with latest code
             echo "Building and starting application with latest code..."
-            docker-compose --env-file .env up --build -d
+            docker compose --env-file .env up --build -d
             sleep 10
 
             # Check if container is running
-            if docker-compose ps | grep -q "Up"; then
+            if docker compose ps | grep -q "Up"; then
               echo "Application started successfully"
-              docker-compose logs --tail=20
+              docker compose logs --tail=20
             else
               echo "Error: Application failed to start"
-              docker-compose logs
+              docker compose logs
               exit 1
             fi
 
