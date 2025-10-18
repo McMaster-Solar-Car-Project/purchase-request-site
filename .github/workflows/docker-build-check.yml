@@ -10,9 +10,5 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Blacksmith Builder
         uses: useblacksmith/setup-docker-builder@v1
-
-
-
-        
       - name: Build Docker image
         run: docker build -t purchase-request-site:${{ github.sha }} .
