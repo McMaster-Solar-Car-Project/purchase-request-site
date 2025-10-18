@@ -24,10 +24,8 @@ jobs:
       - name: Run Ruff
         run: ruff check --output-format=github .
       # Check YAML formatting
-      - name: Check YAML formatting
-        uses: docker://ghcr.io/google/yamlfmt:latest
-        with:
-          args: yamlfmt -lint .
+      - name: Run yamlfmt
+        uses: yk-lab/yamlfmt-action@v1
       # Run Gitleaks to scan for secrets
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
