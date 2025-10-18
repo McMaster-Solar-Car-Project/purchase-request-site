@@ -15,7 +15,6 @@ from src.request_logging import RequestLoggingMiddleware
 from src.routers.auth import router as auth_router
 from src.routers.dashboard import router as dashboard_router
 from src.routers.download import router as download_router
-from src.routers.error import router as error_router
 from src.routers.profile import router as profile_router
 from src.routers.success import router as success_router
 from src.routers.utils import templates
@@ -57,7 +56,6 @@ app.include_router(dashboard_router)
 app.include_router(profile_router)
 app.include_router(success_router)
 app.include_router(download_router)
-app.include_router(error_router)
 
 
 @app.get("/")
