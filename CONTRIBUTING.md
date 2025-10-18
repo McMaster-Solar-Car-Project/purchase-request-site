@@ -29,7 +29,7 @@ This project is part of the McMaster Solar Car Project. Please be respectful, in
 Install the following system dependencies:
 
 ```bash
-brew install uv gitleaks lefthook ruff git
+brew install uv gitleaks lefthook ruff yamlfmt git
 ```
 
 ## Development Setup

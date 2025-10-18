@@ -1,6 +1,5 @@
 # Lefthook is used for configuring git hooks such as pre-commit, pre-push, etc...
 # Can read more here: https://github.com/evilmartians/lefthook
----
 pre-commit:
   parallel: true
   commands:
@@ -16,4 +15,7 @@ pre-commit:
       run: ruff check --fix {staged_files} && ruff format {staged_files}
       stage_fixed: true
     gitleaks:
-      run: gitleaks protect --verbose --redact --staged 
+      run: gitleaks protect --verbose --redact --staged
+    yamlfmt:
+      glob: "*.{yml,yaml}"
+      run: yamlfmt -w {staged_files}
