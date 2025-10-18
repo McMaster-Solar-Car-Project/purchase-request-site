@@ -1,0 +1,120 @@
+name: Build and Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy to production'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  build:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    outputs:
+      image-tag: ${{ steps.tag.outputs.single-tag }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Blacksmith Builder
+        uses: useblacksmith/setup-docker-builder@v1
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Generate single tag
+        id: tag
+        run: |
+          # Create a deterministic tag using commit SHA
+          SINGLE_TAG="${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}"
+          echo "single-tag=$SINGLE_TAG" >> $GITHUB_OUTPUT
+          echo "Generated single tag: $SINGLE_TAG"
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        id: build
+        uses: useblacksmith/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Output image info
+        run: |
+          echo "Single deployment tag: ${{ steps.tag.outputs.single-tag }}"
+          echo "All image tags: ${{ steps.meta.outputs.tags }}"
+          echo "Image digest: ${{ steps.build.outputs.digest }}"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event.inputs.deploy == true)
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          command_timeout: 20m
+          debug: true
+          script: |
+            cd /home/raj/purchase-request-site
+            echo "Starting deployment for commit: ${{ github.sha }}"
+            echo "Pulling image: ${{ needs.build.outputs.image-tag }}"
+
+            # Update git repository
+            git fetch origin
+            git reset --hard origin/main
+
+            # Login to Docker Hub on server
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+            # Stop existing container if running
+            docker compose down || true
+
+            # Pull the latest image
+            echo "Pulling latest image from Docker Hub..."
+            docker pull ${{ needs.build.outputs.image-tag }}
+
+            # Tag as latest for docker-compose
+            docker tag ${{ needs.build.outputs.image-tag }} ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:latest
+
+            # Start the application with the pulled image
+            echo "Starting application with pulled image..."
+            docker compose --env-file .env up -d
+            sleep 10
+
+            # Check if container is running
+            if docker compose ps | grep -q "Up"; then
+              echo "Application started successfully"
+              docker compose logs --tail=20
+            else
+              echo "Error: Application failed to start"
+              docker compose logs
+              exit 1
+            fi
+
+            # Cleanup old Docker images and containers
+            echo "Cleaning up unused Docker data..."
+            docker system prune -af --volumes
+
+            echo "Deployment completed successfully"
