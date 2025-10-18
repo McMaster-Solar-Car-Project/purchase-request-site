@@ -25,7 +25,11 @@ jobs:
         run: ruff check --output-format=github .
       # Check YAML formatting
       - name: Run yamlfmt
-        uses: yk-lab/yamlfmt-action@v1
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            ghcr.io/google/yamlfmt:latest \
+            -lint /workspace
       # Run Gitleaks to scan for secrets
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
