@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from src.core.logging_utils import setup_logger
+from src.core.rate_limit import limiter
 from src.db.schema import get_db
 from src.models.user_service import get_user_by_email, is_user_profile_complete
 from src.routers.utils import templates
@@ -21,18 +22,23 @@ router = APIRouter(tags=["authentication"])
 @router.get("/login")
 async def login_page(request: Request, error: str = None):
     """Display login page"""
+
+    error_messages = {
+        "ratelimit": "Too many login attempts. Please try again later.",
+        "invalid": "Invalid email or password.",
+    }
+
     return templates.TemplateResponse(
         "login.html",
         {
             "request": request,
-            "error_message": "Invalid email or password"
-            if error == "invalid"
-            else None,
+            "error_message": error_messages.get(error),
         },
     )
 
 
 @router.post("/login")
+@limiter.limit("5/minute")
 async def login(
     request: Request,
     email: str = Form(...),
