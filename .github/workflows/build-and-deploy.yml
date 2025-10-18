@@ -4,11 +4,19 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy to production'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,6 +41,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -42,6 +51,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Output image info
+        run: |
+          echo "Image tags: ${{ steps.meta.outputs.tags }}"
+          echo "Image digest: ${{ steps.build.outputs.digest }}"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event.inputs.deploy == 'true')
+    steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -53,7 +72,7 @@ jobs:
           script: |
             cd /home/raj/purchase-request-site
             echo "Starting deployment for commit: ${{ github.sha }}"
-            echo "Pulling image: ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}"
+            echo "Pulling image: ${{ needs.build.outputs.image-tag }}"
 
             # Update git repository
             git fetch origin
@@ -67,10 +86,10 @@ jobs:
 
             # Pull the latest image
             echo "Pulling latest image from Docker Hub..."
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}
+            docker pull ${{ needs.build.outputs.image-tag }}
 
             # Tag as latest for docker-compose
-            docker tag ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:latest
+            docker tag ${{ needs.build.outputs.image-tag }} ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:latest
 
             # Start the application with the pulled image
             echo "Starting application with pulled image..."
