@@ -18,7 +18,7 @@ from src.routers.dashboard import router as dashboard_router
 from src.routers.download import router as download_router
 from src.routers.profile import router as profile_router
 from src.routers.success import router as success_router
-from src.routers.utils import templates, limiter
+from src.routers.utils import limiter, templates
 
 # Load environment variables
 load_dotenv()
