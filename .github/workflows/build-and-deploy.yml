@@ -15,7 +15,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
+      image-tag: ${{ steps.tag.outputs.single-tag }}
       image-digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout code
@@ -29,6 +29,14 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Generate single tag
+        id: tag
+        run: |
+          # Create a deterministic tag using commit SHA
+          SINGLE_TAG="${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}"
+          echo "single-tag=$SINGLE_TAG" >> $GITHUB_OUTPUT
+          echo "Generated single tag: $SINGLE_TAG"
 
       - name: Extract metadata
         id: meta
@@ -53,7 +61,8 @@ jobs:
 
       - name: Output image info
         run: |
-          echo "Image tags: ${{ steps.meta.outputs.tags }}"
+          echo "Single deployment tag: ${{ steps.tag.outputs.single-tag }}"
+          echo "All image tags: ${{ steps.meta.outputs.tags }}"
           echo "Image digest: ${{ steps.build.outputs.digest }}"
 
   deploy:
