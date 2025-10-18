@@ -55,7 +55,7 @@ jobs:
       # Container vulnerability scanning
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
-        with:
+        pip-audit --desc --format=json --output=audit-results.json
           scan-type: 'fs'
           scan-ref: '.'
           format: 'sarif'
