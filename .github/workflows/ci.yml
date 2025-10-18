@@ -2,11 +2,10 @@ name: Lint Check
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
-
 
 jobs:
   build:
@@ -14,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for all branches and tags
+          fetch-depth: 0 # Fetch all history for all branches and tags
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -35,4 +34,3 @@ jobs:
           # GITHUB_TOKEN is required for private repos, and for public repos to prevent rate limiting
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
-        
