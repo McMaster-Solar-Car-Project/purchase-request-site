@@ -11,6 +11,8 @@ import sys
 
 from dotenv import load_dotenv
 
+from emailer import Emailer
+
 # Load environment variables
 load_dotenv()
 
@@ -94,12 +96,14 @@ def _setup_email_handler() -> logging.Handler:
         logging.Handler or None: Email handler if properly configured, None otherwise.
     """
     try:
-        # Get email configuration from environment variables
-        smtp_server = os.getenv("SMTP_SERVER")
-        smtp_port = os.getenv("SMTP_PORT", "587")
-        smtp_username = os.getenv("SMTP_USERNAME")
-        smtp_password = os.getenv("SMTP_PASSWORD")
-        from_email = os.getenv("ERROR_EMAIL_FROM")
+        # Get email configuration from Emailer class
+        emailer = Emailer()
+
+        smtp_server = emailer.smtp_server
+        smtp_port = emailer.smtp_port
+        smtp_username = emailer.smtp_username
+        smtp_password = emailer.smtp_password
+        from_email = emailer.from_email
         to_emails = os.getenv("ERROR_EMAIL_TO")
 
         # Check if all required email settings are provided
