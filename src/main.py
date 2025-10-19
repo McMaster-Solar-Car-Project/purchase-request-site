@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -17,7 +18,7 @@ from src.routers.dashboard import router as dashboard_router
 from src.routers.download import router as download_router
 from src.routers.profile import router as profile_router
 from src.routers.success import router as success_router
-from src.routers.utils import templates
+from src.routers.utils import limiter, templates
 
 # Load environment variables
 load_dotenv()
@@ -56,6 +57,16 @@ app.include_router(dashboard_router)
 app.include_router(profile_router)
 app.include_router(success_router)
 app.include_router(download_router)
+
+
+async def handle_exceed_limit(request: Request, exc: RateLimitExceeded):
+    """Handle rate limit exceeded errors by redirecting to login with error message"""
+    return RedirectResponse(url="/login?error=ratelimit", status_code=303)
+
+
+# Initialize rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, handle_exceed_limit)
 
 
 @app.get("/")
