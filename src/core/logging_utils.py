@@ -11,7 +11,7 @@ import sys
 
 from dotenv import load_dotenv
 
-from emailer import Emailer
+from src.emailer import Emailer
 
 # Load environment variables
 load_dotenv()
