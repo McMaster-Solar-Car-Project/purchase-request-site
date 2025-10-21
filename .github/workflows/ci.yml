@@ -22,7 +22,7 @@ jobs:
           pip install ruff
       # Update output format to enable automatic inline annotations.
       - name: Run Ruff
-        run: ruff check --output-format=github .
+        run: ruff check . --verbose --show-files --output-format=github
       # Check YAML formatting
       - name: Run yamlfmt
         run: |
