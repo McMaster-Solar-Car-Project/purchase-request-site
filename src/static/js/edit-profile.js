@@ -110,6 +110,18 @@ function validatePasswords() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log("hi");
     const form = document.querySelector('form');
+    const backLink = document.getElementById('back-link');
+    if (backLink) {
+        backLink.addEventListener('click', function(e) {
+            const defaultsOk = validateDefault();
+            if (!defaultsOk) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            return true;
+        });
+    }
     if (form) {
         form.addEventListener('submit', function(e) {
             const passwordsOk = validatePasswords();
