@@ -18,7 +18,7 @@
             <h1>Edit Your Information</h1>
         </div>
 
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" novalidate>
             <div class="login-form-group">
                 <label for="name">Full Name <span class="dark-required">*</span></label>
                 <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required>
