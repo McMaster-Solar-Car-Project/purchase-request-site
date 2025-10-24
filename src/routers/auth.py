@@ -55,9 +55,10 @@ async def login(
                 status_code=303,
             )
 
-        # If profile incomplete, go to edit profile page
+        # Default Val Check
         return RedirectResponse(
-            url=f"/edit-profile?user_email={email}", status_code=303
+            url=f"/edit-profile?user_email={email}&error=default_values",
+            status_code=303,
         )
     else:
         logger.warning(f"🚫 Failed login attempt: {email}")
