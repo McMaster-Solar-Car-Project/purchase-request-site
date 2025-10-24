@@ -55,6 +55,14 @@ function checkPasswordMatch() {
     }
 }
 
+// Default Check
+// function validateDefault(){
+//     const name = document.getElementById('name').value;
+//     const name = document.getElementById('name').value;
+//     const name = document.getElementById('name').value;
+    
+// }
+
 // Password validation
 function validatePasswords() {
     const newPassword = document.getElementById('new_password').value;
