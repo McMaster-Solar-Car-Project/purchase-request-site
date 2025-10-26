@@ -152,7 +152,6 @@ def is_user_profile_complete(user: User) -> bool:
     if (
         user.name.strip() == "default_name"
         or user.personal_email.strip() == "default_email@gmail.com"
-        or user.password.strip() == "default_password123"
     ):
         return False
 

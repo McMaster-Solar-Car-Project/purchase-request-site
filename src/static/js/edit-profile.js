@@ -68,7 +68,7 @@ function validateDefault(){
     } else if (personalEmail == "default_email@gmail.com"){
         alert('User is still using default personal email.');
         return false;
-    }
+    } 
     return true;
 }
 
@@ -78,7 +78,6 @@ function validatePasswords() {
     const confirmPassword = document.getElementById('confirm_password').value;
     const currentPassword = document.getElementById('current_password').value;
     
-    //console.log("Password validate")
 
     // If any password field is filled, validate all
     if (newPassword || confirmPassword || currentPassword) {
@@ -104,7 +103,6 @@ function validatePasswords() {
 
 // Initialize form validation when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("hi");
     const form = document.querySelector('form');
     const backLink = document.getElementById('back-link');
     if (backLink) {
