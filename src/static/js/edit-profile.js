@@ -59,7 +59,6 @@ function checkPasswordMatch() {
 function validateDefault(){
     const name = document.getElementById('name').value;
     const personalEmail = document.getElementById('personal_email').value;
-    const currentPassword = document.getElementById('current_password').value;
     
     //console.log("Default");
 
@@ -68,9 +67,6 @@ function validateDefault(){
         return false;
     } else if (personalEmail == "default_email@gmail.com"){
         alert('User is still using default personal email.');
-        return false;
-    } else if (currentPassword == "default_password123"){
-        alert('User is still using default password.');
         return false;
     }
     return true;
