@@ -26,6 +26,9 @@ load_dotenv()
 # Set up logger
 logger = setup_logger(__name__)
 
+# Log start time and date
+logger.info(f"Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
 # Create required directories immediately (before mounting static files)
 required_dirs = ["sessions"]
 for directory in required_dirs:
