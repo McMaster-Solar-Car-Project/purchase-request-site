@@ -148,6 +148,17 @@ def is_user_profile_complete(user: User) -> bool:
     if not user:
         return False
 
+    # Default Val check
+    if (
+        user.name.strip() == "default_name"
+        or user.personal_email.strip() == "default_email@gmail.com"
+    ):
+        return False
+
+    # Default signature check
+    if user.signature_data == "DEFAULT_SIGNATURE":
+        return False
+
     required_fields = [
         user.name,
         user.email,

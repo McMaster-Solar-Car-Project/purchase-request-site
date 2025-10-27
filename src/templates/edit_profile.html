@@ -14,11 +14,11 @@
 <body class="login-body">
     <div class="login-container wide">
         <div class="login-header">
-            <a href="/dashboard?user_email={{ user.email }}&use_saved=true" class="dark-back-link">← Back</a>
+            <a href="/dashboard?user_email={{ user.email }}&use_saved=true" id="back-link" class="dark-back-link">← Back</a>
             <h1>Edit Your Information</h1>
         </div>
 
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" novalidate enctype="multipart/form-data">
             <div class="login-form-group">
                 <label for="name">Full Name <span class="dark-required">*</span></label>
                 <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required>
@@ -213,6 +213,16 @@
         });
     </script>
     {% endif %}
+
+    <script>
+    // Check if the URL contains an error message
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+
+    if (error === 'default_values') {
+        alert('⚠️ Default values must be changed before saving your profile.');
+    } 
+    </script>
 </body>
 
 </html>
