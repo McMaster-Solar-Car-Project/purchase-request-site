@@ -60,8 +60,6 @@ function validateDefault(){
     const name = document.getElementById('name').value;
     const personalEmail = document.getElementById('personal_email').value;
 
-    //console.log("Default");
-
     if (name == "default_name"){
         alert('User is still using default name.');
         return false;
