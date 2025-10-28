@@ -76,6 +76,11 @@ async def edit_profile_post(
         user.team = team.strip()
         user.address = address.strip()
 
+        if user.name == "default_name":
+            logger.warning("User is still using default name.")
+        if user.personal_email == "default_email@gmail.com":
+            logger.warning("User is still using default personal email.")
+
         # Handle password change if provided (strip whitespace from passwords too)
         current_password = current_password.strip()
         new_password = new_password.strip()
