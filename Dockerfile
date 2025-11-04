@@ -4,9 +4,16 @@
 FROM python:3.13-bookworm AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential && \
+        build-essential \
+        curl && \
         apt-get clean && \
         rm -rf /var/lib/apt/lists/*
+
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 ADD https://astral.sh/uv/install.sh /install.sh
 RUN chmod -R 665 /install.sh && /install.sh && rm /install.sh
@@ -16,6 +23,19 @@ ENV PATH="/root/.local/bin:$PATH"
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen
+
+# Copy Node.js dependencies and install
+COPY package.json ./
+COPY package-lock.json* ./
+RUN npm install
+
+# Copy Files for Tailwind CSS Scan + Build
+COPY src/templates/ ./src/templates/
+COPY src/input.css ./src/input.css
+
+# Ensure output dir exists, then build Tailwind CSS
+RUN mkdir -p src/static/css && \
+    ./node_modules/.bin/tailwindcss -i src/input.css -o src/static/css/output.css --minify
 
 
 # -------------------------------
@@ -40,6 +60,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 WORKDIR /app
 RUN mkdir -p sessions
 COPY src/ ./src/
+
+# Copy the generated Tailwind CSS output from builder
+COPY --from=builder /app/src/static/css/output.css ./src/static/css/output.css
 
 EXPOSE 8000
 CMD ["/opt/venv/bin/python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

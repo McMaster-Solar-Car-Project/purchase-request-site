@@ -53,3 +53,6 @@ sessions/
 # SSH Key
 ssh.key
 scripts/
+
+# Node / frontend stuff
+node_modules/

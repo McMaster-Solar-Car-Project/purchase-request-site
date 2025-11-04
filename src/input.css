@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Tailwind CSS v4 CSS-first configuration */
+/* Content paths are specified in tailwind.config.js */
+@source "./templates/**/*.html";
+@source "./static/js/**/*.js";
