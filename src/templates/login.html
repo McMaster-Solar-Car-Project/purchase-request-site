@@ -5,43 +5,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Purchase Request Site</title>
-    <link rel="stylesheet" href="/static/css/output.css">
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
-<body class="font-sans m-0 py-12 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,_#1a1a22_0%,_#0a0a0c_70%)] leading-relaxed min-h-screen flex items-center justify-center text-zinc-200 box-border overflow-y-auto">
-    <div class="max-w-[420px] w-[90%] p-10 bg-zinc-900/80 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-[10px] border border-white/8 my-12 mx-auto">
-        <div class="text-center mb-10 relative">
-            <h1 class="text-white font-semibold text-[1.75rem] mb-3 tracking-tight">Sign In</h1>
-            <p class="text-zinc-400 m-0 text-[0.95rem] font-normal">Enter your credentials to access the Purchase Request Portal</p>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-header">
+            <h1>Sign In</h1>
+            <p>Enter your credentials to access the Purchase Request Portal</p>
         </div>
 
         {% if error_message %}
-        <div class="bg-red-500/15 border border-red-500/30 text-red-300 py-3.5 rounded-lg mb-6 text-center text-sm">
+        <div class="login-error-message">
             {{ error_message }}
         </div>
         {% endif %}
 
         <form method="POST" action="/login">
-            <div class="mb-6">
-                <label for="email" class="block mb-2 font-medium text-zinc-200 text-sm">Email</label>
-                <input type="email" id="email" name="email" required placeholder="macid@mcmaster.ca" value="{{ email or '' }}" class="w-full py-3.5 bg-zinc-800/70 border border-zinc-700/50 rounded-lg text-[0.95rem] transition-all duration-200 text-zinc-200 font-sans block caret-indigo-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 placeholder:text-zinc-500">
+            <div class="login-form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="macid@mcmaster.ca" value="{{ email or '' }}">
             </div>
 
-            <div class="mb-6">
-                <label for="password" class="block mb-2 font-medium text-zinc-200 text-sm">Password</label>
-                <input type="password" id="password" name="password" required placeholder="••••••••" class="w-full py-3.5 bg-zinc-800/70 border border-zinc-700/50 rounded-lg text-[0.95rem] transition-all duration-200 text-zinc-200 font-sans block caret-indigo-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 placeholder:text-zinc-500">
+            <div class="login-form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="••••••••">
             </div>
 
-            <button type="submit" class="w-full py-3.5 bg-gradient-to-br from-indigo-500 to-purple-500 text-white border-none rounded-lg text-[0.95rem] font-medium cursor-pointer transition-all duration-200 font-sans mt-6 hover:from-indigo-600 hover:to-purple-600 hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)] hover:-translate-y-0.5">
+            <button type="submit" class="login-btn">
                 Sign In
             </button>
         </form>
 
-        <div class="text-center mt-8 pt-6 border-t border-zinc-700/50 text-zinc-400 text-sm">
+        <div class="login-footer">
             <p>Need access? Contact Raj on Teams</p>
         </div>
     </div>
