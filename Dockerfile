@@ -27,7 +27,7 @@ RUN uv sync --frozen
 # Copy Node.js dependencies and install
 COPY package.json ./
 COPY package-lock.json* ./
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+RUN npm install
 
 # Copy Tailwind config
 COPY tailwind.config.js* ./
@@ -36,7 +36,7 @@ COPY tailwind.config.js* ./
 COPY src/ ./src/
 
 # Build Tailwind CSS
-RUN npx tailwindcss -i src/input.css -o src/static/css/output.css --minify
+RUN ./node_modules/.bin/tailwindcss -i src/input.css -o src/static/css/output.css --minify
 
 
 # -------------------------------
