@@ -29,14 +29,13 @@ COPY package.json ./
 COPY package-lock.json* ./
 RUN npm install
 
-# Copy Tailwind config
-COPY tailwind.config.js* ./
+# Copy Files for Tailwind CSS Scan + Build
+COPY src/templates/ ./src/templates/
+COPY src/input.css ./src/input.css
 
-# Copy source files (including input.css and templates for Tailwind scanning)
-COPY src/ ./src/
-
-# Build Tailwind CSS
-RUN ./node_modules/.bin/tailwindcss -i src/input.css -o src/static/css/output.css --minify
+# Ensure output dir exists, then build Tailwind CSS
+RUN mkdir -p src/static/css && \
+    ./node_modules/.bin/tailwindcss -i src/input.css -o src/static/css/output.css --minify
 
 
 # -------------------------------
