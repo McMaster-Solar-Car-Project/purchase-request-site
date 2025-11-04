@@ -1,0 +1,11 @@
+{
+  "name": "purchase-request-site",
+  "version": "0.1.0",
+  "description": "Purchase request website - Tailwind CSS build",
+  "scripts": {
+    "build:css": "tailwindcss -i src/input.css -o src/static/css/output.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.0.0"
+  }
+}
