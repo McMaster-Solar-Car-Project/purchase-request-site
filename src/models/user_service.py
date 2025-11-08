@@ -1,9 +1,9 @@
 import base64
 import io
+from pathlib import Path
 
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
-from pathlib import Path
 
 from src.core.logging_utils import setup_logger
 from src.db.schema import User
@@ -34,8 +34,7 @@ class FileUploadFromPath:
         self.content_type = content_type_map.get(ext, "application/octet-stream")
 
         # Read file data
-        with open(file_path, "rb") as f:
-            self.file_data = f.read()
+        self.file_data = Path(file_path).read_bytes()
 
         # Create file-like object
         self.file = io.BytesIO(self.file_data)
@@ -135,8 +134,7 @@ def save_signature_to_file(user: User, file_path: str) -> bool:
         return False
 
     try:
-        with open(file_path, "wb") as f:
-            f.write(user.signature_data)
+        Path(file_path).write_bytes(user.signature_data)
         return True
     except Exception as e:
         logger.exception(f"Error saving signature to file {file_path}: {e}")

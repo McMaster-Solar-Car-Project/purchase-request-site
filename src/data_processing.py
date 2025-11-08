@@ -11,13 +11,15 @@ from src.image_processing import insert_signature_at_cell
 logger = setup_logger(__name__)
 
 
-def create_expense_report(session_folder, user_info, submitted_forms):
+def create_expense_report(
+    session_folder: str, user_info: dict, submitted_forms: list[dict]
+) -> bool:
     """Copy the expense report template to the session folder and populate with user data"""
 
-    template_path = "src/excel_templates/expense_report_template.xlsx"
+    template_path = Path("src/excel_templates/expense_report_template.xlsx")
 
     # Check if template exists
-    if not Path(template_path).exists():
+    if not template_path.exists():
         logger.exception(f"Expense report template not found: {template_path}")
         return False
 
@@ -33,7 +35,8 @@ def create_expense_report(session_folder, user_info, submitted_forms):
             word.capitalize() for word in user_info.get("name", "UnknownUser").split()
         )
         output_filename = f"{month_name}{day}-{year}-ExpenseReport-{pascal_name}.xlsx"
-        output_path = f"{session_folder}/{output_filename}"
+        session_path = Path(session_folder)
+        output_path = session_path / output_filename
 
         shutil.copy2(template_path, output_path)
         # Expense report template copied
@@ -60,7 +63,7 @@ def create_expense_report(session_folder, user_info, submitted_forms):
 
         try:
             # Insert signature at cell A19
-            insert_signature_at_cell(ws, session_folder, "A19", 200, 60)
+            insert_signature_at_cell(ws, str(session_path), "A19", 200, 60)
         except Exception as e:
             logger.warning(f"Failed to insert signature into expense report: {e}")
 
@@ -75,7 +78,7 @@ def create_expense_report(session_folder, user_info, submitted_forms):
         return False
 
 
-def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
+def populate_expense_rows_from_submitted_forms(ws, submitted_forms: list[dict]) -> bool:
     """Populate expense report rows from submitted form data"""
 
     try:
@@ -115,18 +118,21 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
         return False
 
 
-def create_purchase_request(user_info, submitted_forms, session_folder):
+def create_purchase_request(
+    user_info: dict, submitted_forms: list[dict], session_folder: str
+) -> dict:
     """Create Purchase Request using the template with multiple tabs for each submitted form"""
 
-    template_path = "src/excel_templates/purchase_request_template.xlsx"
+    template_path = Path("src/excel_templates/purchase_request_template.xlsx")
 
     # Check if template exists
-    if not Path(template_path).exists():
+    if not template_path.exists():
         raise FileNotFoundError(f"Template file not found: {template_path}")
 
     # Create single output file
     output_filename = "purchase_request.xlsx"
-    output_path = f"{session_folder}/{output_filename}"
+    session_path = Path(session_folder)
+    output_path = session_path / output_filename
 
     # Copy template to session folder
     shutil.copy2(template_path, output_path)
@@ -234,7 +240,7 @@ def create_purchase_request(user_info, submitted_forms, session_folder):
                 ws["D7"] = 0
 
         # Insert signature image
-        insert_signature_at_cell(ws, session_folder, "B33", 280, 70)
+        insert_signature_at_cell(ws, str(session_path), "B33", 280, 70)
 
     # Save the modified workbook
     wb.save(output_path)
@@ -243,7 +249,7 @@ def create_purchase_request(user_info, submitted_forms, session_folder):
     # Return information about the single generated file
     return {
         "filename": output_filename,
-        "filepath": output_path,
+        "filepath": str(output_path),
         "forms_processed": len(submitted_forms),
         "tabs_used": [f"Receipt{form['form_number']}" for form in submitted_forms],
     }
