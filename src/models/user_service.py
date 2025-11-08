@@ -129,12 +129,18 @@ def get_user_signature_as_data_url(user: User) -> str | None:
 
 
 def save_signature_to_file(user: User, file_path: str) -> bool:
-    """Save user's signature from database to a file"""
+    """Save user's signature from database to a file (safely confined to sessions directory)"""
     if not user or not user.signature_data:
         return False
 
+    # Ensure the resulting file path is contained within sessions directory
     try:
-        Path(file_path).write_bytes(user.signature_data)
+        sessions_dir = Path("sessions").resolve()
+        file_path_resolved = Path(file_path).resolve()
+        if not str(file_path_resolved).startswith(str(sessions_dir)):
+            logger.error(f"Path traversal attempt or invalid path: {file_path_resolved} is not under {sessions_dir}")
+            return False
+        file_path_resolved.write_bytes(user.signature_data)
         return True
     except Exception as e:
         logger.exception(f"Error saving signature to file {file_path}: {e}")
