@@ -1,6 +1,6 @@
-import os
 import shutil
 from datetime import datetime
+from pathlib import Path
 
 from openpyxl import load_workbook
 
@@ -17,7 +17,7 @@ def create_expense_report(session_folder, user_info, submitted_forms):
     template_path = "src/excel_templates/expense_report_template.xlsx"
 
     # Check if template exists
-    if not os.path.exists(template_path):
+    if not Path(template_path).exists():
         logger.exception(f"Expense report template not found: {template_path}")
         return False
 
@@ -121,7 +121,7 @@ def create_purchase_request(user_info, submitted_forms, session_folder):
     template_path = "src/excel_templates/purchase_request_template.xlsx"
 
     # Check if template exists
-    if not os.path.exists(template_path):
+    if not Path(template_path).exists():
         raise FileNotFoundError(f"Template file not found: {template_path}")
 
     # Create single output file

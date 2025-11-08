@@ -1,8 +1,8 @@
-import os
 import shutil
 
 from openpyxl.drawing import image
 from PIL import Image
+from pathlib import Path
 
 from src.core.logging_utils import setup_logger
 
@@ -62,13 +62,13 @@ def _find_signature_file(session_folder, user_info=None):
     original_png_signature_path = f"{session_folder}/signature_original.png"
 
     # Check for signature files in order of preference
-    if os.path.exists(processed_signature_path):
+    if Path(processed_signature_path).exists():
         return processed_signature_path, "processed"
-    elif os.path.exists(original_png_signature_path):
+    elif Path(original_png_signature_path).exists():
         return original_png_signature_path, "original_png"
     elif user_info and "signature" in user_info:
         original_signature_path = f"{session_folder}/{user_info['signature']}"
-        if os.path.exists(original_signature_path):
+        if Path(original_signature_path).exists():
             return original_signature_path, "original"
 
     return None, None
@@ -92,7 +92,7 @@ def _prepare_signature_for_insertion(session_folder, signature_path, signature_t
         return signature_png_path
     elif signature_type == "original_png":
         # PNG file but not the processed one, copy it to the processed location
-        if os.path.abspath(signature_path) != os.path.abspath(signature_png_path):
+        if Path(signature_path).resolve() != Path(signature_png_path).resolve():
             try:
                 shutil.copy2(signature_path, signature_png_path)
                 logger.debug(f"Copied {signature_type} PNG to processed location")
@@ -118,7 +118,7 @@ def insert_signature_at_cell(
 
     logger.debug(f"Signature files check for cell {cell_location}:")
     processed_exists = (
-        "exists" if os.path.exists(f"{session_folder}/signature.png") else "missing"
+        "exists" if Path(f"{session_folder}/signature.png").exists() else "missing"
     )
     logger.debug(f"  - Processed (signature.png): {processed_exists}")
     logger.debug(f"  - Using: {signature_type} ({signature_path})")
