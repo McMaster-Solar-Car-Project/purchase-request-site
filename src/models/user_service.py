@@ -1,9 +1,9 @@
 import base64
 import io
-import os
 
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
+from pathlib import Path
 
 from src.core.logging_utils import setup_logger
 from src.db.schema import User
@@ -16,14 +16,14 @@ class FileUploadFromPath:
     """Create an UploadFile-like object from a file path for CLI usage"""
 
     def __init__(self, file_path: str):
-        if not os.path.exists(file_path):
+        if not Path(file_path).exists():
             raise FileNotFoundError(f"Signature file not found: {file_path}")
 
         self.file_path = file_path
-        self.filename = os.path.basename(file_path)
+        self.filename = Path(file_path).name
 
         # Determine content type based on file extension
-        ext = os.path.splitext(file_path)[1].lower()
+        ext = Path(file_path).suffix.lower()
         content_type_map = {
             ".png": "image/png",
             ".jpg": "image/jpeg",

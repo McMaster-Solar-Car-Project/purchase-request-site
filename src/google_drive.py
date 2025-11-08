@@ -19,6 +19,7 @@ from googleapiclient.http import MediaFileUpload
 
 from src.core.logging_utils import setup_logger
 
+
 # Load environment variables from .env file (check parent directory too)
 load_dotenv()  # Current directory
 load_dotenv("../.env")  # Parent directory
@@ -254,13 +255,13 @@ class GoogleDriveClient:
 
         for attempt in range(max_retries):
             try:
-                if not os.path.exists(file_path):
+                if not Path(file_path).exists():
                     logger.warning(f"File not found: {file_path}")
                     return None
 
                 # Determine file name and MIME type
                 if not file_name:
-                    file_name = os.path.basename(file_path)
+                    file_name = Path(file_path).name
 
                 mime_type, _ = mimetypes.guess_type(file_path)
                 if not mime_type:
@@ -318,7 +319,7 @@ class GoogleDriveClient:
             month_year_folder_id = self._ensure_month_year_folder(parent_folder_id)
 
             # Create session folder name with user info and timestamp
-            session_name = os.path.basename(session_folder_path)
+            session_name = Path(session_folder_path).name
             user_name = user_info.get("name", "Unknown").replace(" ", "_")
             timestamp = datetime.now().strftime("%d_%m_%Y_%H-%M-%S")
             drive_folder_name = f"{session_name}_{user_name}_{timestamp}"
@@ -361,7 +362,7 @@ class GoogleDriveClient:
 
         try:
             # Create session folder name with user info and timestamp (always needed for logging)
-            session_name = os.path.basename(session_folder_path)
+            session_name = Path(session_folder_path).name
             user_name = user_info.get("name", "Unknown").replace(" ", "_")
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             drive_folder_name = f"{session_name}_{user_name}_{timestamp}"
@@ -390,7 +391,8 @@ class GoogleDriveClient:
 
             # Get all files to upload, excluding specified ones
             files_to_upload = [
-                file_path for file_path in session_path.iterdir()
+                file_path
+                for file_path in session_path.iterdir()
                 if file_path.is_file() and file_path.name != "signature.png"
             ]
 
