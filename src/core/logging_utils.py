@@ -8,9 +8,9 @@ import logging
 import logging.handlers
 import os
 import sys
+from pathlib import Path
 
 from dotenv import load_dotenv
-from pathlib import Path
 
 from src.emailer import Emailer
 
@@ -62,13 +62,13 @@ def _setup_file_handler() -> logging.Handler:
     try:
         # Create logs directory if it doesn't exist
         logs_dir = Path(__file__).parent.parent / "logs"
-        os.makedirs(logs_dir, exist_ok=True)
+        logs_dir.mkdir(parents=True, exist_ok=True)
 
         # Create log file path with date
         from datetime import datetime
 
         log_filename = f"purchase_request_site_{datetime.now().strftime('%Y%m%d')}.log"
-        log_filepath = Path(logs_dir) / log_filename
+        log_filepath = logs_dir / log_filename
 
         # Create rotating file handler (max 10MB, keep 5 backups)
         file_handler = logging.handlers.RotatingFileHandler(

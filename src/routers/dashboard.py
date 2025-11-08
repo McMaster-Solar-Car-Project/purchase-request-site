@@ -2,10 +2,11 @@
 Dashboard router for the /dashboard and /submit-all-requests endpoints.
 """
 
-import os
 import shutil
 from datetime import datetime
+from pathlib import Path
 
+from werkzeug.utils import secure_filename
 from fastapi import (
     APIRouter,
     Depends,
@@ -75,16 +76,22 @@ async def dashboard(
     )
 
 
-def create_session_folder(name):
-    """Create a session folder with user name and timestamp"""
+def create_session_folder(name: str) -> str:
+    """Create a session folder with user name and timestamp, safely sanitized and constrained to sessions/"""
+    base_dir = Path("sessions").resolve()
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    safe_name = name.replace(" ", "_").lower()
-    session_folder = f"sessions/{safe_name}_{timestamp}"
+    safe_name = secure_filename(name.replace(" ", "_").lower())
+    session_folder = base_dir / f"{safe_name}_{timestamp}"
+    session_folder_normalized = session_folder.resolve()
+
+    # Ensure the normalized path is within the base sessions directory
+    if not str(session_folder_normalized).startswith(str(base_dir)):
+        raise ValueError("Invalid session folder name.")
 
     # Create the session directory if it doesn't exist
-    os.makedirs(session_folder, exist_ok=True)
+    session_folder_normalized.mkdir(parents=True, exist_ok=True)
 
-    return session_folder
+    return str(session_folder_normalized)
 
 
 @router.post("/submit-all-requests")
@@ -112,8 +119,9 @@ async def submit_all_requests(
 
     # Save user's signature to session folder
     signature_filename = "signature.png"
-    signature_path = f"{session_folder}/{signature_filename}"
-    if not save_signature_to_file(user, signature_path):
+    session_path = Path(session_folder)
+    signature_path = session_path / signature_filename
+    if not save_signature_to_file(user, str(signature_path)):
         logger.warning(f"Could not save signature for user {email}")
 
     submitted_forms = []
@@ -189,12 +197,11 @@ async def submit_all_requests(
             else "pdf"
         )
         invoice_filename = f"{form_num}_{vendor_name}.{invoice_extension}"
-        invoice_file_location = f"{session_folder}/{invoice_filename}"
+        invoice_file_location = session_path / invoice_filename
 
         # Save the invoice file
-        with open(invoice_file_location, "wb") as file_object:
-            content = await invoice_file.read()
-            file_object.write(content)
+        content = await invoice_file.read()
+        invoice_file_location.write_bytes(content)
 
         # Save proof of payment file only for USD currency
         proof_of_payment_filename = proof_of_payment_location = None
@@ -211,9 +218,9 @@ async def submit_all_requests(
             proof_of_payment_filename = (
                 f"{form_num}_proof_of_payment.{payment_extension}"
             )
-            proof_of_payment_location = f"{session_folder}/{proof_of_payment_filename}"
-            with open(proof_of_payment_location, "wb") as file_object:
-                file_object.write(await proof_of_payment_file.read())
+            proof_of_payment_location = session_path / proof_of_payment_filename
+            payment_content = await proof_of_payment_file.read()
+            proof_of_payment_location.write_bytes(payment_content)
 
         # Store form data
         form_submission = {
@@ -221,9 +228,11 @@ async def submit_all_requests(
             "vendor_name": vendor_name,
             "currency": currency,
             "invoice_filename": invoice_filename,
-            "invoice_file_location": invoice_file_location,
+            "invoice_file_location": str(invoice_file_location),
             "proof_of_payment_filename": proof_of_payment_filename,
-            "proof_of_payment_location": proof_of_payment_location,
+            "proof_of_payment_location": str(proof_of_payment_location)
+            if proof_of_payment_location
+            else None,
             "subtotal_amount": subtotal_amount,
             "discount_amount": discount_amount,
             "hst_gst_amount": hst_gst_amount,
