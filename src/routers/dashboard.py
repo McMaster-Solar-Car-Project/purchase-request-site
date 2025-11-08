@@ -6,6 +6,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+from werkzeug.utils import secure_filename
 from fastapi import (
     APIRouter,
     Depends,
@@ -76,15 +77,21 @@ async def dashboard(
 
 
 def create_session_folder(name: str) -> str:
-    """Create a session folder with user name and timestamp"""
+    """Create a session folder with user name and timestamp, safely sanitized and constrained to sessions/"""
+    base_dir = Path("sessions").resolve()
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    safe_name = name.replace(" ", "_").lower()
-    session_folder = Path("sessions") / f"{safe_name}_{timestamp}"
+    safe_name = secure_filename(name.replace(" ", "_").lower())
+    session_folder = base_dir / f"{safe_name}_{timestamp}"
+    session_folder_normalized = session_folder.resolve()
+
+    # Ensure the normalized path is within the base sessions directory
+    if not str(session_folder_normalized).startswith(str(base_dir)):
+        raise ValueError("Invalid session folder name.")
 
     # Create the session directory if it doesn't exist
-    session_folder.mkdir(parents=True, exist_ok=True)
+    session_folder_normalized.mkdir(parents=True, exist_ok=True)
 
-    return str(session_folder)
+    return str(session_folder_normalized)
 
 
 @router.post("/submit-all-requests")
