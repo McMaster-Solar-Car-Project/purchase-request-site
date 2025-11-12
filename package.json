@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Purchase request website - Tailwind CSS build",
   "scripts": {
-    "build:css": "./node_modules/.bin/tailwindcss -i src/input.css -o src/static/css/output.css --minify"
+    "build:css": "./node_modules/.bin/tailwindcss -i src/static/css/input.css -o src/static/css/output.css --minify"
   },
   "devDependencies": {
     "tailwindcss": "^4.0.0",
