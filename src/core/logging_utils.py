@@ -49,7 +49,7 @@ def setup_logger(name: str) -> logging.Logger:
         email_handler = _setup_email_handler()
         if email_handler:
             logger.addHandler(email_handler)
-
+            # Loki handler for centralized logging
     return logger
 
 
