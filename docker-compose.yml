@@ -67,11 +67,9 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
     networks:
       - monitoring
-
 volumes:
   prometheus-data:
   grafana-data:
-
 networks:
   monitoring:
     driver: bridge
