@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from prometheus_client import start_http_server
 from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -36,9 +37,13 @@ for directory in required_dirs:
 init_database()
 app = FastAPI(title="Purchase Request Site")
 
-# Prometheus metrics
+METRICS_PORT = int(os.getenv("METRICS_PORT", 9000))
+try:
+    start_http_server(METRICS_PORT)
+    logger.info(f"Prometheus metrics exposed on port {METRICS_PORT}")
+except Exception as e:
+    logger.warning(f"Failed to start Prometheus metrics on port {METRICS_PORT}: {e}")
 instrumentator = Instrumentator().instrument(app)
-instrumentator.expose(app, include_in_schema=False, should_gzip=True)
 
 # Add request logging middleware
 app.add_middleware(RequestLoggingMiddleware)

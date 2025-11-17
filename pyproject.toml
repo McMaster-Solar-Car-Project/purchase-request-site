@@ -16,9 +16,6 @@ dependencies = [
     "supabase>=2.22.0",
     "slowapi>=0.1.9",
     "prometheus-fastapi-instrumentator>=7.1.0",
-    "opentelemetry-sdk>=1.38.0",
-    "opentelemetry-exporter-otlp>=1.38.0",
-    "opentelemetry-instrumentation-fastapi>=0.59b0",
 ]
 
 [tool.ruff]
