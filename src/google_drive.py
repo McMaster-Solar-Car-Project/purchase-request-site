@@ -390,7 +390,8 @@ class GoogleDriveClient:
 
             # Get all files to upload, excluding specified ones
             files_to_upload = [
-                file_path for file_path in session_path.iterdir()
+                file_path
+                for file_path in session_path.iterdir()
                 if file_path.is_file() and file_path.name != "signature.png"
             ]
 

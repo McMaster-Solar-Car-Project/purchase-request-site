@@ -34,15 +34,8 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - ERROR_EMAIL_FROM=${ERROR_EMAIL_FROM}
       - ERROR_EMAIL_TO=${ERROR_EMAIL_TO}
-  loki:
-    image: grafana/loki:2.9.0
-    container_name: loki
-    profiles: ["monitoring"]
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
-    volumes:
-      - ./monitoring/loki:/etc/loki
+    networks:
+      - monitoring
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -54,22 +47,14 @@ services:
       - prometheus-data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
-  tempo:
-    image: grafana/tempo:latest
-    container_name: tempo
-    profiles: ["monitoring"]
-    ports:
-      - "3200:3200"
-    volumes:
-      - ./monitoring/tempo:/etc/tempo
+    networks:
+      - monitoring
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     profiles: ["monitoring"]
     depends_on:
-      - loki
       - prometheus
-      - tempo
     ports:
       - "3000:3000"
     environment:
@@ -80,7 +65,13 @@ services:
       - grafana-data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - monitoring
 
 volumes:
   prometheus-data:
   grafana-data:
+
+networks:
+  monitoring:
+    driver: bridge

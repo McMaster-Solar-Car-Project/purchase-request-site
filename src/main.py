@@ -6,11 +6,6 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -44,16 +39,6 @@ app = FastAPI(title="Purchase Request Site")
 # Prometheus metrics
 instrumentator = Instrumentator().instrument(app)
 instrumentator.expose(app, include_in_schema=False, should_gzip=True)
-
-# OpenTelemetry tracing (Tempo)
-trace.set_tracer_provider(TracerProvider())
-tracer_provider = trace.get_tracer_provider()
-tempo_exporter = OTLPSpanExporter(
-    endpoint="http://tempo:4317",
-    insecure=True,
-)
-tracer_provider.add_span_processor(BatchSpanProcessor(tempo_exporter))
-FastAPIInstrumentor.instrument_app(app)
 
 # Add request logging middleware
 app.add_middleware(RequestLoggingMiddleware)
