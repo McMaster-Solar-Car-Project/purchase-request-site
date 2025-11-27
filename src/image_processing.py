@@ -1,9 +1,8 @@
 import shutil
-from pathlib import Path
 
 from openpyxl.drawing import image
-from openpyxl.worksheet.worksheet import Worksheet
 from PIL import Image
+from pathlib import Path
 
 from src.core.logging_utils import setup_logger
 
@@ -11,7 +10,7 @@ from src.core.logging_utils import setup_logger
 logger = setup_logger(__name__)
 
 
-def convert_signature_to_png(signature_path: str, output_path: str) -> bool:
+def convert_signature_to_png(signature_path, output_path):
     """Convert signature file to PNG format (format conversion only, no cropping)
     Supports: PNG, JPG, JPEG, GIF, PDF formats
 
@@ -49,9 +48,7 @@ def convert_signature_to_png(signature_path: str, output_path: str) -> bool:
         return False
 
 
-def _find_signature_file(
-    session_folder: str, user_info: dict | None = None
-) -> tuple[str | None, str | None]:
+def _find_signature_file(session_folder, user_info=None):
     """Find the best available signature file in order of preference
 
     Args:
@@ -77,9 +74,7 @@ def _find_signature_file(
     return None, None
 
 
-def _prepare_signature_for_insertion(
-    session_folder: str, signature_path: str, signature_type: str
-) -> str | None:
+def _prepare_signature_for_insertion(session_folder, signature_path, signature_type):
     """Prepare signature file for insertion by ensuring it's in PNG format
 
     Args:
@@ -116,12 +111,8 @@ def _prepare_signature_for_insertion(
 
 
 def insert_signature_at_cell(
-    ws: Worksheet,
-    session_folder: str,
-    cell_location: str = "A19",
-    width: int = 200,
-    height: int = 60,
-) -> bool:
+    ws, session_folder, cell_location="A19", width=200, height=60
+):
     """Insert signature image into Excel worksheet at specified cell location"""
     signature_path, signature_type = _find_signature_file(session_folder)
 

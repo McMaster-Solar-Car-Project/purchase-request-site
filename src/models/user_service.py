@@ -1,9 +1,9 @@
 import base64
 import io
-from pathlib import Path
 
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
+from pathlib import Path
 
 from src.core.logging_utils import setup_logger
 from src.db.schema import User
@@ -34,7 +34,8 @@ class FileUploadFromPath:
         self.content_type = content_type_map.get(ext, "application/octet-stream")
 
         # Read file data
-        self.file_data = Path(file_path).read_bytes()
+        with open(file_path, "rb") as f:
+            self.file_data = f.read()
 
         # Create file-like object
         self.file = io.BytesIO(self.file_data)
@@ -129,18 +130,13 @@ def get_user_signature_as_data_url(user: User) -> str | None:
 
 
 def save_signature_to_file(user: User, file_path: str) -> bool:
-    """Save user's signature from database to a file (safely confined to sessions directory)"""
+    """Save user's signature from database to a file"""
     if not user or not user.signature_data:
         return False
 
-    # Ensure the resulting file path is contained within sessions directory
     try:
-        sessions_dir = Path("sessions").resolve()
-        file_path_resolved = Path(file_path).resolve()
-        if not str(file_path_resolved).startswith(str(sessions_dir)):
-            logger.error(f"Path traversal attempt or invalid path: {file_path_resolved} is not under {sessions_dir}")
-            return False
-        file_path_resolved.write_bytes(user.signature_data)
+        with open(file_path, "wb") as f:
+            f.write(user.signature_data)
         return True
     except Exception as e:
         logger.exception(f"Error saving signature to file {file_path}: {e}")
