@@ -1,7 +1,6 @@
 import os
 import secrets
 from datetime import datetime
-from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -33,7 +32,7 @@ logger.info(f"Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 # Create required directories immediately (before mounting static files)
 required_dirs = ["sessions"]
 for directory in required_dirs:
-    Path(directory).mkdir(parents=True, exist_ok=True)
+    os.makedirs(directory, exist_ok=True)
 
 
 init_database()
