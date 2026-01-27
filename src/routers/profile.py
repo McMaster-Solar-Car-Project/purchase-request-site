@@ -4,7 +4,6 @@ Profile router for the /edit-profile endpoints.
 
 import os
 import tempfile
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.exceptions import HTTPException
@@ -130,7 +129,8 @@ async def edit_profile_post(
                     # Convert signature to PNG
                     if convert_signature_to_png(temp_signature_path, temp_png_path):
                         # Read the converted PNG content
-                        png_content = Path(temp_png_path).read_bytes()
+                        with open(temp_png_path, "rb") as png_file:
+                            png_content = png_file.read()
                         # Save PNG content to database
                         user.signature_data = png_content
                         logger.info(
@@ -145,8 +145,8 @@ async def edit_profile_post(
                 finally:
                     # Clean up temporary files
                     try:
-                        Path(temp_signature_path).unlink(missing_ok=True)
-                        Path(temp_png_path).unlink(missing_ok=True)
+                        os.unlink(temp_signature_path)
+                        os.unlink(temp_png_path)
                     except OSError:
                         pass  # Ignore cleanup errors
 
