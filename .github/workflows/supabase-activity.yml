@@ -1,0 +1,27 @@
+name: Ping Supabase to Prevent Pausing
+on:
+  schedule:
+    # Run every (Monday and Thursday at 9 AM UTC) to prevent 7-day inactivity timeout
+    - cron: '0 9 * * 1,4'
+  workflow_dispatch: # Allows manual triggering from the GitHub UI
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Use Node.js 20 LTS
+      # Step 3: Install Supabase Client
+      - name: Install Supabase Client
+        run: npm install @supabase/supabase-js --force
+      # Step 4: Ping Supabase Database
+      - name: Ping Supabase Database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: "node -e \"\n(async () => {\n  try {\n    console.log('Starting Supabase database ping to prevent inactivity...');\n    \n    // Validate environment variables (without logging them)\n    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {\n      throw new Error('Missing required environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');\n    }\n    \n    console.log('Environment variables validated successfully');\n\n    // Import Supabase client\n    const { createClient } = require('@supabase/supabase-js');\n    const supabase = createClient(\n      process.env.SUPABASE_URL, \n      process.env.SUPABASE_SERVICE_ROLE_KEY\n    );\n\n    console.log('Connecting to Supabase...');\n\n    // Ping Supabase by querying the users table\n    const { data, error } = await supabase\n      .from('users')\n      .select('id')\n      .limit(1);\n\n    if (error) {\n      console.error('Supabase query error:', error.message);\n      throw error;\n    }\n\n    console.log('Supabase ping successful!');\n    console.log('Query result:', data ? \\`Found \\${data.length} record(s)\\` : 'No data returned');\n    console.log('Ping completed at:', new Date().toISOString());\n    \n  } catch (err) {\n    console.error('Error pinging Supabase:', err.message);\n    process.exit(1);\n  }\n})();\n\""
