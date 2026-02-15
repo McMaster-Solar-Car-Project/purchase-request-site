@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from src.core.logging_utils import setup_logger
 from src.data_processing import create_expense_report, create_purchase_request
 from src.db.schema import get_db
+from src.emailer import EmailerPipeline
 from src.google_drive import (
     create_drive_folder_and_get_url,
     upload_session_to_drive,
@@ -308,6 +309,19 @@ async def submit_all_requests(
             )
         except Exception as e:
             logger.exception(f"Unexpected error in upload task: {e}")
+
+        # Send confirmation email with attachments
+        try:
+            emailer = EmailerPipeline()
+            email_sent = emailer.send_purchase_request_confirmation(
+                user_info, submitted_forms, session_folder, drive_folder_url
+            )
+            if email_sent:
+                logger.info(f"✅ Confirmation email sent to {user_info.get('email')}")
+            else:
+                logger.info("📧 Email not sent (not configured or failed)")
+        except Exception as e:
+            logger.exception(f"Failed to send confirmation email: {e}")
 
         # Clean up session folder if at least one upload was successful
         if drive_upload_success or supabase_upload_success:
