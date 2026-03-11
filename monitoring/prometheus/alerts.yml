@@ -9,3 +9,4 @@ groups:
         annotations:
           summary: "High 500 error rate"
           descriptions: "The error rate exceeded 5% for 2 minutes"
+          
