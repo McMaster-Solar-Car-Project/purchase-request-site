@@ -15,6 +15,7 @@ dependencies = [
     "sqlalchemy>=2.0.44",
     "supabase>=2.22.0",
     "slowapi>=0.1.9",
+    "prometheus-fastapi-instrumentator>=7.1.0",
 ]
 
 [tool.ruff]

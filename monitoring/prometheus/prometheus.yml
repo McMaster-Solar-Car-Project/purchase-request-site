@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 5s
+<<<<<<< HEAD
+=======
+
+>>>>>>> bb03367 (removed loki + tempo traces, fixed prometheus issues)
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+  - job_name: 'app'
+    static_configs:
+      - targets: ['app:9000']

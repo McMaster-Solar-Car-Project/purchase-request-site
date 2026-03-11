@@ -2,10 +2,15 @@ import os
 import secrets
 from datetime import datetime
 
+import sentry_sdk
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from prometheus_client import Histogram
+from prometheus_fastapi_instrumentator import Instrumentator
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
@@ -35,8 +40,30 @@ for directory in required_dirs:
     os.makedirs(directory, exist_ok=True)
 
 
+sentry_sdk.init(
+    dsn="https://c217aed2d06bdc4504801adf99840b54@o4510432441860096.ingest.us.sentry.io/4510784901677056",
+    integrations=[
+        FastApiIntegration(),
+        # Disable legacy breadcrumb/event behavior - we use native Sentry logs via sentry_sdk.logger
+        LoggingIntegration(event_level=None, level=None),
+    ],
+    traces_sample_rate=1.0,
+    enable_logs=True,  # Enable Sentry's native structured logs
+    environment=os.getenv("ENVIRONMENT", "development"),
+    release=os.getenv("SENTRY_RELEASE"),
+)
+
 init_database()
 app = FastAPI(title="Purchase Request Site")
+
+# Create a histogram for request duration per endpoint
+REQUEST_LATENCY = Histogram(
+    "http_request_duration_seconds",
+    "HTTP request duration in seconds",
+    ["method", "endpoint", "status_code"],
+)
+Instrumentator().instrument(app).expose(app)
+logger.info("Prometheus metrics exposed at /metrics")
 
 # Add request logging middleware
 app.add_middleware(RequestLoggingMiddleware)
@@ -53,6 +80,23 @@ app.add_middleware(
 # Mount static files (directories are guaranteed to exist now)
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
 app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
+
+
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    start_time = datetime.now()
+    response = await call_next(request)
+    process_time = (datetime.now() - start_time).total_seconds()
+
+    endpoint = request.scope.get("path", "unknown")
+    if request.scope.get("route"):
+        endpoint = request.scope["route"].path
+
+    REQUEST_LATENCY.labels(
+        method=request.method, endpoint=endpoint, status_code=response.status_code
+    ).observe(process_time)
+    return response
+
 
 # Include routers
 app.include_router(auth_router)
@@ -84,9 +128,16 @@ async def health_check():
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 
+@app.get("/sentry-debug")
+async def trigger_error():
+    division_by_zero = 1 / 0
+    return division_by_zero
+
+
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404:
+        sentry_sdk.capture_message(f"404 Not Found: {request.url.path}", level="info")
         return templates.TemplateResponse(
             "404.html", {"request": request}, status_code=404
         )

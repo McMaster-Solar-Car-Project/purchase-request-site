@@ -1,0 +1,19 @@
+# add usernames passwords, recipients
+
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: '' 
+  smtp_auth_username: ''
+  smtp_auth_password: ''
+
+receivers:
+  - name: 'email-team'
+    email_configs:
+      - to: 
+      - to: 
+
+route:
+  receiver: email-team
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 4h

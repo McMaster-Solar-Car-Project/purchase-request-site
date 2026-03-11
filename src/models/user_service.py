@@ -1,9 +1,9 @@
 import base64
 import io
+from pathlib import Path
 
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
-from pathlib import Path
 
 from src.core.logging_utils import setup_logger
 from src.db.schema import User

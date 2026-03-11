@@ -1,0 +1,11 @@
+groups:
+  - name: 'app'
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status="500"}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High 500 error rate"
+          descriptions: "The error rate exceeded 5% for 2 minutes"
