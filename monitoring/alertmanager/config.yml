@@ -14,4 +14,3 @@ route:
   group_wait: 10s
   group_interval: 1m
   repeat_interval: 4h
-  

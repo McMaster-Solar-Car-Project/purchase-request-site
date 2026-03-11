@@ -41,7 +41,7 @@ for directory in required_dirs:
 
 
 sentry_sdk.init(
-    dsn="https://c217aed2d06bdc4504801adf99840b54@o4510432441860096.ingest.us.sentry.io/4510784901677056",
+    dsn=os.getenv("SENTRY_DSN"),
     integrations=[
         FastApiIntegration(),
         # Disable legacy breadcrumb/event behavior - we use native Sentry logs via sentry_sdk.logger
@@ -126,12 +126,6 @@ async def home():
 async def health_check():
     """Health check endpoint for Docker health monitoring"""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
-
-
-@app.get("/sentry-debug")
-async def trigger_error():
-    division_by_zero = 1 / 0
-    return division_by_zero
 
 
 @app.exception_handler(StarletteHTTPException)
