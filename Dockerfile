@@ -31,11 +31,11 @@ RUN npm install
 
 # Copy Files for Tailwind CSS Scan + Build
 COPY src/templates/ ./src/templates/
-COPY src/input.css ./src/input.css
+COPY src/static/css/input.css ./src/static/css/input.css
 
 # Ensure output dir exists, then build Tailwind CSS
 RUN mkdir -p src/static/css && \
-    ./node_modules/.bin/tailwindcss -i src/input.css -o src/static/css/output.css --minify
+    ./node_modules/.bin/tailwindcss -i src/static/css/input.css -o src/static/css/output.css --minify
 
 
 # -------------------------------
