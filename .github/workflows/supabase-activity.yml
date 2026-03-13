@@ -2,8 +2,9 @@ name: Ping Supabase to Prevent Pausing
 
 on:
   schedule:
-    # Run every Monday and Thursday at 9 AM UTC to prevent 7-day inactivity timeout
-    - cron: '0 9 * * 1,4'
+    # Run every 3 days to ensure we never hit the 7-day inactivity timeout
+    # This runs at 9 AM UTC every 3 days starting from day 1 of the month
+    - cron: '0 9 */3 * *'
   workflow_dispatch: # Allows manual triggering from the GitHub UI
 
 jobs:
