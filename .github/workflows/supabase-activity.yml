@@ -2,9 +2,9 @@ name: Ping Supabase to Prevent Pausing
 
 on:
   schedule:
-    # Run every 3 days to ensure we never hit the 7-day inactivity timeout
-    # This runs at 9 AM UTC every 3 days starting from day 1 of the month
-    - cron: '0 9 */3 * *'
+    # Run every Monday and Thursday at 9 AM UTC
+    # Ensures we never exceed the 7-day inactivity timeout
+    - cron: '0 9 * * 1,4'
   workflow_dispatch: # Allows manual triggering from the GitHub UI
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
       - name: Install Supabase Client
         run: npm install @supabase/supabase-js --force
 
-      # Step 4: Ping Supabase Database
+      # Step 4: Ping Supabase Database (with retry logic for transient network errors)
       - name: Ping Supabase Database
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -36,38 +36,55 @@ jobs:
           (async () => {
             try {
               console.log('Starting Supabase database ping to prevent inactivity...');
-              
+
               // Validate environment variables (without logging them)
               if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
                 throw new Error('Missing required environment variables: SUPABASE_URL or SUPABASE_ANON_KEY');
               }
-              
+
               console.log('Environment variables validated successfully');
 
               // Import Supabase client
               const { createClient } = require('@supabase/supabase-js');
               const supabase = createClient(
-                process.env.SUPABASE_URL, 
+                process.env.SUPABASE_URL,
                 process.env.SUPABASE_ANON_KEY
               );
 
-              console.log('Connecting to Supabase...');
+              const MAX_RETRIES = 3;
+              const DELAY_MS = 5000;
 
-              // Ping Supabase by querying the users table
-              const { data, error } = await supabase
-                .from('users')
-                .select('id')
-                .limit(1);
+              for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+                try {
+                  console.log(\`Attempt \${attempt} of \${MAX_RETRIES} - Connecting to Supabase...\`);
 
-              if (error) {
-                console.error('Supabase query error:', error.message);
-                throw error;
+                  const { data, error } = await supabase
+                    .from('users')
+                    .select('id')
+                    .limit(1);
+
+                  if (error) {
+                    console.error('Supabase query error:', error.message);
+                    throw error;
+                  }
+
+                  console.log('Supabase ping successful!');
+                  console.log('Query result:', data ? \`Found \${data.length} record(s)\` : 'No data returned');
+                  console.log('Ping completed at:', new Date().toISOString());
+                  process.exit(0);
+
+                } catch (err) {
+                  console.error(\`Attempt \${attempt} failed: \${err.message}\`);
+                  if (attempt < MAX_RETRIES) {
+                    console.log(\`Retrying in \${DELAY_MS / 1000}s...\`);
+                    await new Promise(r => setTimeout(r, DELAY_MS));
+                  } else {
+                    console.error('All retries exhausted.');
+                    process.exit(1);
+                  }
+                }
               }
 
-              console.log('Supabase ping successful!');
-              console.log('Query result:', data ? \`Found \${data.length} record(s)\` : 'No data returned');
-              console.log('Ping completed at:', new Date().toISOString());
-              
             } catch (err) {
               console.error('Error pinging Supabase:', err.message);
               process.exit(1);
