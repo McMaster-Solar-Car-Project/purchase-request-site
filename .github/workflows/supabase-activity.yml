@@ -1,31 +1,25 @@
 name: Ping Supabase to Prevent Pausing
-
 on:
   schedule:
     # Run every Monday and Thursday at 9 AM UTC
     # Ensures we never exceed the 7-day inactivity timeout
     - cron: '0 9 * * 1,4'
   workflow_dispatch: # Allows manual triggering from the GitHub UI
-
 jobs:
   ping:
     runs-on: ubuntu-latest
-
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
-
       # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20' # Use Node.js 20 LTS
-
       # Step 3: Install Supabase Client
       - name: Install Supabase Client
         run: npm install @supabase/supabase-js --force
-
       # Step 4: Ping Supabase Database (with retry logic for transient network errors)
       - name: Ping Supabase Database
         env:

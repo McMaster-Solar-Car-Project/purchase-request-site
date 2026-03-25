@@ -9,31 +9,31 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0   # Fetch all history for all branches and tags
-    - name: Install Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install ruff
-      # Update output format to enable automatic inline annotations.
-    - name: Run Ruff
-      run: ruff check . --verbose --show-files --output-format=github
-      # Check YAML formatting
-    - name: Run yamlfmt
-      run: |
-        docker run --rm \
-          -v "${{ github.workspace }}:/workspace" \
-          ghcr.io/google/yamlfmt:latest \
-          -lint /workspace
-      # Run Gitleaks to scan for secrets
-    - name: Run Gitleaks
-      uses: gitleaks/gitleaks-action@v2
-      env:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+        # Update output format to enable automatic inline annotations.
+      - name: Run Ruff
+        run: ruff check . --verbose --show-files --output-format=github
+        # Check YAML formatting
+      - name: Run yamlfmt
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            ghcr.io/google/yamlfmt:latest \
+            -lint /workspace
+        # Run Gitleaks to scan for secrets
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
           # GITHUB_TOKEN is required for private repos, and for public repos to prevent rate limiting
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}

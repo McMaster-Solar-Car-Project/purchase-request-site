@@ -5,10 +5,10 @@ global:
   smtp_auth_username: ''
   smtp_auth_password: ''
 receivers:
-- name: email-team
-  email_configs:
-  - to: ''
-  - to: ''
+  - name: email-team
+    email_configs:
+      - to: ''
+      - to: ''
 route:
   receiver: email-team
   group_wait: 10s
