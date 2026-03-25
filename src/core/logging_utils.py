@@ -96,11 +96,11 @@ class SentryLoggerWrapper:
     def handlers(self) -> list:
         return self._std_logger.handlers
 
-    def set_level(self, level: int) -> None:
-        self._std_logger.set_level(level)
+    def setLevel(self, level: int) -> None:  # noqa: N802
+        self._std_logger.setLevel(level)
 
-    def add_handler(self, handler: logging.Handler) -> None:
-        self._std_logger.add_handler(handler)
+    def addHandler(self, handler: logging.Handler) -> None:  # noqa: N802
+        self._std_logger.addHandler(handler)
 
 
 def setup_logger(name: str) -> SentryLoggerWrapper:
@@ -116,7 +116,7 @@ def setup_logger(name: str) -> SentryLoggerWrapper:
         SentryLoggerWrapper: A logger that outputs to console, file, and Sentry.
     """
     std_logger = logging.getLogger(name)
-    std_logger.set_level(logging.INFO)
+    std_logger.setLevel(logging.INFO)
 
     if not std_logger.handlers:
         # Console handler
@@ -212,7 +212,7 @@ def _setup_email_handler() -> logging.Handler | None:
         )
 
         # Set level to ERROR (will catch ERROR and CRITICAL)
-        email_handler.set_level(logging.ERROR)
+        email_handler.setLevel(logging.ERROR)
 
         # Create detailed formatter for emails
         email_formatter = logging.Formatter(
