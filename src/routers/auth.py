@@ -28,8 +28,9 @@ async def login_page(request: Request, error: str = None):
     }
 
     return templates.TemplateResponse(
-        "login.html",
-        {
+        request=request,
+        name="login.html",
+        context={
             "request": request,
             "error_message": error_messages.get(error),
         },
@@ -68,8 +69,9 @@ async def login(
     else:
         logger.warning(f"🚫 Failed login attempt: {email}")
         return templates.TemplateResponse(
-            "login.html",
-            {
+            request=request,
+            name="login.html",
+            context={
                 "request": request,
                 "error_message": "Invalid email or password",
                 "email": email,

@@ -34,8 +34,9 @@ async def success_page(
         }
 
     return templates.TemplateResponse(
-        "success.html",
-        {
+        request=request,
+        name="success.html",
+        context={
             "request": request,
             "download_info": download_info,
             "user_email": user_email,

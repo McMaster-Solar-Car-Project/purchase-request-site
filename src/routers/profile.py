@@ -36,8 +36,9 @@ async def edit_profile_get(
     signature_data_url = get_user_signature_as_data_url(user)
 
     return templates.TemplateResponse(
-        "edit_profile.html",
-        {
+        request=request,
+        name="edit_profile.html",
+        context={
             "request": request,
             "title": "Edit Profile - Purchase Request Site",
             "user": user,
