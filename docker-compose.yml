@@ -1,5 +1,6 @@
 services:
   app:
+    image: ${APP_IMAGE:-purchase-request-site:latest}
     build:
       context: .
       dockerfile: Dockerfile
