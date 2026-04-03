@@ -8,9 +8,24 @@ from src.core.logging_utils import setup_logger
 
 logger = setup_logger(__name__)
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError("❌ DATABASE_URL environment variable is not set.")
+
+def _normalize_postgres_url(url: str) -> str:
+    if url.startswith("postgres://"):
+        return "postgresql://" + url[len("postgres://") :]
+    return url
+
+
+def _resolve_database_url() -> str:
+    # Prefer explicit Aiven URL, then fall back to generic DATABASE_URL.
+    raw_url = os.getenv("AIVEN_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not raw_url:
+        raise ValueError(
+            "❌ Database URL not set. Provide AIVEN_DATABASE_URL or DATABASE_URL."
+        )
+    return _normalize_postgres_url(raw_url)
+
+
+DATABASE_URL = _resolve_database_url()
 
 engine = create_engine(
     DATABASE_URL,

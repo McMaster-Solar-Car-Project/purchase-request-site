@@ -3,11 +3,14 @@
 # -------------------------------
 FROM python:3.13-bookworm AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Harden apt against transient mirror/hash issues during image builds.
+RUN rm -rf /var/lib/apt/lists/* && \
+    apt-get clean && \
+    apt-get update -o Acquire::Retries=5 -o Acquire::CompressionTypes::Order::=gz && \
+    apt-get install -y --no-install-recommends --fix-missing \
         build-essential \
         curl && \
-        apt-get clean && \
-        rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
@@ -45,9 +48,8 @@ FROM python:3.13-slim-bookworm AS production
 
 RUN rm -rf /var/lib/apt/lists/* && \
     apt-get clean && \
-    apt-get update -o Acquire::CompressionTypes::Order::=gz && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
+    apt-get update -o Acquire::Retries=5 -o Acquire::CompressionTypes::Order::=gz && \
+    apt-get install -y --no-install-recommends --fix-missing curl && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/.venv /opt/venv
