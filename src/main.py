@@ -88,10 +88,16 @@ async def health_check():
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404:
         return templates.TemplateResponse(
-            "404.html", {"request": request}, status_code=404
+            request=request,
+            name="404.html",
+            context={"request": request},
+            status_code=404,
         )
     return templates.TemplateResponse(
-        "error.html", {"request": request}, status_code=exc.status_code
+        request=request,
+        name="error.html",
+        context={"request": request},
+        status_code=exc.status_code,
     )
 
 
@@ -99,7 +105,10 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 async def generic_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return templates.TemplateResponse(
-        "error.html", {"request": request}, status_code=500
+        request=request,
+        name="error.html",
+        context={"request": request},
+        status_code=500,
     )
 
 
