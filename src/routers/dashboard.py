@@ -58,8 +58,9 @@ async def dashboard(
         success_message = "✅ Your profile has been updated successfully!"
 
     return templates.TemplateResponse(
-        "dashboard.html",
-        {
+        request=request,
+        name="dashboard.html",
+        context={
             "request": request,
             "title": "Purchase Request Site",
             "user_name": user.name,
