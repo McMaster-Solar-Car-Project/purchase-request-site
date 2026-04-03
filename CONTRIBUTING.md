@@ -17,19 +17,20 @@ Thank you for your interest in contributing to the Purchase Request Site! This d
 
 This project is part of the McMaster Solar Car Project. Please be respectful, inclusive, and collaborative in all interactions. We expect all contributors to follow our community guidelines.
 
-## Getting Started
+## Getting Started with Development
 
 ### Prerequisites
 
 - **Operating System**: macOS or WSL (Windows users should use WSL)
-- **Package Manager**: Homebrew (install via [brew.sh](https://brew.sh/))
+- **SystemPackage Manager**: Homebrew (install via [brew.sh](https://brew.sh/))
+- **Docker**: Install via [Docker Desktop](https://docs.docker.com/desktop/install/windows-install/) if you are on Windows or [OrbStack](https://orbstack.dev/) if you are on Mac.
 
 ### Required Tools
 
 Install the following system dependencies:
 
 ```bash
-brew install uv gitleaks lefthook ruff git
+brew install gitleaks lefthook uv ruff git
 ```
 
 ## Development Setup
@@ -99,6 +100,8 @@ git checkout -b fix/issue-description
 ```bash
 # Run docker compose locally and test the funcionality of your changes
 docker compose --env-file .env up --build
+# and the following command to run local tests
+uv run pytest
 ```
 
 ### 4. Commit Your Changes
@@ -135,16 +138,6 @@ git push origin feature/your-feature-name
    - Screenshots (if applicable)
 
 
-### 3. Staging Environment
-
-Staging environment is currently broken, test locally, will be fixed soon.
-
-### 4. Review Process
-
-- Address all review comments
-- Ensure all checks pass (Linting, Formatting, Gitleaks)
-- Test the staging environment thoroughly
-
 ## Code Style and Standards
 
 ### Python Code Style
@@ -172,10 +165,6 @@ The project uses Lefthook for git hooks. These run automatically on commit:
   - Runs Ruff linting and formatting
   - Scans for secrets with Gitleaks
 
-
-## Testing
-
-We need testing pipelines really badly, everything is manual right now.
 
 ## Deployment
 
@@ -216,9 +205,6 @@ You can open bug reports autonomously. When creating a bug report, please includ
 **Screenshots:**
 [If applicable]
 
-**Environment:**
-- Browser: [e.g., Chrome 120]
-- OS: [e.g., macOS 14.0]
 ```
 
 ### Feature Requests and Suggestions
@@ -252,8 +238,7 @@ For new features or suggestions:
 
 ## License
 
-This project is part of the McMaster Solar Car Project. Please ensure you have the appropriate permissions before contributing.
+This project is part of the McMaster Solar Car Project. Please ensure you have the appropriate permissions before contributing or just yolo the code and submit a pull request.
 
 ---
 
-Thank you for contributing to the Purchase Request Site! Your contributions help make this project better for the entire McMaster Solar Car team.
