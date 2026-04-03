@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
-      image-tag: ${{ steps.tag.outputs.single-tag }}
+      image-tag: ${{ steps.tag.outputs.single_tag }}
       image-digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout code
@@ -30,7 +30,7 @@ jobs:
         run: |
           # Create a deterministic tag using commit SHA
           SINGLE_TAG="${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}"
-          echo "single-tag=$SINGLE_TAG" >> $GITHUB_OUTPUT
+          echo "single_tag=$SINGLE_TAG" >> $GITHUB_OUTPUT
           echo "Generated single tag: $SINGLE_TAG"
       - name: Extract metadata
         id: meta
@@ -48,12 +48,12 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ steps.tag.outputs.single-tag }}
+            ${{ steps.tag.outputs.single_tag }}
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Output image info
         run: |
-          echo "Single deployment tag: ${{ steps.tag.outputs.single-tag }}"
+          echo "Single deployment tag: ${{ steps.tag.outputs.single_tag }}"
           echo "All image tags: ${{ steps.meta.outputs.tags }}"
           echo "Image digest: ${{ steps.build.outputs.digest }}"
   deploy:
@@ -72,7 +72,12 @@ jobs:
           script: |
             cd /home/raj/purchase-request-site
             echo "Starting deployment for commit: ${{ github.sha }}"
-            echo "Deploying image: ${{ needs.build.outputs.image-tag }}"
+            IMAGE_TAG="${{ needs.build.outputs.image-tag }}"
+            if [ -z "$IMAGE_TAG" ]; then
+              echo "Error: build output image-tag is empty. Failing deployment."
+              exit 1
+            fi
+            echo "Deploying image: $IMAGE_TAG"
 
             # Update git repository safely
             git fetch origin main
@@ -87,11 +92,11 @@ jobs:
 
             # Pull the exact image built for this commit
             echo "Pulling deployment image from Docker Hub..."
-            docker pull ${{ needs.build.outputs.image-tag }}
+            docker pull "$IMAGE_TAG"
 
             # Start the application with this exact immutable image tag
             echo "Starting application with deployment image..."
-            export APP_IMAGE="${{ needs.build.outputs.image-tag }}"
+            export APP_IMAGE="$IMAGE_TAG"
             docker compose --env-file .env up -d --no-build --pull never
             sleep 10
 
