@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
-      image-tag: ${{ steps.tag.outputs.single_tag }}
+      image_tag: ${{ steps.tag.outputs.single_tag }}
       image-digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout code
@@ -72,7 +72,7 @@ jobs:
           script: |
             cd /home/raj/purchase-request-site
             echo "Starting deployment for commit: ${{ github.sha }}"
-            IMAGE_TAG="${{ needs.build.outputs.image-tag }}"
+            IMAGE_TAG="${{ needs.build.outputs.image_tag }}"
             if [ -z "$IMAGE_TAG" ]; then
               echo "Error: build output image-tag is empty. Failing deployment."
               exit 1
