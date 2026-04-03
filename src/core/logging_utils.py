@@ -8,9 +8,9 @@ import logging
 import logging.handlers
 import os
 import sys
+from pathlib import Path
 
 from dotenv import load_dotenv
-from pathlib import Path
 
 from src.emailer import Emailer
 

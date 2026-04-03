@@ -1,10 +1,12 @@
 name: Lint Check
 on:
   push:
-    branches: [main, master]
+    branches: ["**"]
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,16 +17,34 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.11"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install ruff
-      # Update output format to enable automatic inline annotations.
-      - name: Run Ruff
-        run: ruff check . --verbose --show-files --output-format=github
-      # Check YAML formatting
-      - name: Run yamlfmt
+      - name: Format code with Ruff (push only)
+        if: github.event_name == 'push'
+        run: ruff format .
+      - name: Format YAML with yamlfmt (push only)
+        if: github.event_name == 'push'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            ghcr.io/google/yamlfmt:latest \
+            /workspace
+      - name: Commit formatting changes (push only)
+        if: github.event_name == 'push'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: format code with ruff and yamlfmt"
+      - name: Check Ruff formatting (pull request only)
+        if: github.event_name == 'pull_request'
+        run: ruff format --check .
+      - name: Run Ruff lint
+        run: ruff check --output-format=github .
+      # Check YAML formatting (pull request only)
+      - name: Check YAML formatting (pull request only)
+        if: github.event_name == 'pull_request'
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/workspace" \

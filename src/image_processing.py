@@ -1,8 +1,8 @@
 import shutil
+from pathlib import Path
 
 from openpyxl.drawing import image
 from PIL import Image
-from pathlib import Path
 
 from src.core.logging_utils import setup_logger
 

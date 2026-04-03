@@ -281,9 +281,8 @@ async def submit_all_requests(
         except Exception:
             logger.exception("Failed to log to Google Sheets (continuing anyway)")
 
-        # Upload files to both Google Drive and Supabase concurrently
+        # Upload files to external storage providers
         drive_upload_success = False
-        supabase_upload_success = False
 
         def upload_to_drive():
             """Upload to Google Drive and return success status"""
@@ -297,10 +296,9 @@ async def submit_all_requests(
                 )
                 return False
 
-        # Run both uploads concurrently
-        logger.info("Starting concurrent uploads to Google Drive and Supabase...")
+        # Run uploads
+        logger.info("Starting upload to Google Drive...")
         drive_upload_success = False
-        supabase_upload_success = False
         try:
             drive_upload_success = upload_to_drive()
             logger.info(
@@ -310,7 +308,7 @@ async def submit_all_requests(
             logger.exception(f"Unexpected error in upload task: {e}")
 
         # Clean up session folder if at least one upload was successful
-        if drive_upload_success or supabase_upload_success:
+        if drive_upload_success:
             try:
                 shutil.rmtree(session_folder)
                 logger.info(f"🗑️ Cleaned up session folder: {session_folder}")
