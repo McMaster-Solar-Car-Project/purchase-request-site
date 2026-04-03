@@ -18,6 +18,33 @@ from src.emailer import Emailer
 load_dotenv()
 
 
+class _ColorFormatter(logging.Formatter):
+    RESET = "\033[0m"
+    COLORS = {
+        logging.DEBUG: "\033[36m",  # cyan
+        logging.INFO: "\033[32m",  # green
+        logging.WARNING: "\033[33m",  # yellow
+        logging.ERROR: "\033[31m",  # red
+        logging.CRITICAL: "\033[35m",  # magenta
+    }
+
+    def format(self, record: logging.LogRecord) -> str:
+        original_levelname = record.levelname
+        color = self.COLORS.get(record.levelno)
+        if color:
+            record.levelname = f"{color}{original_levelname}{self.RESET}"
+        try:
+            return super().format(record)
+        finally:
+            record.levelname = original_levelname
+
+
+def _supports_color(stream) -> bool:
+    if os.getenv("NO_COLOR"):
+        return False
+    return hasattr(stream, "isatty") and stream.isatty()
+
+
 def setup_logger(name: str) -> logging.Logger:
     """Set up a logger with the specified name.
 
@@ -33,7 +60,10 @@ def setup_logger(name: str) -> logging.Logger:
     if not logger.handlers:
         # Console handler (existing functionality)
         console_handler = logging.StreamHandler(sys.stdout)
-        console_formatter = logging.Formatter(
+        formatter_cls = (
+            _ColorFormatter if _supports_color(sys.stdout) else logging.Formatter
+        )
+        console_formatter = formatter_cls(
             "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
