@@ -16,6 +16,11 @@ dependencies = [
     "slowapi>=0.1.9",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+]
+
 [tool.ruff]
 target-version = "py313"
 line-length = 88
@@ -29,3 +34,8 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-q"
