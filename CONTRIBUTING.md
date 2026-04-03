@@ -64,14 +64,7 @@ Contact Raj for the required environment variables before running the applicatio
 
 ### 4. Run the Application
 
-```bash
-# Only run the application this way if you want to make code changes that get reflected instantly
-uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### 5. Run the Application with Docker
-
-**Important**: Even though you can run the application with uvicorn, it is recommended to use Docker to run the application since this is how it's run in production
+**Important**: Run the application only with Docker. Do not run it with `uvicorn` directly.
 
 ```bash
 docker compose --env-file .env up --build
@@ -190,7 +183,7 @@ We need testing pipelines really badly, everything is manual right now.
 
 - **Platform**: Digital Ocean
 - **Deployment**: Automatic via GitHub Actions
-- **Database**: Supabase
+- **Database**: Aiven PostgreSQL
 
 ## Opening GitHub Issues
 

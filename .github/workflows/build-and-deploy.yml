@@ -12,9 +12,6 @@ on:
 jobs:
   build:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    outputs:
-      image-tag: ${{ steps.tag.outputs.single-tag }}
-      image-digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,13 +22,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Generate single tag
-        id: tag
-        run: |
-          # Create a deterministic tag using commit SHA
-          SINGLE_TAG="${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}"
-          echo "single-tag=$SINGLE_TAG" >> $GITHUB_OUTPUT
-          echo "Generated single tag: $SINGLE_TAG"
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -47,17 +37,19 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}
+            ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Output image info
         run: |
-          echo "Single deployment tag: ${{ steps.tag.outputs.single-tag }}"
+          echo "Single deployment tag: ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}"
           echo "All image tags: ${{ steps.meta.outputs.tags }}"
           echo "Image digest: ${{ steps.build.outputs.digest }}"
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event.inputs.deploy == true)
+    if: github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.deploy == true))
     steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
@@ -70,11 +62,13 @@ jobs:
           script: |
             cd /home/raj/purchase-request-site
             echo "Starting deployment for commit: ${{ github.sha }}"
-            echo "Pulling image: ${{ needs.build.outputs.image-tag }}"
+            IMAGE_TAG="${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}"
+            echo "Deploying image: $IMAGE_TAG"
 
-            # Update git repository
-            git fetch origin
-            git reset --hard origin/main
+            # Update git repository safely
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
 
             # Login to Docker Hub on server
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
@@ -82,16 +76,14 @@ jobs:
             # Stop existing container if running
             docker compose down || true
 
-            # Pull the latest image
-            echo "Pulling latest image from Docker Hub..."
-            docker pull ${{ needs.build.outputs.image-tag }}
+            # Pull the exact image built for this commit
+            echo "Pulling deployment image from Docker Hub..."
+            docker pull "$IMAGE_TAG"
 
-            # Tag as latest for docker-compose
-            docker tag ${{ needs.build.outputs.image-tag }} ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:latest
-
-            # Start the application with the pulled image
-            echo "Starting application with pulled image..."
-            docker compose --env-file .env up -d
+            # Start the application with this exact immutable image tag
+            echo "Starting application with deployment image..."
+            export APP_IMAGE="$IMAGE_TAG"
+            docker compose --env-file .env up -d --no-build --pull never
             sleep 10
 
             # Check if container is running
@@ -104,8 +96,8 @@ jobs:
               exit 1
             fi
 
-            # Cleanup old Docker images and containers
-            echo "Cleaning up unused Docker data..."
-            docker system prune -af --volumes
+            # Conservative cleanup: remove dangling images only
+            echo "Cleaning up dangling Docker images..."
+            docker image prune -f
 
             echo "Deployment completed successfully"

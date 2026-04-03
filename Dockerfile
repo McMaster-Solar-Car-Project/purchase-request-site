@@ -3,11 +3,14 @@
 # -------------------------------
 FROM python:3.13-bookworm AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Harden apt against transient mirror/hash issues during image builds.
+RUN rm -rf /var/lib/apt/lists/* && \
+    apt-get clean && \
+    apt-get update -o Acquire::Retries=5 -o Acquire::CompressionTypes::Order::=gz && \
+    apt-get install -y --no-install-recommends --fix-missing \
         build-essential \
         curl && \
-        apt-get clean && \
-        rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
@@ -31,11 +34,11 @@ RUN npm install
 
 # Copy Files for Tailwind CSS Scan + Build
 COPY src/templates/ ./src/templates/
-COPY src/input.css ./src/input.css
+COPY src/static/css/input.css ./src/static/css/input.css
 
 # Ensure output dir exists, then build Tailwind CSS
 RUN mkdir -p src/static/css && \
-    ./node_modules/.bin/tailwindcss -i src/input.css -o src/static/css/output.css --minify
+    ./node_modules/.bin/tailwindcss -i src/static/css/input.css -o src/static/css/output.css --minify
 
 
 # -------------------------------
@@ -45,9 +48,8 @@ FROM python:3.13-slim-bookworm AS production
 
 RUN rm -rf /var/lib/apt/lists/* && \
     apt-get clean && \
-    apt-get update -o Acquire::CompressionTypes::Order::=gz && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
+    apt-get update -o Acquire::Retries=5 -o Acquire::CompressionTypes::Order::=gz && \
+    apt-get install -y --no-install-recommends --fix-missing curl && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/.venv /opt/venv

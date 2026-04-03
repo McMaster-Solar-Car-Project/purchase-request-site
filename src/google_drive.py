@@ -19,7 +19,6 @@ from googleapiclient.http import MediaFileUpload
 
 from src.core.logging_utils import setup_logger
 
-
 # Load environment variables from .env file (check parent directory too)
 load_dotenv()  # Current directory
 load_dotenv("../.env")  # Parent directory

@@ -12,9 +12,16 @@ function updateFileName(input, displayId) {
 function checkPasswordStrength() {
     const password = document.getElementById('new_password').value;
     const strengthDiv = document.getElementById('password-strength');
+    const strengthBar = strengthDiv ? strengthDiv.querySelector('div') : null;
+
+    if (!strengthDiv || !strengthBar) {
+        return;
+    }
     
     if (!password) {
-        strengthDiv.className = 'password-strength';
+        strengthBar.style.width = '0%';
+        strengthBar.classList.remove('bg-red-500', 'bg-yellow-500', 'bg-green-500');
+        strengthBar.classList.add('bg-zinc-700');
         return;
     }
     
@@ -25,12 +32,16 @@ function checkPasswordStrength() {
     if (/[0-9]/.test(password)) strength++;
     if (/[^A-Za-z0-9]/.test(password)) strength++;
     
+    strengthBar.classList.remove('bg-zinc-700', 'bg-red-500', 'bg-yellow-500', 'bg-green-500');
     if (strength <= 2) {
-        strengthDiv.className = 'password-strength password-strength-weak';
+        strengthBar.style.width = '35%';
+        strengthBar.classList.add('bg-red-500');
     } else if (strength <= 3) {
-        strengthDiv.className = 'password-strength password-strength-medium';
+        strengthBar.style.width = '65%';
+        strengthBar.classList.add('bg-yellow-500');
     } else {
-        strengthDiv.className = 'password-strength password-strength-strong';
+        strengthBar.style.width = '100%';
+        strengthBar.classList.add('bg-green-500');
     }
 }
 

@@ -1,5 +1,6 @@
 services:
   app:
+    image: ${APP_IMAGE:-purchase-request-site:latest}
     build:
       context: .
       dockerfile: Dockerfile
@@ -20,6 +21,7 @@ services:
       - HOST=0.0.0.0
       - PORT=8000
       - DATABASE_URL=${DATABASE_URL}
+      - AIVEN_DATABASE_URL=${AIVEN_DATABASE_URL}
       - GOOGLE_SHEET_ID=${GOOGLE_SHEET_ID}
       - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY}
       - GOOGLE_SETTINGS__PROJECT_ID=${GOOGLE_SETTINGS__PROJECT_ID}
