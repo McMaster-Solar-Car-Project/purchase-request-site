@@ -5,35 +5,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purchase Request Dashboard</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/output.css">
 </head>
 
-<body class="dashboard-body">
-    <div class="dashboard-container">
-        <div class="dashboard-header">
-            <h1>Purchase Request Dashboard</h1>
-            <div class="dashboard-user-info">
-                <a href="/edit-profile?user_email={{ user_email }}" class="edit-profile-btn">✏️ Edit Information</a>
-                <a href="/logout" class="logout-btn">Logout</a>
+<body class="font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-10 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] min-h-screen text-zinc-200">
+    <div class="dashboard-container max-w-7xl w-[95%] mx-auto bg-[rgba(24,24,27,0.84)] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.28)] p-8 md:p-10">
+        <div class="dashboard-header flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+            <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight text-white">Purchase Request Dashboard</h1>
+            <div class="dashboard-user-info flex items-center gap-3">
+                <a href="/edit-profile?user_email={{ user_email }}" class="edit-profile-btn inline-flex items-center rounded-lg border border-[rgba(99,102,241,0.45)] px-3 py-2 text-sm text-[#c4b5fd] hover:bg-[rgba(99,102,241,0.15)] transition-colors">✏️ Edit Information</a>
+                <a href="/logout" class="logout-btn inline-flex items-center rounded-lg border border-[rgba(239,68,68,0.45)] px-3 py-2 text-sm text-red-300 hover:bg-[rgba(239,68,68,0.18)] transition-colors">Logout</a>
             </div>
         </div>
 
         {% if success_message %}
-        <div class="dashboard-success-message">
+        <div class="dashboard-success-message rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 mb-4 text-emerald-200">
             {{ success_message }}
         </div>
         {% endif %}
 
         {% if error_message %}
-        <div class="error-message">
+        <div class="error-message rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 mb-4 text-red-200">
             {{ error_message }}
         </div>
         {% endif %}
 
-        <p class="subtitle">Fill out up to 10 separate purchase requests and submit them all together</p>
+        <p class="subtitle mt-1 mb-6 text-zinc-300">Fill out up to 10 separate purchase requests and submit them all together</p>
 
-        <div class="user-info">
-            <div class="info-summary">
+        <div class="user-info rounded-xl border border-zinc-700/70 bg-zinc-900/45 p-4 mb-8">
+            <div class="info-summary grid gap-2 md:grid-cols-3 text-sm">
                 <p><strong>Name:</strong> {{ name }}</p>
                 <p><strong>Team:</strong> {{ team }}</p>
                 <p><strong>McMaster Email:</strong> {{ email }}</p>
@@ -51,236 +51,236 @@
             <input type="hidden" name="team" value="{{ team }}">
 
             <div class="dashboard-section">
-                <h2>Your Purchase Request Forms</h2>
-                <p class="dashboard-help">Fill out any number of the forms below. Empty forms will be ignored when you
+                <h2 class="text-2xl font-semibold text-white mt-0">Your Purchase Request Forms</h2>
+                <p class="dashboard-help text-zinc-400 mb-5">Fill out any number of the forms below. Empty forms will be ignored when you
                     submit.</p>
 
-                <div class="forms-container">
+                <div class="forms-container space-y-4">
                     {% for form_num in range(1, 11) %}
-                    <div class="form-accordion">
-                        <div class="form-accordion-header" onclick="toggleForm({{ form_num }})">
-                            <h3>Invoice #{{ form_num }}</h3>
-                            <div class="form-header-actions">
-                                <button type="button" class="btn-clear"
-                                    onclick="event.stopPropagation(); clearForm({{ form_num }})"
+                    <div class="form-accordion rounded-xl border border-zinc-700/70 bg-zinc-900/50 overflow-hidden" data-form="{{ form_num }}">
+                        <div class="form-accordion-header flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-zinc-800/60 transition-colors" data-action="toggle-form" data-form="{{ form_num }}">
+                            <h3 class="m-0 text-lg font-medium text-zinc-100">Invoice #{{ form_num }}</h3>
+                            <div class="form-header-actions flex items-center gap-3">
+                                <button type="button" class="btn-clear inline-flex items-center rounded-md border border-zinc-600 px-2.5 py-1 text-xs text-zinc-300 hover:bg-zinc-700/60"
+                                    data-action="clear-form" data-form="{{ form_num }}"
                                     title="Clear this form">Clear</button>
-                                <span class="form-toggle">▼</span>
+                                <span class="form-toggle text-zinc-400 text-sm" data-role="accordion-toggle">▼</span>
                             </div>
                         </div>
-                        <div class="form-accordion-content" id="form-{{ form_num }}">
-                            <div class="reimbursement-form">
+                        <div class="form-accordion-content px-4 pb-4 border-t border-zinc-800" id="form-{{ form_num }}">
+                            <div class="reimbursement-form space-y-5 pt-4">
                                 <div class="form-group">
-                                    <label for="vendor_name_{{ form_num }}">Vendor/Store Name</label>
+                                    <label for="vendor_name_{{ form_num }}" class="block mb-2 text-sm font-medium text-zinc-200">Vendor/Store Name</label>
                                     <input type="text" id="vendor_name_{{ form_num }}" name="vendor_name_{{ form_num }}"
-                                        placeholder="Enter the name of the vendor or store">
+                                        placeholder="Enter the name of the vendor or store" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="currency_{{ form_num }}">Currency</label>
+                                    <label for="currency_{{ form_num }}" class="block mb-2 text-sm font-medium text-zinc-200">Currency</label>
                                     <select id="currency_{{ form_num }}" name="currency_{{ form_num }}"
-                                        onchange="updateCurrencyLabels({{ form_num }})">
+                                        data-action="currency-select" data-form="{{ form_num }}" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                         <option value="CAD">CAD - Canadian Dollar</option>
                                         <option value="USD">USD - US Dollar</option>
                                     </select>
-                                    <small class="file-help">Select the currency used for this purchase</small>
+                                    <small class="file-help mt-2 block text-xs text-zinc-400">Select the currency used for this purchase</small>
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="invoice_file_{{ form_num }}">Upload Invoice/Receipt</label>
+                                    <label for="invoice_file_{{ form_num }}" class="block mb-2 text-sm font-medium text-zinc-200">Upload Invoice/Receipt</label>
                                     <div class="custom-file-upload">
-                                        <div class="file-drop-area"
-                                            ondragover="handleDragOver(event)"
-                                            ondragleave="handleDragLeave(event)"
-                                            ondrop="handleFileDrop(event, 'invoice_file_{{ form_num }}', 'invoice-filename-{{ form_num }}')">
+                                        <div class="file-drop-area rounded-lg border border-dashed border-zinc-600 bg-zinc-900/70 p-4 text-center transition-colors"
+                                            data-role="file-drop-area"
+                                            data-input-id="invoice_file_{{ form_num }}"
+                                            data-filename-id="invoice-filename-{{ form_num }}">
                                             <input type="file" id="invoice_file_{{ form_num }}"
-                                                name="invoice_file_{{ form_num }}" 
+                                                name="invoice_file_{{ form_num }}"
                                                 accept=".pdf,.jpg,.jpeg,.png,.gif"
-                                                onchange="updateFileName(this, 'invoice-filename-{{ form_num }}')">
-                                            <p class="drop-text">
-                                                <span class="file-upload" onclick="document.getElementById('invoice_file_{{ form_num }}').click()">
+                                                data-filename-id="invoice-filename-{{ form_num }}" class="hidden">
+                                            <p class="drop-text m-0 text-sm text-zinc-300">
+                                                <span class="file-upload cursor-pointer text-indigo-300 hover:text-indigo-200" data-role="file-upload-text" data-input-id="invoice_file_{{ form_num }}">
                                                     <b>Choose a file</b> or drag it here
                                                 </span>
                                             </p>
                                         </div>
-                                        <span class="file-name" id="invoice-filename-{{ form_num }}">No file
+                                        <span class="file-name mt-2 block text-sm text-zinc-400" id="invoice-filename-{{ form_num }}">No file
                                             chosen</span>
                                     </div>
-                                    <small class="file-help">Please upload your invoice or receipt (PDF, JPG, PNG, or
+                                    <small class="file-help mt-2 block text-xs text-zinc-400">Please upload your invoice or receipt (PDF, JPG, PNG, or
                                         GIF format)</small>
                                 </div>
 
                                 <div class="form-group proof-of-payment-section proof-of-payment-section-{{ form_num }}"
                                     style="display: none;">
-                                    <label for="proof_of_payment_{{ form_num }}">Proof of Payment (Required for USD
+                                    <label for="proof_of_payment_{{ form_num }}" class="block mb-2 text-sm font-medium text-zinc-200">Proof of Payment (Required for USD
                                         purchases)</label>
                                     <div class="custom-file-upload">
-                                        <div class="file-drop-area"
-                                            ondragover="handleDragOver(event)"
-                                            ondragleave="handleDragLeave(event)"
-                                            ondrop="handleFileDrop(event, 'proof_of_payment_{{ form_num }}', 'payment-filename-{{ form_num }}')">
+                                        <div class="file-drop-area rounded-lg border border-dashed border-zinc-600 bg-zinc-900/70 p-4 text-center transition-colors"
+                                            data-role="file-drop-area"
+                                            data-input-id="proof_of_payment_{{ form_num }}"
+                                            data-filename-id="payment-filename-{{ form_num }}">
                                             <input type="file" id="proof_of_payment_{{ form_num }}"
-                                                name="proof_of_payment_{{ form_num }}" 
+                                                name="proof_of_payment_{{ form_num }}"
                                                 accept=".pdf,.jpg,.jpeg,.png,.gif"
-                                                onchange="updateFileName(this, 'payment-filename-{{ form_num }}')">
-                                            <p class="drop-text">
-                                                <span class="file-upload" onclick="document.getElementById('proof_of_payment_{{ form_num }}').click()">
+                                                data-filename-id="payment-filename-{{ form_num }}" class="hidden">
+                                            <p class="drop-text m-0 text-sm text-zinc-300">
+                                                <span class="file-upload cursor-pointer text-indigo-300 hover:text-indigo-200" data-role="file-upload-text" data-input-id="proof_of_payment_{{ form_num }}">
                                                     <b>Choose a file</b> or drag it here
                                                 </span>
                                             </p>
                                         </div>
-                                        <span class="file-name" id="invoice-filename-{{ form_num }}">No file
+                                        <span class="file-name mt-2 block text-sm text-zinc-400" id="payment-filename-{{ form_num }}">No file
                                             chosen</span>
                                     </div>
-                                    <small class="file-help">Upload a screenshot of your bank transaction or payment
+                                    <small class="file-help mt-2 block text-xs text-zinc-400">Upload a screenshot of your bank transaction or payment
                                         confirmation (PDF, JPG, PNG, or GIF format)</small>
                                 </div>
 
-                                <div class="items-section">
-                                    <h4>Item Details</h4>
-                                    <small class="items-help">Add the items you purchased (up to 15 items)</small>
+                                <div class="items-section rounded-lg border border-zinc-700/70 bg-zinc-900/40 p-4">
+                                    <h4 class="m-0 text-base font-semibold text-zinc-100">Item Details</h4>
+                                    <small class="items-help mt-1 block text-xs text-zinc-400">Add the items you purchased (up to 15 items)</small>
 
-                                    <div id="items-container-{{ form_num }}">
-                                        <div class="item-row">
-                                            <div class="item-input-group">
-                                                <label>Item Name</label>
+                                    <div id="items-container-{{ form_num }}" class="space-y-3 mt-3">
+                                        <div class="item-row grid gap-3 md:grid-cols-12 p-3 rounded-lg border border-zinc-700/70 bg-zinc-900/70">
+                                            <div class="item-input-group md:col-span-3">
+                                                <label class="block mb-1 text-xs font-medium text-zinc-300">Item Name</label>
                                                 <input type="text" name="item_name_{{ form_num }}_1"
-                                                    placeholder="Enter item name">
+                                                    placeholder="Enter item name" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                             </div>
-                                            <div class="item-input-group">
-                                                <label>Usage/Purpose</label>
+                                            <div class="item-input-group md:col-span-3">
+                                                <label class="block mb-1 text-xs font-medium text-zinc-300">Usage/Purpose</label>
                                                 <input type="text" name="item_usage_{{ form_num }}_1"
-                                                    placeholder="What is this item for?">
+                                                    placeholder="What is this item for?" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                             </div>
-                                            <div class="item-input-group">
-                                                <label>Quantity</label>
+                                            <div class="item-input-group md:col-span-2">
+                                                <label class="block mb-1 text-xs font-medium text-zinc-300">Quantity</label>
                                                 <input type="number" name="item_quantity_{{ form_num }}_1" min="1"
-                                                    value="1" oninput="calculateItemTotal({{ form_num }}, 1)">
+                                                    value="1" data-action="calc-item" data-form="{{ form_num }}" data-item="1" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                             </div>
-                                            <div class="item-input-group">
-                                                <label>Unit Price</label>
+                                            <div class="item-input-group md:col-span-2">
+                                                <label class="block mb-1 text-xs font-medium text-zinc-300">Unit Price</label>
                                                 <input type="number" name="item_price_{{ form_num }}_1" min="0"
                                                     step="0.00001" placeholder="0.00"
-                                                    oninput="calculateItemTotal({{ form_num }}, 1)">
+                                                    data-action="calc-item" data-form="{{ form_num }}" data-item="1" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                             </div>
-                                            <div class="item-input-group">
-                                                <label>Total</label>
+                                            <div class="item-input-group md:col-span-1">
+                                                <label class="block mb-1 text-xs font-medium text-zinc-300">Total</label>
                                                 <input type="number" name="item_total_{{ form_num }}_1" readonly
-                                                    placeholder="0.00" class="total-field">
+                                                    placeholder="0.00" class="total-field w-full rounded-md border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
                                             </div>
-                                            <div class="item-actions">
-                                                <button type="button" class="btn-remove"
-                                                    onclick="removeItem(this, {{ form_num }})"
+                                            <div class="item-actions md:col-span-1 flex items-end">
+                                                <button type="button" class="btn-remove w-full rounded-md border border-red-500/50 px-2 py-2 text-xs text-red-300 hover:bg-red-500/15"
+                                                    data-action="remove-item" data-form="{{ form_num }}"
                                                     style="display: none;">Remove</button>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="form-group">
-                                        <button type="button" class="btn-secondary"
-                                            onclick="addItem({{ form_num }})">Add Another Item</button>
+                                        <button type="button" class="btn-secondary inline-flex items-center rounded-md border border-indigo-500/50 px-3 py-2 text-sm text-indigo-300 hover:bg-indigo-500/15 transition-colors"
+                                            data-action="add-item" data-form="{{ form_num }}">Add Another Item</button>
                                     </div>
                                 </div>
 
-                                <div class="total-section">
-                                    <h4>Financial Summary</h4>
+                                <div class="total-section rounded-lg border border-zinc-700/70 bg-zinc-900/40 p-4">
+                                    <h4 class="m-0 text-base font-semibold text-zinc-100 mb-3">Financial Summary</h4>
 
                                     <!-- CAD Financial Breakdown -->
-                                    <div class="financial-breakdown cad-breakdown-{{ form_num }}">
+                                    <div class="financial-breakdown cad-breakdown-{{ form_num }} space-y-3">
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="subtotal_amount_{{ form_num }}">Subtotal (<span
+                                                <label for="subtotal_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Subtotal (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="subtotal_amount_{{ form_num }}"
                                                     name="subtotal_amount_{{ form_num }}" readonly min="0" step="0.01"
-                                                    placeholder="0.00" class="total-field">
-                                                <small class="financial-help">Automatically calculated from item totals
+                                                    placeholder="0.00" class="total-field w-full rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
+                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Automatically calculated from item totals
                                                     above</small>
                                             </div>
                                         </div>
 
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="discount_amount_{{ form_num }}">Discount (<span
+                                                <label for="discount_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Discount (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="discount_amount_{{ form_num }}"
                                                     name="discount_amount_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
-                                                <small class="financial-help">Coupons, promotional discounts, or
+                                                    placeholder="0.00" data-action="recalc-total" data-form="{{ form_num }}" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
+                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Coupons, promotional discounts, or
                                                     rebates</small>
                                             </div>
                                         </div>
 
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="hst_gst_amount_{{ form_num }}"><span
+                                                <label for="hst_gst_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200"><span
                                                         class="tax-label-{{ form_num }}">HST/GST</span> (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>) <span
                                                         class="required-indicator-{{ form_num }}"></span></label>
                                                 <input type="number" id="hst_gst_amount_{{ form_num }}"
                                                     name="hst_gst_amount_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
-                                                <small class="financial-help tax-help-{{ form_num }}">Harmonized Sales
+                                                    placeholder="0.00" data-action="recalc-total" data-form="{{ form_num }}" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
+                                                <small class="financial-help tax-help-{{ form_num }} mt-1 block text-xs text-zinc-400">Harmonized Sales
                                                     Tax / Goods and Services Tax</small>
                                             </div>
                                         </div>
 
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="shipping_amount_{{ form_num }}">Shipping & Handling (<span
+                                                <label for="shipping_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Shipping & Handling (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="shipping_amount_{{ form_num }}"
                                                     name="shipping_amount_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00" oninput="calculateFinalTotal({{ form_num }})">
-                                                <small class="financial-help">Shipping, delivery, and handling
+                                                    placeholder="0.00" data-action="recalc-total" data-form="{{ form_num }}" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
+                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Shipping, delivery, and handling
                                                     fees</small>
                                             </div>
                                         </div>
 
                                         <div class="form-row total-row">
                                             <div class="form-group">
-                                                <label for="total_amount_{{ form_num }}">Total Reimbursement Amount
+                                                <label for="total_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Total Reimbursement Amount
                                                     (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" id="total_amount_{{ form_num }}"
                                                     name="total_amount_{{ form_num }}" readonly min="0" step="0.01"
-                                                    placeholder="0.00" class="total-field">
-                                                <small class="financial-help">Automatically calculated (Subtotal -
+                                                    placeholder="0.00" class="total-field w-full rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
+                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Automatically calculated (Subtotal -
                                                     Discount + Tax + Shipping)</small>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- USD Financial Breakdown -->
-                                    <div class="financial-breakdown usd-breakdown-{{ form_num }}"
+                                    <div class="financial-breakdown usd-breakdown-{{ form_num }} space-y-3"
                                         style="display: none;">
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="us_total_{{ form_num }}">US Subtotal (USD)</label>
+                                                <label for="us_total_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">US Subtotal (USD)</label>
                                                 <input type="number" id="us_total_{{ form_num }}"
                                                     name="us_total_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00">
-                                                <small class="financial-help">Subtotal in US dollars</small>
+                                                    placeholder="0.00" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
+                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Subtotal in US dollars</small>
                                             </div>
                                         </div>
 
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="usd_taxes_{{ form_num }}">Taxes (USD)</label>
+                                                <label for="usd_taxes_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Taxes (USD)</label>
                                                 <input type="number" id="usd_taxes_{{ form_num }}"
                                                     name="usd_taxes_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00">
-                                                <small class="financial-help">Sales tax, state tax, or other applicable
+                                                    placeholder="0.00" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
+                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Sales tax, state tax, or other applicable
                                                     taxes</small>
                                             </div>
                                         </div>
 
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="canadian_amount_{{ form_num }}">Canadian Amount
+                                                <label for="canadian_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Canadian Amount
                                                     (CAD)</label>
                                                 <input type="number" id="canadian_amount_{{ form_num }}"
                                                     name="canadian_amount_{{ form_num }}" min="0" step="0.01"
-                                                    placeholder="0.00">
-                                                <small class="financial-help">Equivalent amount in Canadian dollars for
+                                                    placeholder="0.00" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
+                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Equivalent amount in Canadian dollars for
                                                     reimbursement</small>
                                             </div>
                                         </div>
@@ -293,9 +293,9 @@
                 </div>
             </div>
 
-            <div class="dashboard-actions">
+            <div class="dashboard-actions mt-8">
                 <div class="form-group">
-                    <button type="submit" id="submit-all-btn" class="btn btn-large">Submit All Purchase Requests</button>
+                    <button type="submit" id="submit-all-btn" class="btn btn-large w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-white border-none px-6 py-3 text-sm font-medium transition-all duration-200 hover:from-[#4f46e5] hover:to-[#7c3aed] hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)]">Submit All Purchase Requests</button>
                 </div>
             </div>
         </form>
@@ -314,7 +314,7 @@
 
         function toggleForm(formNumber) {
             const content = document.getElementById(`form-${formNumber}`);
-            const toggle = content.previousElementSibling.querySelector('.form-toggle');
+            const toggle = content.previousElementSibling.querySelector('[data-role="accordion-toggle"]');
             
             if (content.style.display === 'none' || content.style.display === '') {
                 content.style.display = 'block';
@@ -334,30 +334,30 @@
             itemCounts[formNumber]++;
             const container = document.getElementById(`items-container-${formNumber}`);
             const newRow = document.createElement('div');
-            newRow.className = 'item-row';
+            newRow.className = 'item-row grid gap-3 md:grid-cols-12 p-3 rounded-lg border border-zinc-700/70 bg-zinc-900/70';
             newRow.innerHTML = `
-                <div class="item-input-group">
-                    <label>Item Name</label>
-                    <input type="text" name="item_name_${formNumber}_${itemCounts[formNumber]}" placeholder="Enter item name">
+                <div class="item-input-group md:col-span-3">
+                    <label class="block mb-1 text-xs font-medium text-zinc-300">Item Name</label>
+                    <input type="text" name="item_name_${formNumber}_${itemCounts[formNumber]}" placeholder="Enter item name" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                 </div>
-                <div class="item-input-group">
-                    <label>Usage/Purpose</label>
-                    <input type="text" name="item_usage_${formNumber}_${itemCounts[formNumber]}" placeholder="What is this item for?">
+                <div class="item-input-group md:col-span-3">
+                    <label class="block mb-1 text-xs font-medium text-zinc-300">Usage/Purpose</label>
+                    <input type="text" name="item_usage_${formNumber}_${itemCounts[formNumber]}" placeholder="What is this item for?" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                 </div>
-                <div class="item-input-group">
-                    <label>Quantity</label>
-                    <input type="number" name="item_quantity_${formNumber}_${itemCounts[formNumber]}" min="1" value="1" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
+                <div class="item-input-group md:col-span-2">
+                    <label class="block mb-1 text-xs font-medium text-zinc-300">Quantity</label>
+                    <input type="number" name="item_quantity_${formNumber}_${itemCounts[formNumber]}" min="1" value="1" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                 </div>
-                <div class="item-input-group">
-                    <label>Unit Price</label>
-                    <input type="number" name="item_price_${formNumber}_${itemCounts[formNumber]}" min="0" step="0.01" placeholder="0.00" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})">
+                <div class="item-input-group md:col-span-2">
+                    <label class="block mb-1 text-xs font-medium text-zinc-300">Unit Price</label>
+                    <input type="number" name="item_price_${formNumber}_${itemCounts[formNumber]}" min="0" step="0.01" placeholder="0.00" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                 </div>
-                <div class="item-input-group">
-                    <label>Total</label>
-                    <input type="number" name="item_total_${formNumber}_${itemCounts[formNumber]}" readonly placeholder="0.00" class="total-field">
+                <div class="item-input-group md:col-span-1">
+                    <label class="block mb-1 text-xs font-medium text-zinc-300">Total</label>
+                    <input type="number" name="item_total_${formNumber}_${itemCounts[formNumber]}" readonly placeholder="0.00" class="total-field w-full rounded-md border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
                 </div>
-                <div class="item-actions">
-                    <button type="button" class="btn-remove" onclick="removeItem(this, ${formNumber})">Remove</button>
+                <div class="item-actions md:col-span-1 flex items-end">
+                    <button type="button" class="btn-remove w-full rounded-md border border-red-500/50 px-2 py-2 text-xs text-red-300 hover:bg-red-500/15" onclick="removeItem(this, ${formNumber})">Remove</button>
                 </div>
             `;
             container.appendChild(newRow);
@@ -527,7 +527,8 @@
 
         function updateFileName(input, spanId) {
             const filenameSpan = document.getElementById(spanId);
-            const dropTextSpan = input.closest('.file-drop-area').querySelector('.file-upload');
+            const dropArea = input.closest('[data-role="file-drop-area"]');
+            const dropTextSpan = dropArea ? dropArea.querySelector('[data-role="file-upload-text"]') : null;
 
             if (input.files && input.files[0]) {
                 const name = input.files[0].name
@@ -734,16 +735,16 @@
 
         function handleDragOver(event) {
             event.preventDefault();
-            event.currentTarget.classList.add('dragover');
+            event.currentTarget.classList.add('border-indigo-400', 'bg-indigo-500/10');
         }
 
         function handleDragLeave(event) {
-            event.currentTarget.classList.remove('dragover')
+            event.currentTarget.classList.remove('border-indigo-400', 'bg-indigo-500/10')
         }
         
         function handleFileDrop(event, inputId, spanId) {
             event.preventDefault();
-            event.currentTarget.classList.remove('dragover')
+            event.currentTarget.classList.remove('border-indigo-400', 'bg-indigo-500/10')
 
             const fileInput = document.getElementById(inputId);
             const files = event.dataTransfer.files;
@@ -751,6 +752,60 @@
                 fileInput.files = files;
                 updateFileName(fileInput, spanId)
             }
+        }
+
+        function initializeStaticHandlers() {
+            document.querySelectorAll('[data-action="toggle-form"]').forEach(header => {
+                header.addEventListener('click', () => toggleForm(Number(header.dataset.form)));
+            });
+
+            document.querySelectorAll('[data-action="clear-form"]').forEach(btn => {
+                btn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    clearForm(Number(btn.dataset.form));
+                });
+            });
+
+            document.querySelectorAll('[data-action="currency-select"]').forEach(select => {
+                select.addEventListener('change', () => updateCurrencyLabels(Number(select.dataset.form)));
+            });
+
+            document.querySelectorAll('[data-action="add-item"]').forEach(btn => {
+                btn.addEventListener('click', () => addItem(Number(btn.dataset.form)));
+            });
+
+            document.querySelectorAll('[data-action="remove-item"]').forEach(btn => {
+                btn.addEventListener('click', () => removeItem(btn, Number(btn.dataset.form)));
+            });
+
+            document.querySelectorAll('[data-action="calc-item"]').forEach(input => {
+                input.addEventListener('input', () => {
+                    calculateItemTotal(Number(input.dataset.form), Number(input.dataset.item));
+                });
+            });
+
+            document.querySelectorAll('[data-action="recalc-total"]').forEach(input => {
+                input.addEventListener('input', () => calculateFinalTotal(Number(input.dataset.form)));
+            });
+
+            document.querySelectorAll('[data-role="file-upload-text"]').forEach(trigger => {
+                trigger.addEventListener('click', () => {
+                    const input = document.getElementById(trigger.dataset.inputId);
+                    if (input) input.click();
+                });
+            });
+
+            document.querySelectorAll('[data-role="file-drop-area"]').forEach(area => {
+                area.addEventListener('dragover', handleDragOver);
+                area.addEventListener('dragleave', handleDragLeave);
+                area.addEventListener('drop', (event) => {
+                    handleFileDrop(event, area.dataset.inputId, area.dataset.filenameId);
+                });
+            });
+
+            document.querySelectorAll('input[type="file"][data-filename-id]').forEach(input => {
+                input.addEventListener('change', () => updateFileName(input, input.dataset.filenameId));
+            });
         }
 
         // Initialize the dashboard when the page loads
@@ -764,16 +819,17 @@
                 updateCurrencyLabels(i);
 
                 // Initialize proof of payment section visibility
-                const proofOfPaymentSection = document.getElementById(`proof_of_payment_${i}`);
-                if (proofOfPaymentSection) {
+                const proofOfPaymentWrapper = document.querySelector(`.proof-of-payment-section-${i}`);
+                if (proofOfPaymentWrapper) {
                     const currencySelect = document.getElementById(`currency_${i}`);
                     if (currencySelect && currencySelect.value === 'USD') {
-                        proofOfPaymentSection.style.display = 'block';
+                        proofOfPaymentWrapper.style.display = 'block';
                     } else {
-                        proofOfPaymentSection.style.display = 'none';
+                        proofOfPaymentWrapper.style.display = 'none';
                     }
                 }
             }
+            initializeStaticHandlers();
 
             // Set up form submission handling with double-submit prevention
             const form = document.querySelector('form[action="/submit-all-requests"]');
