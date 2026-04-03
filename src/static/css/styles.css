@@ -891,16 +891,7 @@ h1 {
     font-weight: 400;
 }
 
-.login-error-message {
-    background-color: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #fca5a5;
-    padding: 0.875rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    text-align: center;
-    font-size: 0.875rem;
-}
+
 
 .login-form-group {
     margin-bottom: 1.5rem;
@@ -994,14 +985,7 @@ h1 {
     transform: translateY(-1px);
 }
 
-.login-footer {
-    text-align: center;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid rgba(63, 63, 70, 0.5);
-    color: #a1a1aa;
-    font-size: 0.875rem;
-}
+
 
 /* Back link in dark theme */
 .dark-back-link {

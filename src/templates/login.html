@@ -5,42 +5,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Purchase Request Site</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/output.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
-<body class="login-body">
-    <div class="login-container">
-        <div class="login-header">
-            <h1>Sign In</h1>
-            <p>Enter your credentials to access the Purchase Request Portal</p>
+<body class="font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-12 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] leading-[1.6] min-h-screen flex items-center justify-center text-[#e4e4e7] box-border overflow-y-auto">
+    <div class="max-w-[420px] w-[90%] p-10 bg-[rgba(24,24,27,0.8)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-[10px] [-webkit-backdrop-filter:blur(10px)] border border-[rgba(255,255,255,0.08)] my-12 mx-auto">
+        <div class="text-center mb-10 relative">
+            <h1 class="text-white font-semibold text-[1.75rem] mb-3 tracking-[-0.025em]">
+                Sign In
+            </h1>
+            <p class="text-[#a1a1aa] m-0 text-[0.95rem] font-normal">
+                Enter your credentials to access the Purchase Request Portal
+            </p>
         </div>
 
         {% if error_message %}
-        <div class="login-error-message">
+        <div class="bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.3)] text-[#fca5a5] py-3.5 px-3.5 rounded-lg mb-6 text-center text-sm">
             {{ error_message }}
         </div>
         {% endif %}
 
         <form method="POST" action="/login">
-            <div class="login-form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required placeholder="macid@mcmaster.ca" value="{{ email or '' }}">
+            <div class="mb-6">
+                <label for="email" class="block mb-2 font-medium text-[#e4e4e7] text-sm">
+                    Email
+                </label>
+                <input type="email" id="email" name="email" required placeholder="macid@mcmaster.ca" value="{{ email or '' }}" class="w-full py-3.5 px-3.5 bg-[rgba(39,39,42,0.7)] border border-[rgba(63,63,70,0.5)] rounded-lg text-[0.95rem] transition-all duration-200 box-border text-[#e4e4e7] font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] block caret-[#6366f1] focus:outline-none focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)] placeholder:text-[#71717a]">
             </div>
 
-            <div class="login-form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="••••••••">
+            <div class="mb-6">
+                <label for="password" class="block mb-2 font-medium text-[#e4e4e7] text-sm">
+                    Password
+                </label>
+                <input type="password" id="password" name="password" required placeholder="••••••••" class="w-full py-3.5 px-3.5 bg-[rgba(39,39,42,0.7)] border border-[rgba(63,63,70,0.5)] rounded-lg text-[0.95rem] transition-all duration-200 box-border text-[#e4e4e7] font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] block caret-[#6366f1] focus:outline-none focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)] placeholder:text-[#71717a]">
             </div>
 
-            <button type="submit" class="login-btn">
+            <button type="submit" class="w-full py-3.5 px-3.5 bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-white border-none rounded-lg text-[0.95rem] font-medium cursor-pointer transition-all duration-200 font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] mt-6 hover:bg-gradient-to-br hover:from-[#4f46e5] hover:to-[#7c3aed] hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)] hover:-translate-y-px">
                 Sign In
             </button>
         </form>
 
-        <div class="login-footer">
+        <div class="text-center mt-8 pt-6 border-t border-[rgba(63,63,70,0.5)] text-[#a1a1aa] text-sm">
             <p>Need access? Contact Raj on Teams</p>
         </div>
     </div>
