@@ -5,48 +5,47 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Purchase Request Submitted - Success</title>
-      <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet" href="/static/css/output.css">
 </head>
 
-<body class="success-body">
-  <div class="success-container">
-    <div class="success-header">
-      <div class="success-icon">🎉</div>
-      <h1>Purchase Request Submitted Successfully!</h1>
-      <p>Your purchase request has been processed and submitted for approval 🥳</p>
+<body class="m-0 min-h-screen bg-zinc-950 text-zinc-100 px-6 py-10 font-sans">
+  <div class="mx-auto w-full max-w-3xl rounded-2xl border border-zinc-800 bg-zinc-900/80 p-8 shadow-xl md:p-10">
+    <div class="text-center">
+      <div class="text-4xl" aria-hidden="true">🎉</div>
+      <h1 class="mt-3 text-3xl font-semibold tracking-tight text-white md:text-4xl">Purchase Request Submitted Successfully!</h1>
+      <p class="mt-3 text-zinc-300">Your purchase request has been processed and submitted for approval 🥳</p>
     </div>
 
     {% if download_info %}
-    <div class="download-card">
-      <h3>📄 Your Excel Report is Ready!</h3>
-      <p>Your purchase request has been compiled into an Excel report. You can download it below.</p>
+    <div class="mt-8 rounded-xl border border-indigo-500/40 bg-indigo-500/10 p-5">
+      <h3 class="m-0 text-lg font-semibold text-indigo-200">📄 Your Excel Report is Ready!</h3>
+      <p class="mt-2 text-sm text-zinc-300">Your purchase request has been compiled into an Excel report. You can download it below.</p>
 
-      <div class="session-info">
+      <div class="mt-3 text-sm text-zinc-300">
         <strong>Generated:</strong> {{ current_time.strftime('%B %d, %Y') }}
       </div>
 
-      <a href="{{ download_info.download_url }}" class="download-btn" download="{{ download_info.excel_file }}">
+      <a href="{{ download_info.download_url }}" class="mt-4 inline-flex items-center rounded-lg bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] px-4 py-2.5 text-sm font-medium text-white transition-all hover:from-[#4f46e5] hover:to-[#7c3aed] hover:shadow-[0_4px_12px_rgba(99,102,241,0.35)]" download="{{ download_info.excel_file }}">
         📥 Download Excel Report
       </a>
     </div>
     {% endif %}
 
-    <div class="next-steps">
-      <h4>📋 What Happens Next?</h4>
-      <ul>
-        <li><strong>Review:</strong> Your purchase request will be reviewed by the appropriate team</li>
-        <li><strong>Approval:</strong> You'll be messaged on Teams if additional information is needed</li>
+    <div class="mt-8 rounded-xl border border-zinc-700/80 bg-zinc-900/50 p-5">
+      <h4 class="m-0 text-base font-semibold text-zinc-100">📋 What Happens Next?</h4>
+      <ul class="mb-0 mt-3 list-disc space-y-2 pl-5 text-sm text-zinc-300">
+        <li><strong class="text-zinc-100">Review:</strong> Your purchase request will be reviewed by the appropriate team</li>
+        <li><strong class="text-zinc-100">Approval:</strong> You'll be messaged on Teams if additional information is needed</li>
       </ul>
     </div>
 
-    <div class="success-actions">
-      <a href="/logout" class="success-btn-secondary">🚪 Logout</a>
+    <div class="mt-8">
+      <a href="/logout" class="inline-flex items-center rounded-lg border border-red-500/45 px-4 py-2.5 text-sm text-red-300 transition-colors hover:bg-red-500/15">🚪 Logout</a>
     </div>
 
-    <div
-      style="margin-top: 3rem; padding: 1rem; background: #f8f9fa; border-radius: 6px; font-size: 0.9rem; color: #6c757d;">
-      <p><strong>Need Help?</strong> If you have any questions about your purchase request, please contact Raj.</p>
-      <p><strong>Keep Your Receipt:</strong> Keep the purchase request for your own records. </p>
+    <div class="mt-10 rounded-lg border border-zinc-700/70 bg-zinc-900/45 p-4 text-sm text-zinc-400">
+      <p class="m-0"><strong class="text-zinc-200">Need Help?</strong> If you have any questions about your purchase request, please contact Raj.</p>
+      <p class="mb-0 mt-2"><strong class="text-zinc-200">Keep Your Receipt:</strong> Keep the purchase request for your own records.</p>
     </div>
   </div>
 </body>
