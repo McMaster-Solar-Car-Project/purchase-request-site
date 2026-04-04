@@ -4,6 +4,7 @@ Middleware for logging HTTP requests and responses.
 
 import time
 
+import sentry_sdk
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -26,6 +27,17 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             client_ip = request.headers["x-forwarded-for"].split(",")[0].strip()
         elif "x-real-ip" in request.headers:
             client_ip = request.headers["x-real-ip"]
+
+        # Add Sentry Context
+        try:
+            user_email = request.session.get("user_email")
+            if user_email:
+                sentry_sdk.set_user({"email": user_email})
+            else:
+                sentry_sdk.set_user(None)
+        except Exception:
+            # Session might not be available
+            pass
 
         # Only log important requests (skip static files)
         skip_paths = ["/static", "/favicon.ico", "/robots.txt"]
