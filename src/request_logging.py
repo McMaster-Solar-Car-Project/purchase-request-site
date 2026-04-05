@@ -50,10 +50,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             # Calculate processing time
             process_time = time.time() - start_time
 
-            # Only log slow requests (>1s) or important endpoints or errors
+            # Only log slow requests (>1s) or important endpoints or errors (excluding 404s)
             if should_log and (
                 process_time > 1.0
-                or response.status_code >= 400
+                or (response.status_code >= 400 and response.status_code != 404)
                 or request.method in ["POST", "PUT", "DELETE"]
             ):
                 request_logger.info(

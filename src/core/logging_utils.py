@@ -34,12 +34,12 @@ class SentryLoggerWrapper:
         self._std_logger = std_logger
 
     def _log_to_sentry(self, level: str, msg: str, *args, **kwargs) -> None:
-        """Send log to Sentry using native logger API.
+        """Send log to Sentry using native API.
 
         Uses lazy import to handle cases where logger is created before Sentry init.
         """
         try:
-            from sentry_sdk import logger as sentry_logger
+            import sentry_sdk
         except ImportError:
             return
 
@@ -54,12 +54,23 @@ class SentryLoggerWrapper:
 
         # Extract extra fields as Sentry attributes
         extra = kwargs.get("extra", {})
-        attributes = {"logger.name": self.name, **extra}
 
-        # Map to Sentry logger methods
-        sentry_log_method = getattr(sentry_logger, level, None)
-        if sentry_log_method:
-            sentry_log_method(formatted_msg, attributes=attributes)
+        # Map python log levels to sentry log levels
+        sentry_level = level if level != "critical" else "fatal"
+
+        if sentry_level in ("error", "fatal"):
+            sentry_sdk.capture_message(
+                formatted_msg,
+                level=sentry_level,
+                extras={"logger.name": self.name, **extra},
+            )
+        else:
+            sentry_sdk.add_breadcrumb(
+                category=self.name,
+                message=formatted_msg,
+                level=sentry_level,
+                data=extra,
+            )
 
     def debug(self, msg: str, *args, **kwargs) -> None:
         """Log debug message to console/file and Sentry."""

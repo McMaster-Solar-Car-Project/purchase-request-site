@@ -45,7 +45,6 @@ sentry_sdk.init(
         # Disable legacy breadcrumb/event behavior - we use native Sentry logs via sentry_sdk.logger
         LoggingIntegration(event_level=None, level=None),
     ],
-    traces_sample_rate=1.0,
     enable_logs=True,  # Enable Sentry's native structured logs
     environment=os.getenv("ENVIRONMENT", "development"),
     release=os.getenv("SENTRY_RELEASE"),
@@ -103,7 +102,6 @@ async def health_check():
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404:
-        sentry_sdk.capture_message(f"404 Not Found: {request.url.path}", level="info")
         return templates.TemplateResponse(
             request=request,
             name="404.html",
@@ -138,4 +136,5 @@ if __name__ == "__main__":
         host=os.getenv("HOST", "0.0.0.0"),
         port=int(os.getenv("PORT", 8000)),
         reload=os.getenv("DEBUG", "false").lower() == "true",
+        access_log=False,
     )
