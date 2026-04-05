@@ -20,18 +20,20 @@ def _emit_request_metrics(
     method: str, path: str, status_code: int, process_time_seconds: float
 ) -> None:
     """Emit low-cardinality request metrics to Sentry."""
-    tags = {
+    attributes: dict[str, str] = {
         "method": method,
         "status_code": str(status_code),
         "path": path,
     }
     try:
-        metrics.count("http.server.requests", 1, tags=tags)
+        metrics.count("http.server.requests", 1, attributes=attributes)
         metrics.distribution(
-            "http.server.duration_ms", process_time_seconds * 1000.0, tags=tags
+            "http.server.duration_ms",
+            process_time_seconds * 1000.0,
+            attributes=attributes,
         )
         if status_code >= 500:
-            metrics.count("http.server.errors", 1, tags=tags)
+            metrics.count("http.server.errors", 1, attributes=attributes)
     except Exception:
         # Metrics should never break request handling.
         request_logger.debug("Failed to emit Sentry metrics", exc_info=True)

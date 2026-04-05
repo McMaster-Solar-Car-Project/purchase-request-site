@@ -39,11 +39,12 @@ class GoogleDriveClient:
 
     def __init__(self):
         """Initialize the Google Drive client using environment variables"""
-        self.service = None
-        self.parent_folder_id = None
+        # google-api-python-client builds a dynamic Resource; stubs omit API methods.
+        self.service: Any | None = None
+        self.parent_folder_id: str | None = None
 
     @staticmethod
-    def _get_credentials_from_env() -> dict[str, str]:
+    def _get_credentials_from_env() -> dict[str, Any]:
         """
         Build service account credentials from environment variables
 
@@ -71,14 +72,15 @@ class GoogleDriveClient:
                 f"Missing required environment variables: {', '.join(missing_vars)}"
             )
 
+        assert private_key is not None  # ensured by required_vars check above
+        normalized_private_key = private_key.replace("\\n", "\n")
+
         # Build the service account info dictionary
-        service_account_info = {
+        service_account_info: dict[str, Any] = {
             "type": "service_account",
             "project_id": project_id,
             "private_key_id": private_key_id,
-            "private_key": private_key.replace(
-                "\\n", "\n"
-            ),  # Fix newlines in private key
+            "private_key": normalized_private_key,  # Fix newlines in private key
             "client_email": client_email,
             "client_id": client_id,
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -121,13 +123,17 @@ class GoogleDriveClient:
         if not self.service and not self._authenticate():
             raise Exception("Failed to authenticate with Google Drive")
 
+        service = self.service
+        if service is None:
+            raise Exception("Failed to authenticate with Google Drive")
+
         try:
             # Use the configured folder ID directly
             self.parent_folder_id = PARENT_FOLDER_ID
 
             # Verify the folder exists and get its name
             (
-                self.service.files()
+                service.files()
                 .get(fileId=self.parent_folder_id, fields="id, name")
                 .execute()
             )
@@ -152,6 +158,10 @@ class GoogleDriveClient:
         Returns:
             str: The folder ID of the created session folder
         """
+        service = self.service
+        if service is None:
+            raise RuntimeError("Google Drive client is not authenticated")
+
         try:
             folder_metadata = {
                 "name": session_name,
@@ -159,9 +169,7 @@ class GoogleDriveClient:
                 "parents": [parent_id],
             }
 
-            folder = (
-                self.service.files().create(body=folder_metadata, fields="id").execute()
-            )
+            folder = service.files().create(body=folder_metadata, fields="id").execute()
 
             folder_id = folder.get("id")
             # Session folder created
@@ -184,6 +192,10 @@ class GoogleDriveClient:
         Returns:
             str: The folder ID of the month/year folder
         """
+        service = self.service
+        if service is None:
+            raise RuntimeError("Google Drive client is not authenticated")
+
         try:
             # Get current month and year
             now = datetime.now()
@@ -191,9 +203,7 @@ class GoogleDriveClient:
 
             # Search for existing month/year folder
             query = f"name='{month_year_name}' and mimeType='application/vnd.google-apps.folder' and '{parent_id}' in parents and trashed=false"
-            results = (
-                self.service.files().list(q=query, fields="files(id, name)").execute()
-            )
+            results = service.files().list(q=query, fields="files(id, name)").execute()
 
             folders = results.get("files", [])
 
@@ -213,9 +223,7 @@ class GoogleDriveClient:
                 }
 
                 folder = (
-                    self.service.files()
-                    .create(body=folder_metadata, fields="id")
-                    .execute()
+                    service.files().create(body=folder_metadata, fields="id").execute()
                 )
 
                 month_folder_id = folder.get("id")
@@ -232,8 +240,11 @@ class GoogleDriveClient:
             raise
 
     def _upload_file(
-        self, file_path: str, folder_id: str, file_name: str = None
-    ) -> str:
+        self,
+        file_path: str,
+        folder_id: str,
+        file_name: str | None = None,
+    ) -> str | None:
         """
         Upload a file to Google Drive with retry logic
 
@@ -243,13 +254,17 @@ class GoogleDriveClient:
             file_name: Optional custom name for the file
 
         Returns:
-            str: The file ID of the uploaded file
+            str | None: The file ID of the uploaded file, or None on failure
         """
         max_retries = 3
         retry_delay = 1  # seconds
 
         if not self.service and not self._authenticate():
             logger.exception(f"Failed to authenticate for {file_path}")
+            return None
+
+        service = self.service
+        if service is None:
             return None
 
         for attempt in range(max_retries):
@@ -274,7 +289,7 @@ class GoogleDriveClient:
 
                 # Upload file using the main service
                 file_obj = (
-                    self.service.files()
+                    service.files()
                     .create(body=file_metadata, media_body=media, fields="id")
                     .execute()
                 )
@@ -343,7 +358,7 @@ class GoogleDriveClient:
         self,
         session_folder_path: str,
         user_info: dict[str, Any],
-        session_folder_id: str = None,
+        session_folder_id: str | None = None,
     ) -> bool:
         """
         Upload an entire session folder to Google Drive
@@ -426,9 +441,13 @@ class GoogleDriveClient:
         if not self.service and not self._authenticate():
             return False
 
+        service = self.service
+        if service is None:
+            return False
+
         try:
             # Try to get Drive storage info
-            about = self.service.about().get(fields="storageQuota,user").execute()
+            about = service.about().get(fields="storageQuota,user").execute()
 
             storage_quota = about.get("storageQuota", {})
             usage = storage_quota.get("usage", 0)
@@ -459,9 +478,13 @@ class GoogleDriveClient:
         if not self.service and not self._authenticate():
             raise Exception("Failed to authenticate with Google Drive")
 
+        service = self.service
+        if service is None:
+            raise Exception("Failed to authenticate with Google Drive")
+
         try:
             # Download the file
-            request = self.service.files().get_media(fileId=file_id)
+            request = service.files().get_media(fileId=file_id)
             file_content = request.execute()
 
             logger.info(
@@ -491,12 +514,14 @@ class GoogleDriveClient:
         if not self.service and not self._authenticate():
             return ""
 
+        service = self.service
+        if service is None:
+            return ""
+
         try:
             # Search for the file in the specific folder
             query = f"name='{file_name}' and '{folder_id}' in parents and trashed=false"
-            results = (
-                self.service.files().list(q=query, fields="files(id, name)").execute()
-            )
+            results = service.files().list(q=query, fields="files(id, name)").execute()
 
             files = results.get("files", [])
             if files:
@@ -519,7 +544,8 @@ class GoogleDriveClient:
     def close(self):
         """Close the Google Drive client"""
         self.parent_folder_id = None
-        self.service.close()
+        if self.service is not None:
+            self.service.close()
         self.service = None
 
 
@@ -553,7 +579,9 @@ def create_drive_folder_and_get_url(
 
 
 def upload_session_to_drive(
-    session_folder_path: str, user_info: dict[str, Any], session_folder_id: str = None
+    session_folder_path: str,
+    user_info: dict[str, Any],
+    session_folder_id: str | None = None,
 ) -> bool:
     """
     Upload session data to Google Drive synchronously
@@ -599,21 +627,19 @@ def download_file_from_drive(folder_id: str, file_name: str) -> bytes:
     Raises:
         Exception: If file not found or download fails
     """
+    drive_client = GoogleDriveClient()
     try:
-        drive_client = GoogleDriveClient()
-
         # First find the file in the folder
         file_id = drive_client.find_file_in_folder(folder_id, file_name)
         if not file_id:
             logger.exception(f"File '{file_name}' not found in Google Drive folder")
-            return None
+            raise FileNotFoundError(
+                f"File '{file_name}' not found in Google Drive folder"
+            )
 
-        # Download the file
-        file_info = drive_client.download_file(file_id, file_name)
-
-        drive_client.close()
-        return file_info
-
+        return drive_client.download_file(file_id, file_name)
     except Exception as e:
         logger.exception(f"Error downloading {file_name} from Google Drive: {e}")
-        return None
+        raise
+    finally:
+        drive_client.close()

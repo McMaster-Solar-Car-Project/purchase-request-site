@@ -17,9 +17,9 @@ router = APIRouter(tags=["success"])
 @router.get("/success")
 async def success_page(
     request: Request,
-    drive_folder_id: str = None,
-    excel_file: str = None,
-    user_email: str = None,
+    drive_folder_id: str | None = None,
+    excel_file: str | None = None,
+    user_email: str | None = None,
     _: None = Depends(require_auth),
 ):
     """Display success page after purchase request submission"""

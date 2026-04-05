@@ -15,6 +15,7 @@ from fastapi import (
 )
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
+from starlette.datastructures import UploadFile
 
 from src.core.logging_utils import setup_logger
 from src.data_processing import create_expense_report, create_purchase_request
@@ -35,12 +36,43 @@ logger = setup_logger(__name__)
 router = APIRouter(tags=["dashboard"])
 
 
+def _form_str(value: object, default: str = "") -> str:
+    """Coerce multipart form field to str; ignore accidental file parts."""
+    if value is None or isinstance(value, UploadFile):
+        return default
+    return str(value)
+
+
+def _form_float(value: object, default: float = 0.0) -> float:
+    if value is None or isinstance(value, UploadFile):
+        return default
+    s = str(value).strip()
+    if not s:
+        return default
+    try:
+        return float(s)
+    except ValueError:
+        return default
+
+
+def _form_int(value: object, default: int = 0) -> int:
+    if value is None or isinstance(value, UploadFile):
+        return default
+    s = str(value).strip()
+    if not s:
+        return default
+    try:
+        return int(s)
+    except ValueError:
+        return default
+
+
 @router.get("/dashboard")
 async def dashboard(
     request: Request,
     user_email: str,
     updated: bool = False,
-    error: str = None,
+    error: str | None = None,
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
 ):
@@ -77,7 +109,7 @@ async def dashboard(
     )
 
 
-def create_session_folder(name):
+def create_session_folder(name: str) -> str:
     """Create a session folder with user name and timestamp"""
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     safe_name = name.replace(" ", "_").lower()
@@ -97,11 +129,11 @@ async def submit_all_requests(
     form_data = await request.form()
 
     # Extract user information
-    name = form_data.get("name")
-    email = form_data.get("email")
-    e_transfer_email = form_data.get("e_transfer_email")
-    address = form_data.get("address")
-    team = form_data.get("team")
+    name = _form_str(form_data.get("name"))
+    email = _form_str(form_data.get("email"))
+    e_transfer_email = _form_str(form_data.get("e_transfer_email"))
+    address = _form_str(form_data.get("address"))
+    team = _form_str(form_data.get("team"))
 
     sentry_sdk.add_breadcrumb(
         category="purchase_flow",
@@ -128,7 +160,7 @@ async def submit_all_requests(
 
     # Process each of the 10 possible forms
     for form_num in range(1, 11):
-        vendor_name = form_data.get(f"vendor_name_{form_num}")
+        vendor_name = _form_str(form_data.get(f"vendor_name_{form_num}"))
 
         if vendor_name:
             sentry_sdk.add_breadcrumb(
@@ -138,18 +170,14 @@ async def submit_all_requests(
             )
         invoice_file = form_data.get(f"invoice_file_{form_num}")
         proof_of_payment_file = form_data.get(f"proof_of_payment_{form_num}")
-        currency = form_data.get(
-            f"currency_{form_num}", "CAD"
-        )  # Default to CAD if not specified
+        currency = _form_str(form_data.get(f"currency_{form_num}"), "CAD")
 
         # Skip empty forms (no vendor name or invoice)
-        if not vendor_name or not invoice_file or not hasattr(invoice_file, "filename"):
+        if not vendor_name or not isinstance(invoice_file, UploadFile):
             continue
 
         # For USD purchases, proof of payment is required
-        if currency == "USD" and (
-            not proof_of_payment_file or not hasattr(proof_of_payment_file, "filename")
-        ):
+        if currency == "USD" and not isinstance(proof_of_payment_file, UploadFile):
             logger.warning(
                 f"Form {form_num} in USD currency missing proof of payment - skipping"
             )
@@ -157,27 +185,27 @@ async def submit_all_requests(
 
         # Extract financial data based on currency
         if currency == "USD":
-            us_total = float(form_data.get(f"us_total_{form_num}") or 0)
-            usd_taxes = float(form_data.get(f"usd_taxes_{form_num}") or 0)
-            canadian_amount = float(form_data.get(f"canadian_amount_{form_num}") or 0)
+            us_total = _form_float(form_data.get(f"us_total_{form_num}"))
+            usd_taxes = _form_float(form_data.get(f"usd_taxes_{form_num}"))
+            canadian_amount = _form_float(form_data.get(f"canadian_amount_{form_num}"))
             subtotal_amount = discount_amount = shipping_amount = 0
             hst_gst_amount = usd_taxes
             total_amount = canadian_amount
         else:
-            subtotal_amount = float(form_data.get(f"subtotal_amount_{form_num}") or 0)
-            discount_amount = float(form_data.get(f"discount_amount_{form_num}") or 0)
-            hst_gst_amount = float(form_data.get(f"hst_gst_amount_{form_num}") or 0)
-            shipping_amount = float(form_data.get(f"shipping_amount_{form_num}") or 0)
-            total_amount = float(form_data.get(f"total_amount_{form_num}") or 0)
+            subtotal_amount = _form_float(form_data.get(f"subtotal_amount_{form_num}"))
+            discount_amount = _form_float(form_data.get(f"discount_amount_{form_num}"))
+            hst_gst_amount = _form_float(form_data.get(f"hst_gst_amount_{form_num}"))
+            shipping_amount = _form_float(form_data.get(f"shipping_amount_{form_num}"))
+            total_amount = _form_float(form_data.get(f"total_amount_{form_num}"))
             us_total = usd_taxes = canadian_amount = 0
 
         # Extract items for this form
         items = []
         for item_num in range(1, 50):  # Reasonable limit
-            item_name = form_data.get(f"item_name_{form_num}_{item_num}")
+            item_name = _form_str(form_data.get(f"item_name_{form_num}_{item_num}"))
             if not item_name:
                 break
-            item_usage = form_data.get(f"item_usage_{form_num}_{item_num}")
+            item_usage = _form_str(form_data.get(f"item_usage_{form_num}_{item_num}"))
             item_quantity = form_data.get(f"item_quantity_{form_num}_{item_num}")
             item_price = form_data.get(f"item_price_{form_num}_{item_num}")
             item_total = form_data.get(f"item_total_{form_num}_{item_num}")
@@ -187,9 +215,9 @@ async def submit_all_requests(
                     {
                         "name": item_name,
                         "usage": item_usage,
-                        "quantity": int(item_quantity),
-                        "unit_price": float(item_price),
-                        "total": float(item_total or 0),
+                        "quantity": _form_int(item_quantity),
+                        "unit_price": _form_float(item_price),
+                        "total": _form_float(item_total),
                     }
                 )
 
@@ -198,11 +226,8 @@ async def submit_all_requests(
             continue
 
         # Save uploaded invoice file in session folder
-        invoice_extension = (
-            invoice_file.filename.split(".")[-1]
-            if "." in invoice_file.filename
-            else "pdf"
-        )
+        invoice_fn = invoice_file.filename or "invoice"
+        invoice_extension = invoice_fn.split(".")[-1] if "." in invoice_fn else "pdf"
         invoice_filename = f"{form_num}_{vendor_name}.{invoice_extension}"
         invoice_file_location = f"{session_folder}/{invoice_filename}"
 
@@ -213,16 +238,9 @@ async def submit_all_requests(
 
         # Save proof of payment file only for USD currency
         proof_of_payment_filename = proof_of_payment_location = None
-        if (
-            currency == "USD"
-            and proof_of_payment_file
-            and hasattr(proof_of_payment_file, "filename")
-        ):
-            payment_extension = (
-                proof_of_payment_file.filename.split(".")[-1]
-                if "." in proof_of_payment_file.filename
-                else "pdf"
-            )
+        if currency == "USD" and isinstance(proof_of_payment_file, UploadFile):
+            pop_fn = proof_of_payment_file.filename or "payment"
+            payment_extension = pop_fn.split(".")[-1] if "." in pop_fn else "pdf"
             proof_of_payment_filename = (
                 f"{form_num}_proof_of_payment.{payment_extension}"
             )
