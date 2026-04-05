@@ -6,6 +6,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Purchase Request Submitted - Success</title>
   <link rel="stylesheet" href="/static/css/output.css">
+  <script
+    src="https://js.sentry-cdn.com/b1cf415940d1bc459daa1127317e541b.min.js"
+    crossorigin="anonymous"
+  ></script>
+  <script>
+    Sentry.onLoad(function () {
+      Sentry.init({
+        integrations: [Sentry.replayIntegration()],
+        tracesSampleRate: 1.0,
+        replaysSessionSampleRate: 0.1,
+        replaysOnErrorSampleRate: 1.0,
+      });
+    });
+  </script>
 </head>
 
 <body class="m-0 min-h-screen bg-zinc-950 text-zinc-100 px-6 py-10 font-sans">

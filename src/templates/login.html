@@ -9,6 +9,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script
+      src="https://js.sentry-cdn.com/b1cf415940d1bc459daa1127317e541b.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      Sentry.onLoad(function () {
+        Sentry.init({
+          integrations: [Sentry.replayIntegration()],
+          tracesSampleRate: 1.0,
+          replaysSessionSampleRate: 0.1,
+          replaysOnErrorSampleRate: 1.0,
+        });
+      });
+    </script>
 </head>
 
 <body class="font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-12 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] leading-[1.6] min-h-screen flex items-center justify-center text-[#e4e4e7] box-border overflow-y-auto">
