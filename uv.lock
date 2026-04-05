@@ -659,6 +659,7 @@ dependencies = [
     { name = "pillow" },
     { name = "psycopg2-binary" },
     { name = "pydantic" },
+    { name = "sentry-sdk" },
     { name = "slowapi" },
     { name = "sqlalchemy" },
 ]
@@ -677,6 +678,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=12.0.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
     { name = "pydantic", specifier = ">=2.12.2" },
+    { name = "sentry-sdk", specifier = ">=2.57.0" },
     { name = "slowapi", specifier = ">=0.1.9" },
     { name = "sqlalchemy", specifier = ">=2.0.44" },
 ]

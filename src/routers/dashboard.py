@@ -6,6 +6,7 @@ import os
 import shutil
 from datetime import datetime
 
+import sentry_sdk
 from fastapi import (
     APIRouter,
     Depends,
@@ -102,6 +103,12 @@ async def submit_all_requests(
     address = form_data.get("address")
     team = form_data.get("team")
 
+    sentry_sdk.add_breadcrumb(
+        category="purchase_flow",
+        message="Started submission processing",
+        level="info",
+    )
+
     # Create session folder dynamically
     session_folder = create_session_folder(name)
 
@@ -122,6 +129,13 @@ async def submit_all_requests(
     # Process each of the 10 possible forms
     for form_num in range(1, 11):
         vendor_name = form_data.get(f"vendor_name_{form_num}")
+
+        if vendor_name:
+            sentry_sdk.add_breadcrumb(
+                category="purchase_flow",
+                message=f"Processing form {form_num}: {vendor_name}",
+                level="info",
+            )
         invoice_file = form_data.get(f"invoice_file_{form_num}")
         proof_of_payment_file = form_data.get(f"proof_of_payment_{form_num}")
         currency = form_data.get(
@@ -297,8 +311,13 @@ async def submit_all_requests(
                 )
                 return False
 
-        # Run uploads
-        logger.info("Starting upload to Google Drive...")
+        # Run both uploads concurrently
+        logger.info("Starting concurrent uploads to Google Drive and Supabase...")
+        sentry_sdk.add_breadcrumb(
+            category="external_api",
+            message="Starting Google Drive upload",
+            level="info",
+        )
         drive_upload_success = False
         try:
             drive_upload_success = upload_to_drive()

@@ -2,10 +2,13 @@ import os
 import secrets
 from datetime import datetime
 
+import sentry_sdk
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
@@ -34,6 +37,18 @@ required_dirs = ["sessions"]
 for directory in required_dirs:
     os.makedirs(directory, exist_ok=True)
 
+
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    integrations=[
+        FastApiIntegration(),
+        # Disable legacy breadcrumb/event behavior - we use native Sentry logs via sentry_sdk.logger
+        LoggingIntegration(event_level=None, level=None),
+    ],
+    enable_logs=True,  # Enable Sentry's native structured logs
+    environment=os.getenv("ENVIRONMENT", "development"),
+    release=os.getenv("SENTRY_RELEASE"),
+)
 
 init_database()
 app = FastAPI(title="Purchase Request Site")
@@ -121,4 +136,5 @@ if __name__ == "__main__":
         host=os.getenv("HOST", "0.0.0.0"),
         port=int(os.getenv("PORT", 8000)),
         reload=os.getenv("DEBUG", "false").lower() == "true",
+        access_log=False,
     )

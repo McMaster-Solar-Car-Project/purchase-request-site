@@ -4,6 +4,7 @@ Middleware for logging HTTP requests and responses.
 
 import time
 
+import sentry_sdk
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -27,6 +28,17 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         elif "x-real-ip" in request.headers:
             client_ip = request.headers["x-real-ip"]
 
+        # Add Sentry Context
+        try:
+            user_email = request.session.get("user_email")
+            if user_email:
+                sentry_sdk.set_user({"email": user_email})
+            else:
+                sentry_sdk.set_user(None)
+        except Exception:
+            # Session might not be available
+            pass
+
         # Only log important requests (skip static files)
         skip_paths = ["/static", "/favicon.ico", "/robots.txt"]
         should_log = not any(request.url.path.startswith(path) for path in skip_paths)
@@ -38,10 +50,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             # Calculate processing time
             process_time = time.time() - start_time
 
-            # Only log slow requests (>1s) or important endpoints or errors
+            # Only log slow requests (>1s) or important endpoints or errors (excluding 404s)
             if should_log and (
                 process_time > 1.0
-                or response.status_code >= 400
+                or (response.status_code >= 400 and response.status_code != 404)
                 or request.method in ["POST", "PUT", "DELETE"]
             ):
                 request_logger.info(

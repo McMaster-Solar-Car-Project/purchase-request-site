@@ -14,6 +14,7 @@ dependencies = [
     "pydantic>=2.12.2",
     "sqlalchemy>=2.0.44",
     "slowapi>=0.1.9",
+    "sentry-sdk>=2.57.0",
 ]
 
 [dependency-groups]
