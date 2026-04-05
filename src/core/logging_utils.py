@@ -58,10 +58,16 @@ class SentryLoggerWrapper:
         # Map python log levels to sentry log levels
         sentry_level = level if level != "critical" else "fatal"
 
-        if sentry_level in ("error", "fatal"):
+        if sentry_level == "error":
             sentry_sdk.capture_message(
                 formatted_msg,
-                level=sentry_level,
+                level="error",
+                extras={"logger.name": self.name, **extra},
+            )
+        elif sentry_level == "fatal":
+            sentry_sdk.capture_message(
+                formatted_msg,
+                level="fatal",
                 extras={"logger.name": self.name, **extra},
             )
         else:
@@ -206,8 +212,24 @@ def _setup_email_handler() -> logging.Handler | None:
         to_emails = os.getenv("ERROR_EMAIL_TO")
 
         # Check if all required email settings are provided
-        if not all([smtp_server, smtp_username, smtp_password, from_email, to_emails]):
+        if not all(
+            [
+                smtp_server,
+                smtp_port,
+                smtp_username,
+                smtp_password,
+                from_email,
+                to_emails,
+            ]
+        ):
             return None
+
+        assert smtp_server is not None
+        assert smtp_port is not None
+        assert smtp_username is not None
+        assert smtp_password is not None
+        assert from_email is not None
+        assert to_emails is not None
 
         # Parse multiple email addresses (comma-separated)
         to_email_list = [email.strip() for email in to_emails.split(",")]

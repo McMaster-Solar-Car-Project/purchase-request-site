@@ -1,8 +1,10 @@
 import shutil
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from openpyxl import load_workbook
+from openpyxl.worksheet.worksheet import Worksheet
 
 from src.core.logging_utils import setup_logger
 from src.image_processing import insert_signature_at_cell
@@ -11,7 +13,11 @@ from src.image_processing import insert_signature_at_cell
 logger = setup_logger(__name__)
 
 
-def create_expense_report(session_folder, user_info, submitted_forms):
+def create_expense_report(
+    session_folder: str,
+    user_info: dict[str, Any],
+    submitted_forms: list[dict[str, Any]],
+) -> bool:
     """Copy the expense report template to the session folder and populate with user data"""
 
     template_path = "src/excel_templates/expense_report_template.xlsx"
@@ -75,7 +81,9 @@ def create_expense_report(session_folder, user_info, submitted_forms):
         return False
 
 
-def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
+def populate_expense_rows_from_submitted_forms(
+    ws: Worksheet, submitted_forms: list[dict[str, Any]]
+) -> bool:
     """Populate expense report rows from submitted form data"""
 
     try:
@@ -115,7 +123,11 @@ def populate_expense_rows_from_submitted_forms(ws, submitted_forms):
         return False
 
 
-def create_purchase_request(user_info, submitted_forms, session_folder):
+def create_purchase_request(
+    user_info: dict[str, Any],
+    submitted_forms: list[dict[str, Any]],
+    session_folder: str,
+) -> dict[str, Any]:
     """Create Purchase Request using the template with multiple tabs for each submitted form"""
 
     template_path = "src/excel_templates/purchase_request_template.xlsx"

@@ -78,7 +78,7 @@ def create_or_update_user(
     address: str,
     team: str,
     password: str,
-    signature_file: UploadFile,
+    signature_file: UploadFile | FileUploadFromPath,
 ) -> User:
     """Create a new user or update existing user profile"""
 

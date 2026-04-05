@@ -19,7 +19,7 @@ router = APIRouter(tags=["authentication"])
 
 
 @router.get("/login")
-async def login_page(request: Request, error: str = None):
+async def login_page(request: Request, error: str | None = None):
     """Display login page"""
 
     error_messages = {
@@ -27,12 +27,14 @@ async def login_page(request: Request, error: str = None):
         "invalid": "Invalid email or password.",
     }
 
+    error_message = None if error is None else error_messages.get(error)
+
     return templates.TemplateResponse(
         request=request,
         name="login.html",
         context={
             "request": request,
-            "error_message": error_messages.get(error),
+            "error_message": error_message,
         },
     )
 

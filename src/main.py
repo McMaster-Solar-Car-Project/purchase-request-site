@@ -3,6 +3,7 @@ import os
 import secrets
 from collections.abc import Mapping
 from datetime import datetime
+from typing import cast
 from urllib.parse import urlparse
 
 import sentry_sdk
@@ -12,6 +13,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
+from sentry_sdk.types import Event, Hint
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
@@ -38,7 +40,9 @@ def _event_is_for_health_endpoint(event: Mapping[str, object]) -> bool:
     """Return True when a Sentry event/transaction belongs to /health."""
     request_data = event.get("request")
     if isinstance(request_data, Mapping):
-        request_url = request_data.get("url")
+        # Sentry's request payload is str-keyed; bare Mapping narrows to unusable key type for ty.
+        request_payload = cast("Mapping[str, object]", request_data)
+        request_url = request_payload.get("url")
         if isinstance(request_url, str):
             parsed_path = urlparse(request_url).path
             if parsed_path.startswith(HEALTH_PATH_PREFIX):
@@ -48,9 +52,7 @@ def _event_is_for_health_endpoint(event: Mapping[str, object]) -> bool:
     return isinstance(transaction_name, str) and "/health" in transaction_name
 
 
-def _drop_health_events(
-    event: dict[str, object], hint: dict[str, object]
-) -> dict[str, object] | None:
+def _drop_health_events(event: Event, hint: Hint) -> Event | None:
     """Prevent health-check errors/log events from being sent to Sentry."""
     del hint
     if _event_is_for_health_endpoint(event):
@@ -58,9 +60,7 @@ def _drop_health_events(
     return event
 
 
-def _drop_health_transactions(
-    event: dict[str, object], hint: dict[str, object]
-) -> dict[str, object] | None:
+def _drop_health_transactions(event: Event, hint: Hint) -> Event | None:
     """Prevent health-check transactions from being sent to Sentry."""
     del hint
     if _event_is_for_health_endpoint(event):
@@ -77,7 +77,8 @@ class ExcludeHealthFromAccessLogFilter(logging.Filter):
         # Prefer parsing full_path directly instead of brittle message matching.
         args = getattr(record, "args", ())
         if isinstance(args, tuple) and len(args) >= 3:
-            full_path = args[2]
+            tuple_args = cast("tuple[object, ...]", args)
+            full_path = tuple_args[2]
             if isinstance(full_path, str) and full_path.startswith(HEALTH_PATH_PREFIX):
                 return False
 
@@ -149,8 +150,10 @@ app.include_router(success_router)
 app.include_router(download_router)
 
 
-async def handle_exceed_limit(request: Request, exc: RateLimitExceeded):
+async def handle_exceed_limit(request: Request, exc: Exception):
     """Handle rate limit exceeded errors by redirecting to login with error message"""
+    if not isinstance(exc, RateLimitExceeded):
+        raise exc
     return RedirectResponse(url="/login?error=ratelimit", status_code=303)
 
 

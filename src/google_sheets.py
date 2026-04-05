@@ -42,9 +42,10 @@ class GoogleSheetsClient:
     def __init__(self):
         """Initialize the Google Sheets client using environment variables"""
         self.sheet_id = SHEET_ID
-        self.service = None
+        # google-api-python-client builds a dynamic Resource; stubs omit API methods like spreadsheets().
+        self.service: Any | None = None
 
-    def _get_credentials_from_env(self) -> dict[str, str]:
+    def _get_credentials_from_env(self) -> dict[str, Any]:
         """
         Build service account credentials from environment variables
 
@@ -72,14 +73,15 @@ class GoogleSheetsClient:
                 f"Missing required environment variables: {', '.join(missing_vars)}"
             )
 
+        assert private_key is not None  # ensured by required_vars check above
+        normalized_private_key = private_key.replace("\\n", "\n")
+
         # Build the service account info dictionary
-        service_account_info = {
+        service_account_info: dict[str, Any] = {
             "type": "service_account",
             "project_id": project_id,
             "private_key_id": private_key_id,
-            "private_key": private_key.replace(
-                "\\n", "\n"
-            ),  # Fix newlines in private key
+            "private_key": normalized_private_key,  # Fix newlines in private key
             "client_email": client_email,
             "client_id": client_id,
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -118,10 +120,14 @@ class GoogleSheetsClient:
         if not self.service and not self._authenticate():
             return False
 
+        service = self.service
+        if service is None:
+            return False
+
         try:
             # Try to get sheet metadata
             sheet_metadata = (
-                self.service.spreadsheets().get(spreadsheetId=self.sheet_id).execute()
+                service.spreadsheets().get(spreadsheetId=self.sheet_id).execute()
             )
 
             logger.info(
@@ -170,10 +176,14 @@ class GoogleSheetsClient:
         return total
 
     def _append_row_with_retries(self, range_name, body, max_attempts=5):
+        service = self.service
+        if service is None:
+            raise RuntimeError("Google Sheets client is not authenticated")
+
         for attempt in range(1, max_attempts + 1):
             try:
                 return (
-                    self.service.spreadsheets()
+                    service.spreadsheets()
                     .values()
                     .append(
                         spreadsheetId=self.sheet_id,
@@ -266,5 +276,6 @@ class GoogleSheetsClient:
 
     def close(self):
         """Close the Google Sheets client"""
-        self.service.close()
+        if self.service is not None:
+            self.service.close()
         self.service = None
