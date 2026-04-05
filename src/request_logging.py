@@ -39,8 +39,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             # Session might not be available
             pass
 
-        # Only log important requests (skip static files)
-        skip_paths = ["/static", "/favicon.ico", "/robots.txt"]
+        # Only log important requests (skip static files and health probes)
+        skip_paths = ["/static", "/favicon.ico", "/robots.txt", "/health"]
         should_log = not any(request.url.path.startswith(path) for path in skip_paths)
 
         # Process request
