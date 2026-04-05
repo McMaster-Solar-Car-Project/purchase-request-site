@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy:
-        description: Deploy to production
+        description: 'Deploy to production'
         required: false
         default: 'false'
         type: boolean
