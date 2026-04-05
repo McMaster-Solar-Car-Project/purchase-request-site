@@ -67,6 +67,9 @@ sentry_sdk.init(
     enable_logs=True,  # Enable Sentry's native structured logs
     environment=os.getenv("ENVIRONMENT", "development"),
     release=os.getenv("SENTRY_RELEASE"),
+    traces_sample_rate=1.0,
+    profile_session_sample_rate=1.0,
+    profile_lifecycle="trace",
 )
 
 configure_uvicorn_access_log_filter()
