@@ -81,3 +81,22 @@ def test_request_metrics_are_emitted(client, monkeypatch) -> None:
         and tags["path"] == "/submit"
         for name, value, tags in captured_distributions
     )
+
+
+def test_health_path_metrics_are_not_emitted(client, monkeypatch) -> None:
+    captured_counts: list[tuple[str, int, dict[str, str]]] = []
+    captured_distributions: list[tuple[str, float, dict[str, str]]] = []
+
+    def fake_count(name: str, value: int, tags: dict[str, str]) -> None:
+        captured_counts.append((name, value, tags))
+
+    def fake_distribution(name: str, value: float, tags: dict[str, str]) -> None:
+        captured_distributions.append((name, value, tags))
+
+    monkeypatch.setattr("src.request_logging.metrics.count", fake_count)
+    monkeypatch.setattr("src.request_logging.metrics.distribution", fake_distribution)
+
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert captured_counts == []
+    assert captured_distributions == []

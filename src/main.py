@@ -31,6 +31,21 @@ load_dotenv()
 logger = setup_logger(__name__)
 
 
+def sentry_traces_sampler(sampling_context: dict) -> float:
+    """Drop health check traces so probes don't create Sentry telemetry."""
+    asgi_scope = sampling_context.get("asgi_scope") or {}
+    path = asgi_scope.get("path")
+    if isinstance(path, str) and path.startswith("/health"):
+        return 0.0
+
+    transaction_context = sampling_context.get("transaction_context") or {}
+    transaction_name = transaction_context.get("name", "")
+    if isinstance(transaction_name, str) and "/health" in transaction_name:
+        return 0.0
+
+    return 1.0
+
+
 class ExcludeHealthFromAccessLogFilter(logging.Filter):
     """Filter out Uvicorn access logs for health probe endpoints."""
 
@@ -67,7 +82,7 @@ sentry_sdk.init(
     enable_logs=True,  # Enable Sentry's native structured logs
     environment=os.getenv("ENVIRONMENT", "development"),
     release=os.getenv("SENTRY_RELEASE"),
-    traces_sample_rate=1.0,
+    traces_sampler=sentry_traces_sampler,
     profile_session_sample_rate=1.0,
     profile_lifecycle="trace",
 )

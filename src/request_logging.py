@@ -13,12 +13,16 @@ from src.core.logging_utils import setup_logger
 
 # Set up logger for request logging
 request_logger = setup_logger("requests")
+OBSERVABILITY_EXCLUDED_PATH_PREFIXES = ("/health",)
 
 
 def _emit_request_metrics(
     method: str, path: str, status_code: int, process_time_seconds: float
 ) -> None:
     """Emit low-cardinality request metrics to Sentry."""
+    if path.startswith(OBSERVABILITY_EXCLUDED_PATH_PREFIXES):
+        return
+
     tags = {
         "method": method,
         "status_code": str(status_code),
