@@ -6,12 +6,34 @@ import time
 
 import sentry_sdk
 from fastapi import Request
+from sentry_sdk import metrics
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.core.logging_utils import setup_logger
 
 # Set up logger for request logging
 request_logger = setup_logger("requests")
+
+
+def _emit_request_metrics(
+    method: str, path: str, status_code: int, process_time_seconds: float
+) -> None:
+    """Emit low-cardinality request metrics to Sentry."""
+    tags = {
+        "method": method,
+        "status_code": str(status_code),
+        "path": path,
+    }
+    try:
+        metrics.count("http.server.requests", 1, tags=tags)
+        metrics.distribution(
+            "http.server.duration_ms", process_time_seconds * 1000.0, tags=tags
+        )
+        if status_code >= 500:
+            metrics.count("http.server.errors", 1, tags=tags)
+    except Exception:
+        # Metrics should never break request handling.
+        request_logger.debug("Failed to emit Sentry metrics", exc_info=True)
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
@@ -50,6 +72,13 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             # Calculate processing time
             process_time = time.time() - start_time
 
+            _emit_request_metrics(
+                method=request.method,
+                path=request.url.path,
+                status_code=response.status_code,
+                process_time_seconds=process_time,
+            )
+
             # Only log slow requests (>1s) or important endpoints or errors (excluding 404s)
             if should_log and (
                 process_time > 1.0
@@ -66,6 +95,12 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # Always log errors
             process_time = time.time() - start_time
+            _emit_request_metrics(
+                method=request.method,
+                path=request.url.path,
+                status_code=500,
+                process_time_seconds=process_time,
+            )
             request_logger.exception(
                 f"❌ {request.method} {request.url.path} "
                 f"failed after {process_time:.3f}s - {str(e)}"
