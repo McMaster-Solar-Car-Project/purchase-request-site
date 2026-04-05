@@ -22,6 +22,10 @@ def create_test_app() -> FastAPI:
     async def submit() -> dict[str, bool]:
         return {"saved": True}
 
+    @app.get("/health")
+    async def health() -> dict[str, str]:
+        return {"status": "healthy"}
+
     @app.get("/boom")
     async def boom() -> None:
         raise RuntimeError("boom")
