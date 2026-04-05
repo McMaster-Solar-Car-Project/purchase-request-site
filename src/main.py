@@ -1,3 +1,4 @@
+import logging
 import os
 import secrets
 from datetime import datetime
@@ -29,6 +30,24 @@ load_dotenv()
 # Set up logger
 logger = setup_logger(__name__)
 
+
+class ExcludeHealthFromAccessLogFilter(logging.Filter):
+    """Filter out Uvicorn access logs for health probe endpoints."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        return '"/health' not in message
+
+
+def configure_uvicorn_access_log_filter() -> None:
+    """Prevent noisy health-check probes from being emitted as access logs."""
+    access_logger = logging.getLogger("uvicorn.access")
+    if not any(
+        isinstance(f, ExcludeHealthFromAccessLogFilter) for f in access_logger.filters
+    ):
+        access_logger.addFilter(ExcludeHealthFromAccessLogFilter())
+
+
 # Log start time and date
 logger.info(f"Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
@@ -49,6 +68,8 @@ sentry_sdk.init(
     environment=os.getenv("ENVIRONMENT", "development"),
     release=os.getenv("SENTRY_RELEASE"),
 )
+
+configure_uvicorn_access_log_filter()
 
 init_database()
 app = FastAPI(title="Purchase Request Site")
