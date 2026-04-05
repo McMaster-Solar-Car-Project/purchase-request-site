@@ -72,8 +72,17 @@ class ExcludeHealthFromAccessLogFilter(logging.Filter):
     """Filter out Uvicorn access logs for health probe endpoints."""
 
     def filter(self, record: logging.LogRecord) -> bool:
+        # Uvicorn access logger provides request details in record.args:
+        # (client_addr, method, full_path, http_version, status_code).
+        # Prefer parsing full_path directly instead of brittle message matching.
+        args = getattr(record, "args", ())
+        if isinstance(args, tuple) and len(args) >= 3:
+            full_path = args[2]
+            if isinstance(full_path, str) and full_path.startswith(HEALTH_PATH_PREFIX):
+                return False
+
         message = record.getMessage()
-        return '"/health' not in message
+        return " /health" not in message
 
 
 def configure_uvicorn_access_log_filter() -> None:
