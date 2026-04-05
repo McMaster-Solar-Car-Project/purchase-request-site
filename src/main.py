@@ -1,12 +1,14 @@
 import logging
 import os
 import secrets
+from collections.abc import Mapping
 from datetime import datetime
+from urllib.parse import urlparse
 
 import sentry_sdk
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
@@ -29,6 +31,41 @@ load_dotenv()
 
 # Set up logger
 logger = setup_logger(__name__)
+HEALTH_PATH_PREFIX = "/health"
+
+
+def _event_is_for_health_endpoint(event: Mapping[str, object]) -> bool:
+    """Return True when a Sentry event/transaction belongs to /health."""
+    request_data = event.get("request")
+    if isinstance(request_data, Mapping):
+        request_url = request_data.get("url")
+        if isinstance(request_url, str):
+            parsed_path = urlparse(request_url).path
+            if parsed_path.startswith(HEALTH_PATH_PREFIX):
+                return True
+
+    transaction_name = event.get("transaction")
+    return isinstance(transaction_name, str) and "/health" in transaction_name
+
+
+def _drop_health_events(
+    event: dict[str, object], hint: dict[str, object]
+) -> dict[str, object] | None:
+    """Prevent health-check errors/log events from being sent to Sentry."""
+    del hint
+    if _event_is_for_health_endpoint(event):
+        return None
+    return event
+
+
+def _drop_health_transactions(
+    event: dict[str, object], hint: dict[str, object]
+) -> dict[str, object] | None:
+    """Prevent health-check transactions from being sent to Sentry."""
+    del hint
+    if _event_is_for_health_endpoint(event):
+        return None
+    return event
 
 
 class ExcludeHealthFromAccessLogFilter(logging.Filter):
@@ -70,6 +107,8 @@ sentry_sdk.init(
     traces_sample_rate=1.0,
     profile_session_sample_rate=1.0,
     profile_lifecycle="trace",
+    before_send=_drop_health_events,
+    before_send_transaction=_drop_health_transactions,
 )
 
 configure_uvicorn_access_log_filter()
@@ -142,6 +181,8 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
+    if request.url.path.startswith(HEALTH_PATH_PREFIX):
+        return JSONResponse(status_code=500, content={"status": "unhealthy"})
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return templates.TemplateResponse(
         request=request,

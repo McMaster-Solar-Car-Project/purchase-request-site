@@ -13,6 +13,7 @@ from src.core.logging_utils import setup_logger
 
 # Set up logger for request logging
 request_logger = setup_logger("requests")
+HEALTH_PATH_PREFIX = "/health"
 
 
 def _emit_request_metrics(
@@ -62,8 +63,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             pass
 
         # Only log important requests (skip static files and health probes)
-        skip_paths = ["/static", "/favicon.ico", "/robots.txt", "/health"]
+        skip_paths = ["/static", "/favicon.ico", "/robots.txt", HEALTH_PATH_PREFIX]
         should_log = not any(request.url.path.startswith(path) for path in skip_paths)
+        should_emit_metrics = not request.url.path.startswith(HEALTH_PATH_PREFIX)
 
         # Process request
         try:
@@ -72,12 +74,13 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             # Calculate processing time
             process_time = time.time() - start_time
 
-            _emit_request_metrics(
-                method=request.method,
-                path=request.url.path,
-                status_code=response.status_code,
-                process_time_seconds=process_time,
-            )
+            if should_emit_metrics:
+                _emit_request_metrics(
+                    method=request.method,
+                    path=request.url.path,
+                    status_code=response.status_code,
+                    process_time_seconds=process_time,
+                )
 
             # Only log slow requests (>1s) or important endpoints or errors (excluding 404s)
             if should_log and (
@@ -95,14 +98,16 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # Always log errors
             process_time = time.time() - start_time
-            _emit_request_metrics(
-                method=request.method,
-                path=request.url.path,
-                status_code=500,
-                process_time_seconds=process_time,
-            )
-            request_logger.exception(
-                f"❌ {request.method} {request.url.path} "
-                f"failed after {process_time:.3f}s - {str(e)}"
-            )
+            if should_emit_metrics:
+                _emit_request_metrics(
+                    method=request.method,
+                    path=request.url.path,
+                    status_code=500,
+                    process_time_seconds=process_time,
+                )
+            if should_log:
+                request_logger.exception(
+                    f"❌ {request.method} {request.url.path} "
+                    f"failed after {process_time:.3f}s - {str(e)}"
+                )
             raise
