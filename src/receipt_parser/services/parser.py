@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from src.receipt_parser.config.settings import client
 from src.receipt_parser.models.receipt import ReceiptData
 
@@ -15,10 +17,10 @@ Dates: Use Invoice/Transaction Date (not Order Date for Amazon). Format: YYYY-MM
 Default missing numeric fields to 0.
 """
 
-current_model = "gemini-3-flash-preview"
+current_model = "gemini-3.1-flash-lite-preview"
 
 
-def parse_result(receipt_text, model=current_model):
+def parse_result(receipt_text: str, model: str = current_model) -> ReceiptData:
     """Parse OCR text into structured receipt data using Gemini."""
     try:
         response = client.models.generate_content(

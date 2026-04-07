@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from pathlib import Path
 
@@ -5,7 +7,7 @@ import fitz  # PyMuPDF
 from google.cloud import vision
 
 
-def preprocess_text(receipt_text):
+def preprocess_text(receipt_text: str) -> str:
     """Clean up raw OCR text to reduce noise and token count."""
 
     # Remove page break markers
@@ -64,7 +66,7 @@ def preprocess_text(receipt_text):
     return "\n".join(lines)
 
 
-def detect_text(path):
+def detect_text(path: str | Path) -> str:
     """
     Detects text in a file using Google Cloud Vision OCR.
     Handles images and multi-page PDFs by converting PDF pages to images.

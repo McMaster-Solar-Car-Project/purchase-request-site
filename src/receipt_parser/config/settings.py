@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from google import genai
 
 load_dotenv()
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "ocr_demo_key.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google_ocr_credentials.json"
 
 WORD = re.compile(r"\w+")
 
