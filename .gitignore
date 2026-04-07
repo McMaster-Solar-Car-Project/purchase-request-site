@@ -60,4 +60,3 @@ node_modules/
 
 # Receipt Parser OCR credentials
 google_ocr_credentials.json
-test_ocr/
