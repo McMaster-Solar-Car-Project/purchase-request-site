@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from src.core.logging_utils import setup_logger
 from src.receipt_parser.config.settings import client
 from src.receipt_parser.models.receipt import ReceiptData
+
+logger = setup_logger(__name__)
 
 RECEIPT_PARSER_PROMPT = """
 Extract receipt data with these rules:
@@ -36,8 +39,6 @@ def parse_result(receipt_text: str, model: str = current_model) -> ReceiptData:
             },
         )
         return ReceiptData.model_validate_json(response.text)
-    except Exception as e:
-        print(f"Error type: {type(e).__name__}")
-        print(f"Error message: {str(e)}")
-        print(f"Full error: {repr(e)}")
+    except Exception:
+        logger.exception("Failed to parse receipt text")
         raise

@@ -6,6 +6,10 @@ from pathlib import Path
 import fitz  # PyMuPDF
 from google.cloud import vision
 
+from src.core.logging_utils import setup_logger
+
+logger = setup_logger(__name__)
+
 
 def preprocess_text(receipt_text: str) -> str:
     """Clean up raw OCR text to reduce noise and token count."""
@@ -111,6 +115,6 @@ def detect_text(path: str | Path) -> str:
     raw_text = "\n--- Page Break ---\n".join(all_text)
 
     processed_text = preprocess_text(raw_text)
-    print(f"Tokens Saved: {len(raw_text) - len(processed_text)}/{len(raw_text)}")
+    logger.info(f"Tokens Saved: {len(raw_text) - len(processed_text)}/{len(raw_text)}")
     return processed_text
     # return raw_text
