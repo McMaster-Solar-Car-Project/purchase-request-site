@@ -70,46 +70,66 @@ def preprocess_text(receipt_text: str) -> str:
     return "\n".join(lines)
 
 
-def detect_text(path: str | Path) -> str:
+def detect_text(
+    path: str | Path,
+    *,
+    zoom: float = 2.0,
+    max_pages: int | None = None,
+) -> str:
     """
     Detects text in a file using Google Cloud Vision OCR.
     Handles images and multi-page PDFs by converting PDF pages to images.
+
+    Args:
+        path: Path to the image or PDF file.
+        zoom: Scale factor for PDF page rendering (higher = better quality, more memory).
+        max_pages: Maximum number of pages to process from a PDF (None = all pages).
+
+    Returns:
+        Extracted and preprocessed text from the document.
     """
     vision_client = vision.ImageAnnotatorClient()
     file_ext = Path(path).suffix.lower()
-    all_text = []
+    all_text: list[str] = []
 
-    image_contents = []
-
-    if file_ext == ".pdf":
-        # opening PDF and iterating through all pages
-        pdf_document = fitz.open(path)
-        for page_num in range(len(pdf_document)):
-            page = pdf_document[page_num]
-
-            # convert each page to an image
-            matrix = fitz.Matrix(2, 2)
-            pix = page.get_pixmap(matrix=matrix)
-            image_contents.append(pix.tobytes("png"))
-        pdf_document.close()
-    else:
-        # Handle standard image files (png, jpg, etc.)
-        with open(path, "rb") as image_file:
-            image_contents.append(image_file.read())
-
-    # Process each image/page through Vision OCR
-    for content in image_contents:
+    def _process_image(content: bytes) -> str | None:
+        """Process image bytes through Vision OCR and return extracted text."""
         image = vision.Image(content=content)
-
-        # We use document_text_detection for better handling of dense text/receipts
         response = vision_client.document_text_detection(image=image)
 
         if response.error.message:
             raise Exception(f"Vision API Error: {response.error.message}")
 
-        # text_annotations[0] contains the entire page's text as a single string
         if response.text_annotations:
-            page_text = response.text_annotations[0].description
+            return response.text_annotations[0].description
+        return None
+
+    if file_ext == ".pdf":
+        with fitz.open(path) as pdf_document:
+            page_count = len(pdf_document)
+            pages_to_process = min(page_count, max_pages) if max_pages else page_count
+
+            for page_num in range(pages_to_process):
+                page = pdf_document[page_num]
+
+                # Convert page to image with configurable zoom
+                matrix = fitz.Matrix(zoom, zoom)
+                pix = page.get_pixmap(matrix=matrix)
+                page_bytes = pix.tobytes("png")
+
+                # Process immediately and discard bytes
+                page_text = _process_image(page_bytes)
+                if page_text:
+                    all_text.append(page_text)
+
+                # Explicitly free pixmap resources
+                pix = None  # type: ignore[assignment]
+    else:
+        # Handle standard image files (png, jpg, etc.)
+        with open(path, "rb") as image_file:
+            content = image_file.read()
+        page_text = _process_image(content)
+        if page_text:
             all_text.append(page_text)
 
     raw_text = "\n--- Page Break ---\n".join(all_text)
@@ -117,4 +137,3 @@ def detect_text(path: str | Path) -> str:
     processed_text = preprocess_text(raw_text)
     logger.info(f"Tokens Saved: {len(raw_text) - len(processed_text)}/{len(raw_text)}")
     return processed_text
-    # return raw_text
