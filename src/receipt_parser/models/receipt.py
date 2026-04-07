@@ -21,8 +21,8 @@ class ReceiptSummary(BaseModel):
 
 class ReceiptData(BaseModel):
     store: str
-    order_number: str | None
-    date: str | None
+    order_number: str | None = None
+    date: str | None = None
     currency: str
     items: list[ReceiptItem]
     summary: ReceiptSummary
