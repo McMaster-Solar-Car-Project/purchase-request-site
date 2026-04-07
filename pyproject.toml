@@ -14,6 +14,9 @@ dependencies = [
     "pydantic>=2.12.2",
     "sqlalchemy>=2.0.44",
     "slowapi>=0.1.9",
+    "pymupdf>=1.27.2.2",
+    "google-genai>=1.70.0",
+    "google-cloud-vision>=3.13.0",
 ]
 
 [dependency-groups]
