@@ -1,5 +1,5 @@
-from receipt_parser.config.settings import client
-from receipt_parser.models.receipt import ReceiptData
+from src.receipt_parser.config.settings import client
+from src.receipt_parser.models.receipt import ReceiptData
 
 RECEIPT_PARSER_PROMPT = """
 Extract receipt data with these rules:
