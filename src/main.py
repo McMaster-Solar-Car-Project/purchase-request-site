@@ -53,24 +53,46 @@ def _event_is_for_health_endpoint(event: Mapping[str, object]) -> bool:
     return isinstance(transaction_name, str) and "/health" in transaction_name
 
 
-def _drop_health_events(event: Event, hint: Hint) -> Event | None:
-    """Prevent health-check errors/log events from being sent to Sentry."""
-    del hint
+def _is_unwanted_log(event: Event, hint: Hint) -> bool:
+    """Return True if the event or transaction should be dropped."""
+    exc_info = hint.get("exc_info")
+    if exc_info is not None:
+        exc_type, exc_value, _ = exc_info
+        if (
+            isinstance(exc_value, StarletteHTTPException)
+            and exc_value.status_code == 404
+        ):
+            return True
+
+    contexts = event.get("contexts")
+    if isinstance(contexts, Mapping):
+        response = contexts.get("response")
+        if isinstance(response, Mapping) and response.get("status_code") == 404:
+            return True
+
+    return False
+
+
+def _drop_unwanted_events(event: Event, hint: Hint) -> Event | None:
+    """Prevent unwanted errors/log events from being sent to Sentry."""
     if _event_is_for_health_endpoint(event):
+        return None
+    if _is_unwanted_log(event, hint):
         return None
     return event
 
 
-def _drop_health_transactions(event: Event, hint: Hint) -> Event | None:
-    """Prevent health-check transactions from being sent to Sentry."""
-    del hint
+def _drop_unwanted_transactions(event: Event, hint: Hint) -> Event | None:
+    """Prevent unwanted transactions from being sent to Sentry."""
     if _event_is_for_health_endpoint(event):
+        return None
+    if _is_unwanted_log(event, hint):
         return None
     return event
 
 
-class ExcludeHealthFromAccessLogFilter(logging.Filter):
-    """Filter out Uvicorn access logs for health probe endpoints."""
+class ExcludeUnwantedAccessLogsFilter(logging.Filter):
+    """Filter out Uvicorn access logs for health probes and unwanted status codes."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         # Uvicorn access logger provides request details in record.args:
@@ -83,17 +105,23 @@ class ExcludeHealthFromAccessLogFilter(logging.Filter):
             if isinstance(full_path, str) and full_path.startswith(HEALTH_PATH_PREFIX):
                 return False
 
+        if isinstance(args, tuple) and len(args) >= 5:
+            tuple_args = cast("tuple[object, ...]", args)
+            status_code = tuple_args[4]
+            if status_code == 404:
+                return False
+
         message = record.getMessage()
         return " /health" not in message
 
 
 def configure_uvicorn_access_log_filter() -> None:
-    """Prevent noisy health-check probes from being emitted as access logs."""
+    """Prevent noisy health-check probes and unwanted logs from being emitted as access logs."""
     access_logger = logging.getLogger("uvicorn.access")
     if not any(
-        isinstance(f, ExcludeHealthFromAccessLogFilter) for f in access_logger.filters
+        isinstance(f, ExcludeUnwantedAccessLogsFilter) for f in access_logger.filters
     ):
-        access_logger.addFilter(ExcludeHealthFromAccessLogFilter())
+        access_logger.addFilter(ExcludeUnwantedAccessLogsFilter())
 
 
 # Log start time and date
@@ -119,8 +147,8 @@ sentry_sdk.init(
     traces_sample_rate=1.0,
     profile_session_sample_rate=1.0,
     profile_lifecycle="trace",
-    before_send=_drop_health_events,
-    before_send_transaction=_drop_health_transactions,
+    before_send=_drop_unwanted_events,
+    before_send_transaction=_drop_unwanted_transactions,
 )
 
 configure_uvicorn_access_log_filter()
