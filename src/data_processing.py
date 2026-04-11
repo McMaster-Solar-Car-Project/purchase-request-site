@@ -20,10 +20,10 @@ def create_expense_report(
 ) -> bool:
     """Copy the expense report template to the session folder and populate with user data"""
 
-    template_path = Path("src") / "excel_templates" / "expense_report_template.xlsx"
+    template_path = "src/excel_templates/expense_report_template.xlsx"
 
     # Check if template exists
-    if not template_path.exists():
+    if not Path(template_path).exists():
         logger.exception(f"Expense report template not found: {template_path}")
         return False
 
@@ -39,7 +39,7 @@ def create_expense_report(
             word.capitalize() for word in user_info.get("name", "UnknownUser").split()
         )
         output_filename = f"{month_name}{day}-{year}-ExpenseReport-{pascal_name}.xlsx"
-        output_path = Path(session_folder) / output_filename
+        output_path = f"{session_folder}/{output_filename}"
 
         shutil.copy2(template_path, output_path)
         # Expense report template copied
@@ -130,15 +130,15 @@ def create_purchase_request(
 ) -> dict[str, Any]:
     """Create Purchase Request using the template with multiple tabs for each submitted form"""
 
-    template_path = Path("src") / "excel_templates" / "purchase_request_template.xlsx"
+    template_path = "src/excel_templates/purchase_request_template.xlsx"
 
     # Check if template exists
-    if not template_path.exists():
+    if not Path(template_path).exists():
         raise FileNotFoundError(f"Template file not found: {template_path}")
 
     # Create single output file
     output_filename = "purchase_request.xlsx"
-    output_path = Path(session_folder) / output_filename
+    output_path = f"{session_folder}/{output_filename}"
 
     # Copy template to session folder
     shutil.copy2(template_path, output_path)
@@ -255,7 +255,7 @@ def create_purchase_request(
     # Return information about the single generated file
     return {
         "filename": output_filename,
-        "filepath": str(output_path),
+        "filepath": output_path,
         "forms_processed": len(submitted_forms),
         "tabs_used": [f"Receipt{form['form_number']}" for form in submitted_forms],
     }

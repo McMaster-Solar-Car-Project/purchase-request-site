@@ -2,14 +2,12 @@
 Shared helper utility functions for routers.
 """
 
-from pathlib import Path
-
 from fastapi import HTTPException, Request, status
 from fastapi.templating import Jinja2Templates
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-templates_dir = str(Path("src") / "templates")
+templates_dir = "src/templates"
 templates = Jinja2Templates(directory=templates_dir)
 
 

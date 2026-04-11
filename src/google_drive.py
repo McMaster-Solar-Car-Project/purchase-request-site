@@ -21,7 +21,7 @@ from src.core.logging_utils import setup_logger
 
 # Load environment variables from .env file (check parent directory too)
 load_dotenv()  # Current directory
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+load_dotenv("../.env")  # Parent directory
 
 # Set up logger
 logger = setup_logger(__name__)
