@@ -115,46 +115,6 @@ class GoogleSheetsClient:
             logger.exception(f"Failed to authenticate with Google Sheets API: {e}")
             return False
 
-    def test_connection(self) -> bool:
-        """Test the connection to Google Sheets by reading sheet metadata"""
-        if not self.service and not self._authenticate():
-            return False
-
-        service = self.service
-        if service is None:
-            return False
-
-        try:
-            # Try to get sheet metadata
-            sheet_metadata = (
-                service.spreadsheets().get(spreadsheetId=self.sheet_id).execute()
-            )
-
-            logger.info(
-                f"Successfully connected to sheet: {sheet_metadata.get('properties', {}).get('title', 'Unknown')}"
-            )
-
-            # List available tabs
-            sheets = sheet_metadata.get("sheets", [])
-            tab_names = [sheet["properties"]["title"] for sheet in sheets]
-            logger.info(f"Available tabs: {tab_names}")
-
-            return True
-
-        except HttpError as e:
-            logger.exception(f"HTTP error accessing Google Sheets: {e}")
-            if e.resp.status == 403:
-                logger.exception(
-                    "Permission denied. Make sure you shared the sheet with: "
-                    + os.getenv(
-                        "GOOGLE_SETTINGS__CLIENT_EMAIL", "service account email"
-                    )
-                )
-            return False
-        except Exception as e:
-            logger.exception(f"Error testing Google Sheets connection: {e}")
-            return False
-
     def _calculate_total_amount(self, forms: list[dict[str, Any]]) -> float:
         """
         Calculate the total amount from all submitted forms in CAD
