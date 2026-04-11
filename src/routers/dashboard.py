@@ -315,21 +315,6 @@ async def submit_all_requests(
             logger.exception("Failed to log to Google Sheets (continuing anyway)")
 
         # Upload files to external storage providers
-        drive_upload_success = False
-
-        def upload_to_drive():
-            """Upload to Google Drive and return success status"""
-            try:
-                return upload_session_to_drive(
-                    session_folder, user_info, drive_folder_id
-                )
-            except Exception:
-                logger.exception(
-                    "Failed to start Google Drive upload (continuing anyway)"
-                )
-                return False
-
-        # Run both uploads concurrently
         logger.info("Starting concurrent uploads to Google Drive and Supabase...")
         sentry_sdk.add_breadcrumb(
             category="external_api",
@@ -338,12 +323,14 @@ async def submit_all_requests(
         )
         drive_upload_success = False
         try:
-            drive_upload_success = upload_to_drive()
+            drive_upload_success = upload_session_to_drive(
+                session_folder, user_info, drive_folder_id
+            )
             logger.info(
                 f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"
             )
-        except Exception as e:
-            logger.exception(f"Unexpected error in upload task: {e}")
+        except Exception:
+            logger.exception("Failed to start Google Drive upload (continuing anyway)")
 
         # Clean up session folder if at least one upload was successful
         if drive_upload_success:
