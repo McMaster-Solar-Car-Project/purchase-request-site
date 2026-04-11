@@ -41,30 +41,6 @@ class FileUploadFromPath:
         self.file = io.BytesIO(self.file_data)
 
 
-def create_user_from_cli(
-    db: Session,
-    name: str,
-    email: str,
-    personal_email: str,
-    address: str,
-    team: str,
-    password: str,
-    signature_path: str,
-) -> User:
-    """Create user from command line with file path"""
-    signature_file = FileUploadFromPath(signature_path)
-    return create_or_update_user(
-        db=db,
-        name=name,
-        email=email,
-        personal_email=personal_email,
-        address=address,
-        team=team,
-        password=password,
-        signature_file=signature_file,
-    )
-
-
 def get_user_by_email(db: Session, email: str) -> User | None:
     """Get user by McMaster email"""
     return db.query(User).filter(User.email == email).first()
@@ -173,7 +149,6 @@ def is_user_profile_complete(user: User) -> bool:
 
 
 if __name__ == "__main__":
-    # Example usage - you can copy this code to create users programmatically
     from dotenv import load_dotenv
 
     from db.schema import get_db, init_database
@@ -187,7 +162,7 @@ if __name__ == "__main__":
 
     try:
         # Example: Create a user with a signature file
-        user = create_user_from_cli(
+        user = create_or_update_user(
             db=db,
             name="final_test",
             email="oof@mcmaster.ca",
@@ -195,7 +170,7 @@ if __name__ == "__main__":
             address="123 Main St, Hamilton, ON, Canada",
             team="Mechanical",
             password="goofy",
-            signature_path="static/img/default_signature.png",
+            signature_file=FileUploadFromPath("static/img/default_signature.png"),
         )
 
         logger.info(f"✅ User created: {user.name} ({user.email})")
