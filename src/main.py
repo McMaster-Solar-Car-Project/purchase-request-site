@@ -3,6 +3,7 @@ import os
 import secrets
 from collections.abc import Mapping
 from datetime import datetime
+from pathlib import Path
 from typing import cast
 from urllib.parse import urlparse
 
@@ -100,9 +101,9 @@ def configure_uvicorn_access_log_filter() -> None:
 logger.info(f"Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 # Create required directories immediately (before mounting static files)
-required_dirs = ["sessions"]
+required_dirs = [Path("sessions")]
 for directory in required_dirs:
-    os.makedirs(directory, exist_ok=True)
+    directory.mkdir(parents=True, exist_ok=True)
 
 
 sentry_sdk.init(
@@ -141,8 +142,8 @@ app.add_middleware(
 )
 
 # Mount static files (directories are guaranteed to exist now)
-app.mount("/static", StaticFiles(directory="src/static"), name="static")
-app.mount("/sessions", StaticFiles(directory="sessions"), name="sessions")
+app.mount("/static", StaticFiles(directory=Path("src") / "static"), name="static")
+app.mount("/sessions", StaticFiles(directory=Path("sessions")), name="sessions")
 
 # Include routers
 app.include_router(auth_router)

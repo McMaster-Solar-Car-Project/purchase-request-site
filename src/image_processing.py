@@ -58,18 +58,19 @@ def _find_signature_file(session_folder, user_info=None):
     Returns:
         tuple: (signature_path, signature_type) or (None, None) if no file found
     """
-    processed_signature_path = f"{session_folder}/signature.png"
-    original_png_signature_path = f"{session_folder}/signature_original.png"
+    session_path = Path(session_folder)
+    processed_signature_path = session_path / "signature.png"
+    original_png_signature_path = session_path / "signature_original.png"
 
     # Check for signature files in order of preference
-    if Path(processed_signature_path).exists():
-        return processed_signature_path, "processed"
-    elif Path(original_png_signature_path).exists():
-        return original_png_signature_path, "original_png"
+    if processed_signature_path.exists():
+        return str(processed_signature_path), "processed"
+    elif original_png_signature_path.exists():
+        return str(original_png_signature_path), "original_png"
     elif user_info and "signature" in user_info:
-        original_signature_path = f"{session_folder}/{user_info['signature']}"
-        if Path(original_signature_path).exists():
-            return original_signature_path, "original"
+        original_signature_path = session_path / str(user_info["signature"])
+        if original_signature_path.exists():
+            return str(original_signature_path), "original"
 
     return None, None
 
@@ -85,27 +86,27 @@ def _prepare_signature_for_insertion(session_folder, signature_path, signature_t
     Returns:
         str: Path to the prepared PNG file, or None if preparation failed
     """
-    signature_png_path = f"{session_folder}/signature.png"
+    signature_png_path = Path(session_folder) / "signature.png"
 
     if signature_type == "processed":
         # Already the processed PNG file, no conversion needed
-        return signature_png_path
+        return str(signature_png_path)
     elif signature_type == "original_png":
         # PNG file but not the processed one, copy it to the processed location
-        if Path(signature_path).resolve() != Path(signature_png_path).resolve():
+        if Path(signature_path).resolve() != signature_png_path.resolve():
             try:
                 shutil.copy2(signature_path, signature_png_path)
                 logger.debug(f"Copied {signature_type} PNG to processed location")
-                return signature_png_path
+                return str(signature_png_path)
             except Exception as e:
                 logger.exception(f"Could not copy signature PNG: {e}")
                 return None
         else:
-            return signature_png_path
+            return str(signature_png_path)
     else:  # original (non-PNG)
         # Convert to PNG
-        if convert_signature_to_png(signature_path, signature_png_path):
-            return signature_png_path
+        if convert_signature_to_png(signature_path, str(signature_png_path)):
+            return str(signature_png_path)
         else:
             return None
 
@@ -118,7 +119,7 @@ def insert_signature_at_cell(
 
     logger.debug(f"Signature files check for cell {cell_location}:")
     processed_exists = (
-        "exists" if Path(f"{session_folder}/signature.png").exists() else "missing"
+        "exists" if (Path(session_folder) / "signature.png").exists() else "missing"
     )
     logger.debug(f"  - Processed (signature.png): {processed_exists}")
     logger.debug(f"  - Using: {signature_type} ({signature_path})")

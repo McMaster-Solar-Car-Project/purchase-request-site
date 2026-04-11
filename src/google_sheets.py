@@ -9,6 +9,7 @@ import random
 import ssl
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
@@ -20,7 +21,7 @@ from src.core.logging_utils import setup_logger
 
 # Load environment variables from .env file (check parent directory too)
 load_dotenv()  # Current directory
-load_dotenv("../.env")  # Parent directory
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 # Set up logger
 logger = setup_logger(__name__)

@@ -170,7 +170,9 @@ if __name__ == "__main__":
             address="123 Main St, Hamilton, ON, Canada",
             team="Mechanical",
             password="goofy",
-            signature_file=FileUploadFromPath("static/img/default_signature.png"),
+            signature_file=FileUploadFromPath(
+                str(Path("static") / "img" / "default_signature.png")
+            ),
         )
 
         logger.info(f"✅ User created: {user.name} ({user.email})")
