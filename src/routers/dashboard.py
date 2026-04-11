@@ -2,6 +2,7 @@
 Dashboard router for the /dashboard and /submit-all-requests endpoints.
 """
 
+import re
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -36,6 +37,7 @@ logger = setup_logger(__name__)
 router = APIRouter(tags=["dashboard"])
 MAX_FORMS = 10
 MAX_ITEMS_PER_FORM = 50
+SESSIONS_ROOT = Path("sessions").resolve()
 
 
 def _form_str(value: object, default: str = "") -> str:
@@ -76,10 +78,23 @@ def _file_extension(filename: str | None, default: str = "pdf") -> str:
 
 
 def _safe_filename_component(value: str) -> str:
-    return value.replace("/", "_").replace("\\", "_").strip()
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", value).strip("._")
+    return cleaned or "file"
 
 
-async def _save_uploaded_file(file: UploadFile, destination: str) -> None:
+def _build_session_file_path(session_folder: str, filename: str) -> Path:
+    session_path = Path(session_folder).resolve()
+    if not session_path.is_relative_to(SESSIONS_ROOT):
+        raise ValueError("Invalid session path outside sessions root")
+    destination = (session_path / filename).resolve()
+    if not destination.is_relative_to(session_path):
+        raise ValueError("Invalid destination path outside session folder")
+    return destination
+
+
+async def _save_uploaded_file(file: UploadFile, destination: Path) -> None:
+    if not destination.resolve().is_relative_to(SESSIONS_ROOT):
+        raise ValueError("Invalid destination path outside sessions root")
     with open(destination, "wb") as file_object:
         file_object.write(await file.read())
 
@@ -129,8 +144,10 @@ async def dashboard(
 def _create_session_folder(name: str) -> str:
     """Create a timestamped session folder for generated files."""
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    safe_name = name.replace(" ", "_").lower()
-    session_folder = Path("sessions") / f"{safe_name}_{timestamp}"
+    safe_name = _safe_filename_component(name).lower()
+    session_folder = (SESSIONS_ROOT / f"{safe_name}_{timestamp}").resolve()
+    if not session_folder.is_relative_to(SESSIONS_ROOT):
+        raise ValueError("Invalid session folder path")
     session_folder.mkdir(parents=True, exist_ok=True)
     return str(session_folder)
 
@@ -162,8 +179,8 @@ async def submit_all_requests(
         raise HTTPException(status_code=404, detail="User not found")
 
     signature_filename = "signature.png"
-    signature_path = f"{session_folder}/{signature_filename}"
-    if not save_signature_to_file(user, signature_path):
+    signature_path = _build_session_file_path(session_folder, signature_filename)
+    if not save_signature_to_file(user, str(signature_path)):
         logger.warning(f"Could not save signature for user {email}")
 
     submitted_forms = []
@@ -232,8 +249,9 @@ async def submit_all_requests(
         invoice_extension = _file_extension(invoice_file.filename)
         safe_vendor_name = _safe_filename_component(vendor_name)
         invoice_filename = f"{form_num}_{safe_vendor_name}.{invoice_extension}"
-        invoice_file_location = f"{session_folder}/{invoice_filename}"
-        await _save_uploaded_file(invoice_file, invoice_file_location)
+        invoice_file_path = _build_session_file_path(session_folder, invoice_filename)
+        await _save_uploaded_file(invoice_file, invoice_file_path)
+        invoice_file_location = str(invoice_file_path)
 
         proof_of_payment_filename = proof_of_payment_location = None
         if currency == "USD" and isinstance(proof_of_payment_file, UploadFile):
@@ -241,8 +259,11 @@ async def submit_all_requests(
             proof_of_payment_filename = (
                 f"{form_num}_proof_of_payment.{payment_extension}"
             )
-            proof_of_payment_location = f"{session_folder}/{proof_of_payment_filename}"
-            await _save_uploaded_file(proof_of_payment_file, proof_of_payment_location)
+            proof_of_payment_path = _build_session_file_path(
+                session_folder, proof_of_payment_filename
+            )
+            await _save_uploaded_file(proof_of_payment_file, proof_of_payment_path)
+            proof_of_payment_location = str(proof_of_payment_path)
 
         form_submission = {
             "form_number": form_num,
