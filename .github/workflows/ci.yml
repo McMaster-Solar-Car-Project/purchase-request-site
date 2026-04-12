@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Actions "Variables" are not process environment variables unless mapped here.
-      DEBUG: ${{ vars.DEBUG }}
-      ENVIRONMENT: ${{ vars.ENVIRONMENT }}
-      GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID }}
-      GOOGLE_SHEET_TAB_NAME: ${{ vars.GOOGLE_SHEET_TAB_NAME }}
+      DEBUG: false
+      ENVIRONMENT: testing
+      GOOGLE_SHEET_ID: "1JRoYYOu1ndvOfrOWvGpR4QGfuHiU4h9W79JQE3poRRc"
+      GOOGLE_SHEET_TAB_NAME: "Website Responses"
       RUN_LIVE_PIPELINE_TEST: 1
       # Repo variable is PARENT_FOLDER_ID; app reads GOOGLE_DRIVE_FOLDER_ID (see src/google_drive.py).
-      GOOGLE_DRIVE_FOLDER_ID: ${{ vars.PARENT_FOLDER_ID }}
+      PARENT_FOLDER_ID: "1fH2GB4LtYjGGhusqbjOLftB7jqgLNehW"
     steps:
       - uses: actions/checkout@v4
         with:
