@@ -45,10 +45,6 @@ def _has_google_service_account_env() -> bool:
     os.getenv("RUN_LIVE_PIPELINE_TEST") != "1",
     reason="Set RUN_LIVE_PIPELINE_TEST=1 to run live pipeline test",
 )
-@pytest.mark.skipif(
-    not _has_google_service_account_env(),
-    reason="Google integration env vars are not configured",
-)
 def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
     import src.routers.dashboard as dashboard_module
 
