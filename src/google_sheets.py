@@ -4,36 +4,76 @@ Google Sheets integration module for the Purchase Request Site.
 This module handles writing purchase request data to Google Sheets for logging and tracking.
 """
 
-import os
 import random
 import ssl
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
-from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from src.core.logging_utils import setup_logger
-
-# Load environment variables from .env file (check parent directory too)
-load_dotenv()  # Current directory
-load_dotenv("../.env")  # Parent directory
+from src.core.settings import get_settings
 
 # Set up logger
 logger = setup_logger(__name__)
 
 # Google Sheets configuration
-SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
-is_testing = os.getenv("ENVIRONMENT") == "testing"
-SHEET_TAB_NAME = "Test Responses" if is_testing else "Website Responses"
+settings = get_settings()
+SHEET_ID = settings.google_sheet_id
+SHEET_TAB_NAME = "Test Responses" if settings.is_testing else "Website Responses"
 
 # Clean the tab name in case it has comments or extra text
 if SHEET_TAB_NAME and "#" in SHEET_TAB_NAME:
     SHEET_TAB_NAME = SHEET_TAB_NAME.split("#")[0].strip()
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+
+
+class GoogleServiceAccountEnv(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    project_id: str = Field(min_length=1)
+    private_key: str = Field(min_length=1)
+    client_email: str = Field(min_length=1)
+    private_key_id: str | None = None
+    client_id: str | None = None
+    client_x509_cert_url: str | None = None
+
+    def to_service_account_info(self) -> dict[str, Any]:
+        normalized_private_key = self.private_key.replace("\\n", "\n")
+        return {
+            "type": "service_account",
+            "project_id": self.project_id,
+            "private_key_id": self.private_key_id,
+            "private_key": normalized_private_key,
+            "client_email": self.client_email,
+            "client_id": self.client_id,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": self.client_x509_cert_url,
+        }
+
+
+class SheetsUserInfo(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    name: str = ""
+    email: str = ""
+    e_transfer_email: str = ""
+    address: str = ""
+    team: str = ""
+
+
+class SheetsSubmissionForm(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    currency: Literal["CAD", "USD"] | str = "CAD"
+    total_amount: float = 0.0
+    canadian_amount: float = 0.0
 
 
 class GoogleSheetsClient:
@@ -52,45 +92,35 @@ class GoogleSheetsClient:
         Returns:
             Dict containing the service account information
         """
-        # Get credentials from environment variables
-        project_id = os.getenv("GOOGLE_SETTINGS__PROJECT_ID")
-        private_key_id = os.getenv("GOOGLE_SETTINGS__PRIVATE_KEY_ID")
-        private_key = os.getenv("GOOGLE_SETTINGS__PRIVATE_KEY")
-        client_email = os.getenv("GOOGLE_SETTINGS__CLIENT_EMAIL")
-        client_id = os.getenv("GOOGLE_SETTINGS__CLIENT_ID")
-        client_x509_cert_url = os.getenv("GOOGLE_SETTINGS__CLIENT_X509_CERT_URL")
+        settings = get_settings()
 
-        # Check if all required variables are present
-        required_vars = {
-            "GOOGLE_SETTINGS__PROJECT_ID": project_id,
-            "GOOGLE_SETTINGS__PRIVATE_KEY": private_key,
-            "GOOGLE_SETTINGS__CLIENT_EMAIL": client_email,
-        }
+        credentials_env = GoogleServiceAccountEnv(
+            project_id=settings.google_settings_project_id,
+            private_key=settings.google_settings_private_key,
+            client_email=settings.google_settings_client_email,
+            private_key_id=settings.google_settings_private_key_id,
+            client_id=settings.google_settings_client_id,
+            client_x509_cert_url=settings.google_settings_client_x509_cert_url,
+        )
+        return credentials_env.to_service_account_info()
 
-        missing_vars = [var for var, value in required_vars.items() if not value]
-        if missing_vars:
-            raise ValueError(
-                f"Missing required environment variables: {', '.join(missing_vars)}"
-            )
+    @staticmethod
+    def _coerce_user_info(user_info: dict[str, Any] | SheetsUserInfo) -> SheetsUserInfo:
+        if isinstance(user_info, SheetsUserInfo):
+            return user_info
+        return SheetsUserInfo.model_validate(user_info)
 
-        assert private_key is not None  # ensured by required_vars check above
-        normalized_private_key = private_key.replace("\\n", "\n")
-
-        # Build the service account info dictionary
-        service_account_info: dict[str, Any] = {
-            "type": "service_account",
-            "project_id": project_id,
-            "private_key_id": private_key_id,
-            "private_key": normalized_private_key,  # Fix newlines in private key
-            "client_email": client_email,
-            "client_id": client_id,
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": client_x509_cert_url,
-        }
-
-        return service_account_info
+    @staticmethod
+    def _coerce_forms(
+        forms: list[dict[str, Any] | SheetsSubmissionForm],
+    ) -> list[SheetsSubmissionForm]:
+        coerced_forms: list[SheetsSubmissionForm] = []
+        for form in forms:
+            if isinstance(form, SheetsSubmissionForm):
+                coerced_forms.append(form)
+            else:
+                coerced_forms.append(SheetsSubmissionForm.model_validate(form))
+        return coerced_forms
 
     def _authenticate(self):
         """Authenticate with Google Sheets API using environment variables"""
@@ -108,14 +138,14 @@ class GoogleSheetsClient:
                 "Successfully authenticated with Google Sheets API using environment variables"
             )
             return True
-        except ValueError as e:
+        except (ValueError, ValidationError) as e:
             logger.exception(f"Environment variable error: {e}")
             return False
         except Exception as e:
             logger.exception(f"Failed to authenticate with Google Sheets API: {e}")
             return False
 
-    def _calculate_total_amount(self, forms: list[dict[str, Any]]) -> float:
+    def _calculate_total_amount(self, forms: list[SheetsSubmissionForm]) -> float:
         """
         Calculate the total amount from all submitted forms in CAD
 
@@ -127,12 +157,12 @@ class GoogleSheetsClient:
         """
         total = 0.0
         for form in forms:
-            if form.get("currency") == "USD":
+            if form.currency == "USD":
                 # For USD forms, use the Canadian equivalent amount
-                total += float(form.get("canadian_amount", 0))
+                total += form.canadian_amount
             else:
                 # For CAD forms, use the total amount directly
-                total += float(form.get("total_amount", 0))
+                total += form.total_amount
         return total
 
     def _append_row_with_retries(self, range_name, body, max_attempts=5):
@@ -174,8 +204,8 @@ class GoogleSheetsClient:
 
     def log_purchase_request(
         self,
-        user_info: dict[str, Any],
-        forms: list[dict[str, Any]],
+        user_info: dict[str, Any] | SheetsUserInfo,
+        forms: list[dict[str, Any] | SheetsSubmissionForm],
         session_folder: str,
         drive_folder_url: str = "",
     ) -> bool:
@@ -195,20 +225,22 @@ class GoogleSheetsClient:
             return False
 
         try:
+            validated_user = self._coerce_user_info(user_info)
+            validated_forms = self._coerce_forms(forms)
             # Prepare data for sheets - one row per session
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             # Calculate total amount from all forms
-            total_amount = self._calculate_total_amount(forms)
+            total_amount = self._calculate_total_amount(validated_forms)
 
             # Create single row with user session information
             row = [
                 timestamp,
-                user_info.get("name", ""),
-                user_info.get("email", ""),  # Mac Email
-                user_info.get("address", ""),
-                user_info.get("e_transfer_email", ""),  # Email Address
-                user_info.get("team", ""),
+                validated_user.name,
+                validated_user.email,  # Mac Email
+                validated_user.address,
+                validated_user.e_transfer_email,  # Email Address
+                validated_user.team,
                 f"${total_amount:.2f}",  # Total Amount (formatted as currency)
                 drive_folder_url,  # Google Drive folder link
             ]

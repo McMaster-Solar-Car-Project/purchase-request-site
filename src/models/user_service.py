@@ -149,12 +149,9 @@ def is_user_profile_complete(user: User) -> bool:
 
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
-
     from db.schema import get_db, init_database
 
-    # Load environment variables and initialize database
-    load_dotenv()
+    # Initialize database
     init_database()
 
     # Get database session

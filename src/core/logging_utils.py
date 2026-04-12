@@ -14,12 +14,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from dotenv import load_dotenv
-
+from src.core.settings import get_settings
 from src.emailer import Emailer
-
-# Load environment variables
-load_dotenv()
 
 
 class SentryLoggerWrapper:
@@ -209,7 +205,7 @@ def _setup_email_handler() -> logging.Handler | None:
         smtp_username = emailer.smtp_username
         smtp_password = emailer.smtp_password
         from_email = emailer.from_email
-        to_emails = os.getenv("ERROR_EMAIL_TO")
+        to_emails = get_settings().error_email_to
 
         # Check if all required email settings are provided
         if not all(
