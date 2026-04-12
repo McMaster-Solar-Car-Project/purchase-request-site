@@ -126,7 +126,14 @@ sentry_sdk.init(
 configure_uvicorn_access_log_filter()
 
 init_database()
-app = FastAPI(title="Purchase Request Site")
+app = FastAPI(
+    title="Purchase Request Site",
+    docs_url=None if os.getenv("ENVIRONMENT", "testing") == "production" else "/docs",
+    redoc_url=None if os.getenv("ENVIRONMENT", "testing") == "production" else "/redoc",
+    openapi_url=None
+    if os.getenv("ENVIRONMENT", "testing") == "production"
+    else "/openapi.json",
+)
 
 # Add request logging middleware
 app.add_middleware(RequestLoggingMiddleware)

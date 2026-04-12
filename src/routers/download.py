@@ -16,7 +16,7 @@ router = APIRouter(tags=["download"])
 
 
 @router.get("/download-excel")
-async def download_excel(
+def download_excel(
     request: Request,
     drive_folder_id: str,
     excel_file: str,
