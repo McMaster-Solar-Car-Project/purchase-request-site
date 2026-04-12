@@ -6,6 +6,7 @@ import os
 import shutil
 from datetime import datetime
 
+import anyio
 import sentry_sdk
 from fastapi import (
     APIRouter,
@@ -122,11 +123,11 @@ def create_session_folder(name: str) -> str:
 
 
 @router.post("/submit-all-requests")
-async def submit_all_requests(
+def submit_all_requests(
     request: Request, db: Session = Depends(get_db), _: None = Depends(require_auth)
 ):
     # Get form data
-    form_data = await request.form()
+    form_data = anyio.from_thread.run(request.form)
 
     # Extract user information
     name = _form_str(form_data.get("name"))
@@ -233,7 +234,7 @@ async def submit_all_requests(
 
         # Save the invoice file
         with open(invoice_file_location, "wb") as file_object:
-            content = await invoice_file.read()
+            content = invoice_file.file.read()
             file_object.write(content)
 
         # Save proof of payment file only for USD currency
@@ -246,7 +247,7 @@ async def submit_all_requests(
             )
             proof_of_payment_location = f"{session_folder}/{proof_of_payment_filename}"
             with open(proof_of_payment_location, "wb") as file_object:
-                file_object.write(await proof_of_payment_file.read())
+                file_object.write(proof_of_payment_file.file.read())
 
         # Store form data
         form_submission = {
