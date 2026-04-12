@@ -58,6 +58,7 @@ def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
 
     session_folder = tmp_path / "live-pipeline-session"
     session_folder.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(dashboard_module, "SESSIONS_ROOT", tmp_path.resolve())
     monkeypatch.setattr(
         dashboard_module, "create_session_folder", lambda _name: str(session_folder)
     )
