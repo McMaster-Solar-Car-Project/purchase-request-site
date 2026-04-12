@@ -1,33 +1,20 @@
 import os
 from base64 import b64decode
-from dataclasses import dataclass
+from collections.abc import Iterator
 from urllib.parse import parse_qs, urlparse
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
-from src.db.schema import get_db
+from src.db.schema import User, get_db
 from src.routers.dashboard import router
 from src.routers.utils import require_auth
 
 TINY_PNG_BYTES = b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+yY6kAAAAASUVORK5CYII="
 )
-
-
-@dataclass
-class FakeUser:
-    name: str
-    email: str
-    personal_email: str
-    address: str
-    team: str
-    signature_data: bytes
-
-
-class DummyDb:
-    pass
 
 
 def _has_google_service_account_env() -> bool:
@@ -47,7 +34,9 @@ def _live_pipeline_env_enabled() -> bool:
     return raw in ("1", "true", "yes")
 
 
-def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
+def test_submit_all_requests_live_pipeline(
+    monkeypatch, tmp_path, db_session: Session
+) -> None:
     raw_live_flag = os.environ.get("RUN_LIVE_PIPELINE_TEST")
     if not _live_pipeline_env_enabled():
         pytest.skip(
@@ -62,22 +51,26 @@ def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(
         dashboard_module, "create_session_folder", lambda _name: str(session_folder)
     )
-    monkeypatch.setattr(
-        dashboard_module,
-        "get_user_by_email",
-        lambda _db, _email: FakeUser(
+    db_session.add(
+        User(
             name="Integration Test User",
             email="integration-test@example.com",
             personal_email="integration-transfer@example.com",
             address="1280 Main St W, Hamilton",
             team="Software",
+            password="integration-test-password",
             signature_data=TINY_PNG_BYTES,
-        ),
+        )
     )
+    db_session.commit()
 
     app = FastAPI()
     app.include_router(router)
-    app.dependency_overrides[get_db] = lambda: DummyDb()
+
+    def override_get_db() -> Iterator[Session]:
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[require_auth] = lambda: None
     client = TestClient(app, follow_redirects=False)
 

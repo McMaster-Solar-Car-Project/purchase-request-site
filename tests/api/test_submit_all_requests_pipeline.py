@@ -1,37 +1,31 @@
-from dataclasses import dataclass
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
-from src.db.schema import get_db
+from src.db.schema import User, get_db
 from src.routers.dashboard import router
 from src.routers.utils import require_auth
 
 
-@dataclass
-class FakeUser:
-    name: str
-    email: str
-    personal_email: str
-    address: str
-    team: str
-
-
-class DummyDb:
-    pass
-
-
-def _make_test_client() -> TestClient:
+def _make_test_client(db_session: Session) -> TestClient:
     app = FastAPI()
     app.include_router(router)
-    app.dependency_overrides[get_db] = lambda: DummyDb()
+
+    def override_get_db() -> Iterator[Session]:
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[require_auth] = lambda: None
     return TestClient(app, follow_redirects=False)
 
 
-def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> None:
+def test_submit_all_requests_full_pipeline_success(
+    monkeypatch, tmp_path, db_session
+) -> None:
     import src.routers.dashboard as dashboard_module
 
     session_folder = tmp_path / "session-success"
@@ -41,14 +35,17 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
         dashboard_module, "create_session_folder", lambda _name: str(session_folder)
     )
 
-    user = FakeUser(
+    user = User(
         name="Test User",
         email="test@example.com",
         personal_email="transfer@example.com",
         address="123 Main St",
         team="Software",
+        password="test-password",
+        signature_data=b"fake-signature",
     )
-    monkeypatch.setattr(dashboard_module, "get_user_by_email", lambda _db, _email: user)
+    db_session.add(user)
+    db_session.commit()
 
     def fake_save_signature_to_file(_user: Any, file_path: str) -> bool:
         Path(file_path).write_bytes(b"fake-signature")
@@ -108,7 +105,7 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
     monkeypatch.setattr(dashboard_module, "GoogleDriveClient", FakeDriveClient)
     monkeypatch.setattr(dashboard_module, "GoogleSheetsClient", FakeSheetsClient)
 
-    client = _make_test_client()
+    client = _make_test_client(db_session)
     response = client.post(
         "/submit-all-requests",
         data={
@@ -154,7 +151,7 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
 
 
 def test_submit_all_requests_no_forms_redirects_with_error(
-    monkeypatch, tmp_path
+    monkeypatch, tmp_path, db_session
 ) -> None:
     import src.routers.dashboard as dashboard_module
 
@@ -164,22 +161,23 @@ def test_submit_all_requests_no_forms_redirects_with_error(
     monkeypatch.setattr(
         dashboard_module, "create_session_folder", lambda _name: str(session_folder)
     )
-    monkeypatch.setattr(
-        dashboard_module,
-        "get_user_by_email",
-        lambda _db, _email: FakeUser(
+    db_session.add(
+        User(
             name="Test User",
             email="test@example.com",
             personal_email="transfer@example.com",
             address="123 Main St",
             team="Software",
-        ),
+            password="test-password",
+            signature_data=b"fake-signature",
+        )
     )
+    db_session.commit()
     monkeypatch.setattr(
         dashboard_module, "save_signature_to_file", lambda _user, _file_path: True
     )
 
-    client = _make_test_client()
+    client = _make_test_client(db_session)
     response = client.post(
         "/submit-all-requests",
         data={

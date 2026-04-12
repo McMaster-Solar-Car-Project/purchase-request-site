@@ -1,3 +1,5 @@
+import sys
+
 from sqlalchemy import Integer, LargeBinary, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
@@ -15,6 +17,8 @@ def _normalize_postgres_url(url: str) -> str:
 
 def _resolve_database_url() -> str:
     settings = get_settings()
+    if "pytest" in sys.modules:
+        return "sqlite:////tmp/purchase_request_site_pytest.sqlite3"
     raw_url = settings.aiven_database_url.strip()
     if raw_url:
         return _normalize_postgres_url(raw_url)
