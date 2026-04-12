@@ -41,11 +41,17 @@ def _has_google_service_account_env() -> bool:
     return all(os.getenv(name) for name in required)
 
 
-@pytest.mark.skipif(
-    os.getenv("RUN_LIVE_PIPELINE_TEST") != "1",
-    reason="Set RUN_LIVE_PIPELINE_TEST=1 to run live pipeline test",
-)
+def _live_pipeline_env_enabled() -> bool:
+    """Match CI/local after load_dotenv; accept 1, true, yes (case-insensitive)."""
+    raw = (os.environ.get("RUN_LIVE_PIPELINE_TEST") or "").strip().lower()
+    return raw in ("1", "true", "yes")
+
+
 def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
+    if not _live_pipeline_env_enabled():
+        pytest.skip(
+            "Set RUN_LIVE_PIPELINE_TEST to 1, true, or yes (repository variable or env)."
+        )
     import src.routers.dashboard as dashboard_module
 
     session_folder = tmp_path / "live-pipeline-session"
