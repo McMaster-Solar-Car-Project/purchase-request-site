@@ -16,9 +16,7 @@ jobs:
       ENVIRONMENT: ${{ vars.ENVIRONMENT }}
       GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID }}
       GOOGLE_SHEET_TAB_NAME: ${{ vars.GOOGLE_SHEET_TAB_NAME }}
-      HOST: ${{ vars.HOST }}
-      PORT: ${{ vars.PORT }}
-      RUN_LIVE_PIPELINE_TEST: ${{ vars.RUN_LIVE_PIPELINE_TEST }}
+      RUN_LIVE_PIPELINE_TEST: 1
       # Repo variable is PARENT_FOLDER_ID; app reads GOOGLE_DRIVE_FOLDER_ID (see src/google_drive.py).
       GOOGLE_DRIVE_FOLDER_ID: ${{ vars.PARENT_FOLDER_ID }}
     steps:

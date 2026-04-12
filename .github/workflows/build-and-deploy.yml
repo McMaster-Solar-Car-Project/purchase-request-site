@@ -9,15 +9,6 @@ on:
         required: false
         default: 'false'
         type: boolean
-env:
-  DEBUG: ${{ vars.DEBUG }}
-  ENVIRONMENT: ${{ vars.ENVIRONMENT }}
-  GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID }}
-  GOOGLE_SHEET_TAB_NAME: ${{ vars.GOOGLE_SHEET_TAB_NAME }}
-  HOST: ${{ vars.HOST }}
-  PARENT_FOLDER_ID: ${{ vars.PARENT_FOLDER_ID }}
-  PORT: ${{ vars.PORT }}
-  RUN_LIVE_PIPELINE_TEST: ${{ vars.RUN_LIVE_PIPELINE_TEST }}
 jobs:
   build:
     runs-on: blacksmith-4vcpu-ubuntu-2404
