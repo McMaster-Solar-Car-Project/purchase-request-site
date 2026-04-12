@@ -7,6 +7,7 @@ This module handles uploading session data (Excel files, invoices, signatures) t
 import mimetypes
 import os
 import time
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -427,9 +428,6 @@ class GoogleDriveClient:
                 except Exception as e:
                     logger.exception(f"Error uploading {file_path.name}: {e}")
 
-                # Small delay between uploads to be nice to the API
-                time.sleep(0.5)
-
             return True
 
         except Exception as e:
@@ -562,6 +560,12 @@ def create_drive_folder_and_get_url(
     Returns:
         tuple: (folder_url: str, folder_id: str) or ("", "") if failed
     """
+    warnings.warn(
+        "create_drive_folder_and_get_url() is deprecated; "
+        "use GoogleDriveClient.create_session_folder_structure() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     try:
         drive_client = GoogleDriveClient()
         success, folder_url, folder_id = drive_client.create_session_folder_structure(
@@ -594,6 +598,12 @@ def upload_session_to_drive(
     Returns:
         bool: True if upload was successful, False otherwise
     """
+    warnings.warn(
+        "upload_session_to_drive() is deprecated; "
+        "use GoogleDriveClient.upload_session_folder() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     try:
         logger.info(
             f"Starting synchronous upload to Google Drive: {session_folder_path}"
