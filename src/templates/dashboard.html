@@ -172,13 +172,12 @@
                                             </div>
                                             <div class="item-input-group md:col-span-2">
                                                 <label class="block mb-1 text-xs font-medium text-zinc-300">Unit Price</label>
-                                                <input type="number" name="item_price_{{ form_num }}_1" min="0"
-                                                    step="0.00000001" placeholder="0.00"
+                                                <input type="number" step="any" name="item_price_{{ form_num }}_1" min="0" placeholder="0.00"
                                                     data-action="calc-item" data-form="{{ form_num }}" data-item="1" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                             </div>
                                             <div class="item-input-group md:col-span-1">
                                                 <label class="block mb-1 text-xs font-medium text-zinc-300">Total</label>
-                                                <input type="number" name="item_total_{{ form_num }}_1" readonly
+                                                <input type="number" step="any" name="item_total_{{ form_num }}_1" readonly
                                                     placeholder="0.00" class="total-field w-full rounded-md border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
                                             </div>
                                             <div class="item-actions md:col-span-1 flex items-end">
@@ -204,8 +203,8 @@
                                             <div class="form-group">
                                                 <label for="subtotal_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Subtotal (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="subtotal_amount_{{ form_num }}"
-                                                    name="subtotal_amount_{{ form_num }}" readonly min="0" step="0.00000001"
+                                                <input type="number" step="any" id="subtotal_amount_{{ form_num }}"
+                                                    name="subtotal_amount_{{ form_num }}" readonly min="0"
                                                     placeholder="0.00" class="total-field w-full rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
                                                 <small class="financial-help mt-1 block text-xs text-zinc-400">Automatically calculated from item totals
                                                     above</small>
@@ -216,8 +215,8 @@
                                             <div class="form-group">
                                                 <label for="discount_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Discount (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="discount_amount_{{ form_num }}"
-                                                    name="discount_amount_{{ form_num }}" min="0" step="0.00000001"
+                                                <input type="number" step="any" id="discount_amount_{{ form_num }}"
+                                                    name="discount_amount_{{ form_num }}" min="0"
                                                     placeholder="0.00" data-action="recalc-total" data-form="{{ form_num }}" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                                 <small class="financial-help mt-1 block text-xs text-zinc-400">Coupons, promotional discounts, or
                                                     rebates</small>
@@ -230,8 +229,8 @@
                                                         class="tax-label-{{ form_num }}">HST/GST</span> (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>) <span
                                                         class="required-indicator-{{ form_num }}"></span></label>
-                                                <input type="number" id="hst_gst_amount_{{ form_num }}"
-                                                    name="hst_gst_amount_{{ form_num }}" min="0" step="0.00000001"
+                                                <input type="number" step="any" id="hst_gst_amount_{{ form_num }}"
+                                                    name="hst_gst_amount_{{ form_num }}" min="0"
                                                     placeholder="0.00" data-action="recalc-total" data-form="{{ form_num }}" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                                 <small class="financial-help tax-help-{{ form_num }} mt-1 block text-xs text-zinc-400">Harmonized Sales
                                                     Tax / Goods and Services Tax</small>
@@ -242,8 +241,8 @@
                                             <div class="form-group">
                                                 <label for="shipping_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Shipping & Handling (<span
                                                         class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="shipping_amount_{{ form_num }}"
-                                                    name="shipping_amount_{{ form_num }}" min="0" step="0.00000001"
+                                                <input type="number" step="any" id="shipping_amount_{{ form_num }}"
+                                                    name="shipping_amount_{{ form_num }}" min="0"
                                                     placeholder="0.00" data-action="recalc-total" data-form="{{ form_num }}" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                                 <small class="financial-help mt-1 block text-xs text-zinc-400">Shipping, delivery, and handling
                                                     fees</small>
@@ -254,8 +253,8 @@
                                             <div class="form-group">
                                                 <label for="total_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Total Reimbursement Amount
                                                     (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="total_amount_{{ form_num }}"
-                                                    name="total_amount_{{ form_num }}" readonly min="0" step="0.00000001"
+                                                <input type="number" step="any" id="total_amount_{{ form_num }}"
+                                                    name="total_amount_{{ form_num }}" readonly min="0"
                                                     placeholder="0.00" class="total-field w-full rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
                                                 <small class="financial-help mt-1 block text-xs text-zinc-400">Automatically calculated (Subtotal -
                                                     Discount + Tax + Shipping)</small>
@@ -269,8 +268,8 @@
                                         <div class="form-row">
                                             <div class="form-group">
                                                 <label for="us_total_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">US Subtotal (USD)</label>
-                                                <input type="number" id="us_total_{{ form_num }}"
-                                                    name="us_total_{{ form_num }}" min="0" step="0.00000001"
+                                                <input type="number" step="any" id="us_total_{{ form_num }}"
+                                                    name="us_total_{{ form_num }}" min="0"
                                                     placeholder="0.00" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                                 <small class="financial-help mt-1 block text-xs text-zinc-400">Subtotal in US dollars</small>
                                             </div>
@@ -279,8 +278,8 @@
                                         <div class="form-row">
                                             <div class="form-group">
                                                 <label for="usd_taxes_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Taxes (USD)</label>
-                                                <input type="number" id="usd_taxes_{{ form_num }}"
-                                                    name="usd_taxes_{{ form_num }}" min="0" step="0.00000001"
+                                                <input type="number" step="any" id="usd_taxes_{{ form_num }}"
+                                                    name="usd_taxes_{{ form_num }}" min="0"
                                                     placeholder="0.00" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                                 <small class="financial-help mt-1 block text-xs text-zinc-400">Sales tax, state tax, or other applicable
                                                     taxes</small>
@@ -291,8 +290,8 @@
                                             <div class="form-group">
                                                 <label for="canadian_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Canadian Amount
                                                     (CAD)</label>
-                                                <input type="number" id="canadian_amount_{{ form_num }}"
-                                                    name="canadian_amount_{{ form_num }}" min="0" step="0.00000001"
+                                                <input type="number" step="any" id="canadian_amount_{{ form_num }}"
+                                                    name="canadian_amount_{{ form_num }}" min="0"
                                                     placeholder="0.00" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                                 <small class="financial-help mt-1 block text-xs text-zinc-400">Equivalent amount in Canadian dollars for
                                                     reimbursement</small>
@@ -364,11 +363,11 @@
                 </div>
                 <div class="item-input-group md:col-span-2">
                     <label class="block mb-1 text-xs font-medium text-zinc-300">Unit Price</label>
-                    <input type="number" name="item_price_${formNumber}_${itemCounts[formNumber]}" min="0" step="0.00000001" placeholder="0.00" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
+                    <input type="number" step="any" name="item_price_${formNumber}_${itemCounts[formNumber]}" min="0" placeholder="0.00" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                 </div>
                 <div class="item-input-group md:col-span-1">
                     <label class="block mb-1 text-xs font-medium text-zinc-300">Total</label>
-                    <input type="number" name="item_total_${formNumber}_${itemCounts[formNumber]}" readonly placeholder="0.00" class="total-field w-full rounded-md border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
+                    <input type="number" step="any" name="item_total_${formNumber}_${itemCounts[formNumber]}" readonly placeholder="0.00" class="total-field w-full rounded-md border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
                 </div>
                 <div class="item-actions md:col-span-1 flex items-end">
                     <button type="button" class="btn-remove w-full rounded-md border border-red-500/50 px-2 py-2 text-xs text-red-300 hover:bg-red-500/15" onclick="removeItem(this, ${formNumber})">Remove</button>
