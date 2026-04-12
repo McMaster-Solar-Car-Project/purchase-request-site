@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
+        env_ignore_empty=True,
         extra="ignore",
     )
 
@@ -22,8 +23,8 @@ class Settings(BaseSettings):
     google_sheet_id: str = Field(default="", alias="GOOGLE_SHEET_ID")
     google_sheet_tab_name: str = Field(default="", alias="GOOGLE_SHEET_TAB_NAME")
     google_drive_folder_id: str = Field(
-        default="1fH2GB4LtYjGGhusqbjOLftB7jqgLNehW",
-        alias="GOOGLE_DRIVE_FOLDER_ID",
+        default="",
+        validation_alias=AliasChoices("GOOGLE_DRIVE_FOLDER_ID", "PARENT_FOLDER_ID"),
     )  # gitleaks: allowlist
     google_places_api_key: str = Field(default="", alias="GOOGLE_PLACES_API_KEY")
 
@@ -52,6 +53,39 @@ class Settings(BaseSettings):
     smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
     error_email_from: str = Field(default="", alias="ERROR_EMAIL_FROM")
     error_email_to: str = Field(default="", alias="ERROR_EMAIL_TO")
+
+    @model_validator(mode="after")
+    def _require_expected_env_fields(self) -> "Settings":
+        required_str_fields = (
+            "environment",
+            "host",
+            "aiven_database_url",
+            "google_sheet_id",
+            "google_sheet_tab_name",
+            "google_drive_folder_id",
+            "google_places_api_key",
+            "google_settings_project_id",
+            "google_settings_private_key",
+            "google_settings_client_email",
+            "google_settings_private_key_id",
+            "google_settings_client_id",
+            "google_settings_client_x509_cert_url",
+            "smtp_server",
+            "smtp_username",
+            "smtp_password",
+            "error_email_from",
+            "error_email_to",
+        )
+        missing = [
+            field_name
+            for field_name in required_str_fields
+            if not getattr(self, field_name).strip()
+        ]
+        if missing:
+            raise ValueError(
+                "Missing required settings values: " + ", ".join(sorted(missing))
+            )
+        return self
 
     @property
     def is_production(self) -> bool:

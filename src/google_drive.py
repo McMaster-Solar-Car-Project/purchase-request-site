@@ -14,7 +14,7 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
@@ -81,22 +81,11 @@ class GoogleDriveClient:
             Dict containing the service account information
         """
         settings = get_settings()
-        missing_vars: list[str] = []
-        if not settings.google_settings_project_id:
-            missing_vars.append("GOOGLE_SETTINGS__PROJECT_ID")
-        if not settings.google_settings_private_key:
-            missing_vars.append("GOOGLE_SETTINGS__PRIVATE_KEY")
-        if not settings.google_settings_client_email:
-            missing_vars.append("GOOGLE_SETTINGS__CLIENT_EMAIL")
-        if missing_vars:
-            raise ValueError(
-                f"Missing required environment variables: {', '.join(missing_vars)}"
-            )
 
         credentials_env = GoogleServiceAccountEnv(
-            project_id=settings.google_settings_project_id or "",
-            private_key=settings.google_settings_private_key or "",
-            client_email=settings.google_settings_client_email or "",
+            project_id=settings.google_settings_project_id,
+            private_key=settings.google_settings_private_key,
+            client_email=settings.google_settings_client_email,
             private_key_id=settings.google_settings_private_key_id,
             client_id=settings.google_settings_client_id,
             client_x509_cert_url=settings.google_settings_client_x509_cert_url,
@@ -121,7 +110,7 @@ class GoogleDriveClient:
             self.service = build("drive", "v3", credentials=credentials)
             # Authentication successful
             return True
-        except ValueError as e:
+        except (ValueError, ValidationError) as e:
             logger.exception(f"Environment variable error: {e}")
             return False
         except Exception as e:
