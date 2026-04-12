@@ -56,7 +56,7 @@ jobs:
       - name: Run ty
         run: ty check src tests
       - name: Run tests
-        run: pytest
+        run: pytest -vv
       # Check YAML formatting (pull request only)
       - name: Check YAML formatting (pull request only)
         if: github.event_name == 'pull_request'
