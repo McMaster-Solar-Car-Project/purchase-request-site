@@ -62,13 +62,6 @@ jobs:
         run: ruff check --output-format=github .
       - name: Run ty
         run: ty check src tests
-      - name: Debug test env gate
-        run: |
-          python - <<'PYENV'
-          import os
-          print('RUN_LIVE_PIPELINE_TEST=', repr(os.getenv('RUN_LIVE_PIPELINE_TEST')))
-          print('GITHUB_EVENT_NAME=', repr(os.getenv('GITHUB_EVENT_NAME')))
-          PYENV
       - name: Run tests
         run: pytest -vv
       # Check YAML formatting (pull request only)
