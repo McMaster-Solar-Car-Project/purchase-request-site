@@ -9,25 +9,16 @@ from src.core.settings import get_settings
 logger = setup_logger(__name__)
 
 
-def _normalize_postgres_url(url: str) -> str:
-    if url.startswith("postgres://"):
-        return "postgresql://" + url[len("postgres://") :]
-    return url
-
-
 def _resolve_database_url() -> str:
     settings = get_settings()
-    # Prefer explicit Aiven URL, then fall back to generic DATABASE_URL.
     raw_url = (settings.aiven_database_url or "").strip()
     if raw_url:
-        return _normalize_postgres_url(raw_url)
+        return raw_url
     # Pytest imports this module before DATABASE_URL is configured; use SQLite so
     # API tests that override get_db can collect without a live Postgres URL.
     if "pytest" in sys.modules:
         return "sqlite:////tmp/purchase_request_site_pytest.sqlite3"
-    raise ValueError(
-        "❌ Database URL not set. Provide AIVEN_DATABASE_URL or DATABASE_URL."
-    )
+    raise ValueError("❌ Database URL not set. Provide AIVEN_DATABASE_URL.")
 
 
 DATABASE_URL = _resolve_database_url()
