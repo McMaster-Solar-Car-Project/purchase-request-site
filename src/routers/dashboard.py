@@ -6,6 +6,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 
 import sentry_sdk
 from fastapi import (
@@ -15,6 +16,7 @@ from fastapi import (
     Request,
 )
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 from starlette.datastructures import UploadFile
 
@@ -35,6 +37,48 @@ router = APIRouter(tags=["dashboard"])
 MAX_FORMS = 10
 MAX_ITEMS_PER_FORM = 50
 SESSIONS_ROOT = Path("sessions").resolve()
+
+
+class SubmissionLineItem(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    name: str
+    usage: str
+    quantity: int
+    unit_price: float
+    total: float
+
+
+class SubmissionForm(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    form_number: int
+    vendor_name: str
+    currency: Literal["CAD", "USD"]
+    invoice_filename: str
+    invoice_file_location: str
+    proof_of_payment_filename: str | None = None
+    proof_of_payment_location: str | None = None
+    subtotal_amount: float
+    discount_amount: float
+    hst_gst_amount: float
+    shipping_amount: float
+    total_amount: float
+    us_total: float
+    usd_taxes: float
+    canadian_amount: float
+    items: list[SubmissionLineItem]
+
+
+class SubmissionUserInfo(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    name: str
+    email: str
+    e_transfer_email: str
+    address: str
+    team: str
+    signature: str
 
 
 def _form_str(value: object, default: str = "") -> str:
@@ -180,7 +224,7 @@ async def submit_all_requests(
     if not save_signature_to_file(user, str(signature_path)):
         logger.warning(f"Could not save signature for user {email}")
 
-    submitted_forms = []
+    submitted_forms: list[SubmissionForm] = []
 
     for form_num in range(1, MAX_FORMS + 1):
         vendor_name = _form_str(form_data.get(f"vendor_name_{form_num}"))
@@ -231,13 +275,13 @@ async def submit_all_requests(
 
             if item_name and item_usage and item_quantity and item_price:
                 items.append(
-                    {
-                        "name": item_name,
-                        "usage": item_usage,
-                        "quantity": _form_int(item_quantity),
-                        "unit_price": _form_float(item_price),
-                        "total": _form_float(item_total),
-                    }
+                    SubmissionLineItem(
+                        name=item_name,
+                        usage=item_usage,
+                        quantity=_form_int(item_quantity),
+                        unit_price=_form_float(item_price),
+                        total=_form_float(item_total),
+                    )
                 )
 
         if not items:
@@ -262,43 +306,51 @@ async def submit_all_requests(
             await _save_uploaded_file(proof_of_payment_file, proof_of_payment_path)
             proof_of_payment_location = str(proof_of_payment_path)
 
-        form_submission = {
-            "form_number": form_num,
-            "vendor_name": vendor_name,
-            "currency": currency,
-            "invoice_filename": invoice_filename,
-            "invoice_file_location": invoice_file_location,
-            "proof_of_payment_filename": proof_of_payment_filename,
-            "proof_of_payment_location": proof_of_payment_location,
-            "subtotal_amount": subtotal_amount,
-            "discount_amount": discount_amount,
-            "hst_gst_amount": hst_gst_amount,
-            "shipping_amount": shipping_amount,
-            "total_amount": total_amount,
-            "us_total": us_total,
-            "usd_taxes": usd_taxes,
-            "canadian_amount": canadian_amount,
-            "items": items,
-        }
+        form_submission = SubmissionForm(
+            form_number=form_num,
+            vendor_name=vendor_name,
+            currency="USD" if currency == "USD" else "CAD",
+            invoice_filename=invoice_filename,
+            invoice_file_location=invoice_file_location,
+            proof_of_payment_filename=proof_of_payment_filename,
+            proof_of_payment_location=proof_of_payment_location,
+            subtotal_amount=subtotal_amount,
+            discount_amount=discount_amount,
+            hst_gst_amount=hst_gst_amount,
+            shipping_amount=shipping_amount,
+            total_amount=total_amount,
+            us_total=us_total,
+            usd_taxes=usd_taxes,
+            canadian_amount=canadian_amount,
+            items=items,
+        )
 
         submitted_forms.append(form_submission)
 
     if submitted_forms:
-        user_info = {
-            "name": name,
-            "email": email,
-            "e_transfer_email": e_transfer_email,
-            "address": address,
-            "team": team,
-            "signature": signature_filename,
-        }
+        user_info = SubmissionUserInfo(
+            name=name,
+            email=email,
+            e_transfer_email=e_transfer_email,
+            address=address,
+            team=team,
+            signature=signature_filename,
+        )
+        user_info_payload = user_info.model_dump()
+        submitted_forms_payload = [
+            submission.model_dump() for submission in submitted_forms
+        ]
         try:
-            create_purchase_request(user_info, submitted_forms, session_folder)
+            create_purchase_request(
+                user_info_payload, submitted_forms_payload, session_folder
+            )
         except Exception:
             logger.exception("Failed to create purchase request (continuing anyway)")
 
         try:
-            create_expense_report(session_folder, user_info, submitted_forms)
+            create_expense_report(
+                session_folder, user_info_payload, submitted_forms_payload
+            )
         except Exception:
             logger.exception(
                 "Failed to copy and populate expense report template (continuing anyway)"
@@ -313,7 +365,7 @@ async def submit_all_requests(
             try:
                 success, drive_folder_url, drive_folder_id = (
                     drive_client.create_session_folder_structure(
-                        session_folder, user_info
+                        session_folder, user_info_payload
                     )
                 )
                 if not success:
@@ -327,7 +379,10 @@ async def submit_all_requests(
             try:
                 sheets_client = GoogleSheetsClient()
                 sheets_client.log_purchase_request(
-                    user_info, submitted_forms, session_folder, drive_folder_url
+                    user_info_payload,
+                    submitted_forms_payload,
+                    session_folder,
+                    drive_folder_url,
                 )
             except Exception:
                 logger.exception("Failed to log to Google Sheets (continuing anyway)")
@@ -342,7 +397,7 @@ async def submit_all_requests(
             )
             try:
                 drive_upload_success = drive_client.upload_session_folder(
-                    session_folder, user_info, drive_folder_id or None
+                    session_folder, user_info_payload, drive_folder_id or None
                 )
                 logger.info(
                     f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"
