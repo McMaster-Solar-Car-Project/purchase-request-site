@@ -18,7 +18,7 @@ def _normalize_postgres_url(url: str) -> str:
 def _resolve_database_url() -> str:
     settings = get_settings()
     # Prefer explicit Aiven URL, then fall back to generic DATABASE_URL.
-    raw_url = (settings.aiven_database_url).strip()
+    raw_url = (settings.aiven_database_url or "").strip()
     if raw_url:
         return _normalize_postgres_url(raw_url)
     # Pytest imports this module before DATABASE_URL is configured; use SQLite so

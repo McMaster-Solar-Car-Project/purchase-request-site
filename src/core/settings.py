@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     port: int = Field(default=8000, alias="PORT")
     debug: bool = Field(default=False, alias="DEBUG")
     aiven_database_url: str | None = Field(default=None, alias="AIVEN_DATABASE_URL")
-    database_url: str | None = Field(default=None, alias="DATABASE_URL")
 
     google_sheet_id: str | None = Field(default=None, alias="GOOGLE_SHEET_ID")
     google_sheet_tab_name: str | None = Field(
