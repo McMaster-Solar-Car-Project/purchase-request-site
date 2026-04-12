@@ -10,6 +10,17 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Actions "Variables" are not process environment variables unless mapped here.
+      DEBUG: ${{ vars.DEBUG }}
+      ENVIRONMENT: ${{ vars.ENVIRONMENT }}
+      GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID }}
+      GOOGLE_SHEET_TAB_NAME: ${{ vars.GOOGLE_SHEET_TAB_NAME }}
+      HOST: ${{ vars.HOST }}
+      PORT: ${{ vars.PORT }}
+      RUN_LIVE_PIPELINE_TEST: ${{ vars.RUN_LIVE_PIPELINE_TEST }}
+      # Repo variable is PARENT_FOLDER_ID; app reads GOOGLE_DRIVE_FOLDER_ID (see src/google_drive.py).
+      GOOGLE_DRIVE_FOLDER_ID: ${{ vars.PARENT_FOLDER_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,9 +56,6 @@ jobs:
       - name: Run ty
         run: ty check src tests
       - name: Run tests
-        env:
-          # Repository variables are not process env vars unless mapped here.
-          RUN_LIVE_PIPELINE_TEST: ${{ vars.RUN_LIVE_PIPELINE_TEST }}
         run: pytest
       # Check YAML formatting (pull request only)
       - name: Check YAML formatting (pull request only)
