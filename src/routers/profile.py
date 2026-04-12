@@ -1,6 +1,4 @@
-"""
-Profile router for the /edit-profile endpoints.
-"""
+"""Profile router for the /edit-profile endpoints."""
 
 import os
 import tempfile
@@ -11,12 +9,14 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from src.core.logging_utils import setup_logger
+from src.core.settings import get_settings
 from src.db.schema import get_db
 from src.image_processing import convert_signature_to_png
 from src.models.user_service import get_user_by_email, get_user_signature_as_data_url
 from src.routers.utils import require_auth, templates
 
 logger = setup_logger(__name__)
+settings = get_settings()
 
 router = APIRouter(tags=["profile"])
 
@@ -43,7 +43,7 @@ async def edit_profile_get(
             "title": "Edit Profile - Purchase Request Site",
             "user": user,
             "signature_data_url": signature_data_url,
-            "google_api_key": os.getenv("GOOGLE_PLACES_API_KEY"),
+            "google_api_key": settings.google_places_api_key,
         },
     )
 

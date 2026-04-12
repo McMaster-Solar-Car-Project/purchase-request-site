@@ -1,10 +1,10 @@
-import os
 import sys
 
 from sqlalchemy import Integer, LargeBinary, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from src.core.logging_utils import setup_logger
+from src.core.settings import get_settings
 
 logger = setup_logger(__name__)
 
@@ -16,8 +16,9 @@ def _normalize_postgres_url(url: str) -> str:
 
 
 def _resolve_database_url() -> str:
+    settings = get_settings()
     # Prefer explicit Aiven URL, then fall back to generic DATABASE_URL.
-    raw_url = os.getenv("AIVEN_DATABASE_URL") or os.getenv("DATABASE_URL")
+    raw_url = settings.aiven_database_url or settings.database_url
     if raw_url:
         return _normalize_postgres_url(raw_url)
     # Pytest imports this module before DATABASE_URL is configured; use SQLite so
