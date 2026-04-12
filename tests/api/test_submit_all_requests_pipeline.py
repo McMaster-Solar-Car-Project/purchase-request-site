@@ -67,9 +67,21 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
         calls["expense_report"] = (session_folder, user_info, submitted_forms)
         return True
 
-    def fake_create_drive_folder_and_get_url(session_folder, user_info):
-        calls["drive_folder"] = (session_folder, user_info)
-        return "https://drive.google.com/folders/test-folder", "drive-folder-id"
+    class FakeDriveClient:
+        def create_session_folder_structure(self, session_folder, user_info):
+            calls["drive_folder"] = (session_folder, user_info)
+            return (
+                True,
+                "https://drive.google.com/folders/test-folder",
+                "drive-folder-id",
+            )
+
+        def upload_session_folder(self, session_folder, user_info, session_folder_id):
+            calls["upload"] = (session_folder, user_info, session_folder_id)
+            return True
+
+        def close(self):
+            calls["drive_closed"] = True
 
     class FakeSheetsClient:
         def log_purchase_request(
@@ -86,25 +98,14 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
         def close(self):
             calls["sheets_closed"] = True
 
-    def fake_upload_session_to_drive(session_folder, user_info, drive_folder_id):
-        calls["upload"] = (session_folder, user_info, drive_folder_id)
-        return True
-
     monkeypatch.setattr(
         dashboard_module, "create_purchase_request", fake_create_purchase_request
     )
     monkeypatch.setattr(
         dashboard_module, "create_expense_report", fake_create_expense_report
     )
-    monkeypatch.setattr(
-        dashboard_module,
-        "create_drive_folder_and_get_url",
-        fake_create_drive_folder_and_get_url,
-    )
+    monkeypatch.setattr(dashboard_module, "GoogleDriveClient", FakeDriveClient)
     monkeypatch.setattr(dashboard_module, "GoogleSheetsClient", FakeSheetsClient)
-    monkeypatch.setattr(
-        dashboard_module, "upload_session_to_drive", fake_upload_session_to_drive
-    )
 
     client = _make_test_client()
     response = client.post(
@@ -145,6 +146,7 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
     assert "sheets" in calls
     assert calls.get("sheets_closed") is True
     assert "upload" in calls
+    assert calls.get("drive_closed") is True
 
     uploaded_session_folder = calls["purchase_request"][2]
     assert not Path(uploaded_session_folder).exists()
