@@ -49,7 +49,7 @@ async def edit_profile_get(
 
 
 @router.post("/edit-profile")
-async def edit_profile_post(
+def edit_profile_post(
     request: Request,
     user_email: str,
     name: str = Form(...),
@@ -111,7 +111,7 @@ async def edit_profile_post(
         # Handle signature update if provided
         if signature and signature.filename:
             # Read the signature file content
-            signature_content = await signature.read()
+            signature_content = signature.file.read()
             if signature_content:
                 # Create a temporary file to save the uploaded signature
                 with tempfile.NamedTemporaryFile(

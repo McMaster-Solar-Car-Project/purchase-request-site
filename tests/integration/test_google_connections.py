@@ -36,7 +36,7 @@ def test_google_sheets_connection_reads_metadata() -> None:
 
 
 @pytest.mark.skipif(
-    not _has_google_service_account_env() or not os.getenv("PARENT_FOLDER_ID"),
+    not _has_google_service_account_env() or not os.getenv("GOOGLE_DRIVE_FOLDER_ID"),
     reason="Google Drive integration env vars are not configured",
 )
 def test_google_drive_connection_reads_folder() -> None:

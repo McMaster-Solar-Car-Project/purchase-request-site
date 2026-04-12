@@ -21,10 +21,7 @@ from starlette.datastructures import UploadFile
 from src.core.logging_utils import setup_logger
 from src.data_processing import create_expense_report, create_purchase_request
 from src.db.schema import get_db
-from src.google_drive import (
-    create_drive_folder_and_get_url,
-    upload_session_to_drive,
-)
+from src.google_drive import GoogleDriveClient
 from src.google_sheets import GoogleSheetsClient
 from src.models.user_service import (
     get_user_by_email,
@@ -141,7 +138,7 @@ async def dashboard(
     )
 
 
-def _create_session_folder(name: str) -> str:
+def create_session_folder(name: str) -> str:
     """Create a timestamped session folder for generated files."""
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     safe_name = _safe_filename_component(name).lower()
@@ -170,7 +167,7 @@ async def submit_all_requests(
         level="info",
     )
 
-    session_folder = _create_session_folder(name)
+    session_folder = create_session_folder(name)
 
     # Get user from database to fetch signature
     user = get_user_by_email(db, email)
@@ -307,41 +304,50 @@ async def submit_all_requests(
                 "Failed to copy and populate expense report template (continuing anyway)"
             )
 
+        # Create Google Drive folder and upload using one client instance
         drive_folder_url = ""
         drive_folder_id = ""
-        try:
-            drive_folder_url, drive_folder_id = create_drive_folder_and_get_url(
-                session_folder, user_info
-            )
-        except Exception:
-            logger.exception("Failed to create Google Drive folder (continuing anyway)")
-
-        sheets_client = GoogleSheetsClient()
-        try:
-            sheets_client.log_purchase_request(
-                user_info, submitted_forms, session_folder, drive_folder_url
-            )
-        except Exception:
-            logger.exception("Failed to log to Google Sheets (continuing anyway)")
-        finally:
-            sheets_client.close()
-
-        logger.info("Starting Google Drive upload...")
-        sentry_sdk.add_breadcrumb(
-            category="external_api",
-            message="Starting Google Drive upload",
-            level="info",
-        )
         drive_upload_success = False
+        drive_client = GoogleDriveClient()
         try:
-            drive_upload_success = upload_session_to_drive(
-                session_folder, user_info, drive_folder_id
+            try:
+                success, drive_folder_url, drive_folder_id = (
+                    drive_client.create_session_folder_structure(
+                        session_folder, user_info
+                    )
+                )
+                if not success:
+                    logger.warning("Failed to create Google Drive folder")
+            except Exception:
+                logger.exception(
+                    "Failed to create Google Drive folder (continuing anyway)"
+                )
+            # Log to Google Sheets (with Drive folder URL)
+            try:
+                sheets_client = GoogleSheetsClient()
+                sheets_client.log_purchase_request(
+                    user_info, submitted_forms, session_folder, drive_folder_url
+                )
+                sheets_client.close()
+            except Exception:
+                logger.exception("Failed to log to Google Sheets (continuing anyway)")
+
+            sentry_sdk.add_breadcrumb(
+                category="external_api",
+                message="Starting Google Drive upload",
+                level="info",
             )
-            logger.info(
-                f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"
-            )
-        except Exception:
-            logger.exception("Failed to start Google Drive upload (continuing anyway)")
+            try:
+                drive_upload_success = drive_client.upload_session_folder(
+                    session_folder, user_info, drive_folder_id or None
+                )
+                logger.info(
+                    f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"
+                )
+            except Exception as e:
+                logger.exception(f"Unexpected error in upload task: {e}")
+        finally:
+            drive_client.close()
 
         if drive_upload_success:
             try:

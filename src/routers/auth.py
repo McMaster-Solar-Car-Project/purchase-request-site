@@ -41,7 +41,7 @@ async def login_page(request: Request, error: str | None = None):
 
 @router.post("/login")
 @limiter.limit("5/minute")  # Limit to 5 login attempts per minute per IP
-async def login(
+def login(
     request: Request,
     email: str = Form(...),
     password: str = Form(...),
