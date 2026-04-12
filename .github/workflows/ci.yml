@@ -45,6 +45,9 @@ jobs:
       - name: Run ty
         run: ty check src tests
       - name: Run tests
+        env:
+          # Repository variables are not process env vars unless mapped here.
+          RUN_LIVE_PIPELINE_TEST: ${{ vars.RUN_LIVE_PIPELINE_TEST }}
         run: pytest
       # Check YAML formatting (pull request only)
       - name: Check YAML formatting (pull request only)
