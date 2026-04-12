@@ -36,6 +36,7 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
 
     session_folder = tmp_path / "session-success"
     session_folder.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(dashboard_module, "SESSIONS_ROOT", tmp_path.resolve())
     monkeypatch.setattr(
         dashboard_module, "create_session_folder", lambda _name: str(session_folder)
     )
@@ -159,6 +160,7 @@ def test_submit_all_requests_no_forms_redirects_with_error(
 
     session_folder = tmp_path / "session-no-forms"
     session_folder.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(dashboard_module, "SESSIONS_ROOT", tmp_path.resolve())
     monkeypatch.setattr(
         dashboard_module, "create_session_folder", lambda _name: str(session_folder)
     )

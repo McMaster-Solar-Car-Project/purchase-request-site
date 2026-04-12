@@ -2,9 +2,10 @@
 Dashboard router for the /dashboard and /submit-all-requests endpoints.
 """
 
-import os
+import re
 import shutil
 from datetime import datetime
+from pathlib import Path
 
 import sentry_sdk
 from fastapi import (
@@ -31,6 +32,9 @@ from src.routers.utils import require_auth, templates
 logger = setup_logger(__name__)
 
 router = APIRouter(tags=["dashboard"])
+MAX_FORMS = 10
+MAX_ITEMS_PER_FORM = 50
+SESSIONS_ROOT = Path("sessions").resolve()
 
 
 def _form_str(value: object, default: str = "") -> str:
@@ -62,6 +66,34 @@ def _form_int(value: object, default: int = 0) -> int:
         return int(s)
     except ValueError:
         return default
+
+
+def _file_extension(filename: str | None, default: str = "pdf") -> str:
+    if not filename or "." not in filename:
+        return default
+    return filename.rsplit(".", 1)[-1]
+
+
+def _safe_filename_component(value: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", value).strip("._")
+    return cleaned or "file"
+
+
+def _build_session_file_path(session_folder: str, filename: str) -> Path:
+    session_path = Path(session_folder).resolve()
+    if not session_path.is_relative_to(SESSIONS_ROOT):
+        raise ValueError("Invalid session path outside sessions root")
+    destination = (session_path / filename).resolve()
+    if not destination.is_relative_to(session_path):
+        raise ValueError("Invalid destination path outside session folder")
+    return destination
+
+
+async def _save_uploaded_file(file: UploadFile, destination: Path) -> None:
+    if not destination.resolve().is_relative_to(SESSIONS_ROOT):
+        raise ValueError("Invalid destination path outside sessions root")
+    with open(destination, "wb") as file_object:
+        file_object.write(await file.read())
 
 
 @router.get("/dashboard")
@@ -107,25 +139,22 @@ async def dashboard(
 
 
 def create_session_folder(name: str) -> str:
-    """Create a session folder with user name and timestamp"""
+    """Create a timestamped session folder for generated files."""
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    safe_name = name.replace(" ", "_").lower()
-    session_folder = f"sessions/{safe_name}_{timestamp}"
-
-    # Create the session directory if it doesn't exist
-    os.makedirs(session_folder, exist_ok=True)
-
-    return session_folder
+    safe_name = _safe_filename_component(name).lower()
+    session_folder = (SESSIONS_ROOT / f"{safe_name}_{timestamp}").resolve()
+    if not session_folder.is_relative_to(SESSIONS_ROOT):
+        raise ValueError("Invalid session folder path")
+    session_folder.mkdir(parents=True, exist_ok=True)
+    return str(session_folder)
 
 
 @router.post("/submit-all-requests")
 async def submit_all_requests(
     request: Request, db: Session = Depends(get_db), _: None = Depends(require_auth)
 ):
-    # Get form data
     form_data = await request.form()
 
-    # Extract user information
     name = _form_str(form_data.get("name"))
     email = _form_str(form_data.get("email"))
     e_transfer_email = _form_str(form_data.get("e_transfer_email"))
@@ -138,7 +167,6 @@ async def submit_all_requests(
         level="info",
     )
 
-    # Create session folder dynamically
     session_folder = create_session_folder(name)
 
     # Get user from database to fetch signature
@@ -147,16 +175,14 @@ async def submit_all_requests(
         logger.exception(f"User not found in database: {email}")
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Save user's signature to session folder
     signature_filename = "signature.png"
-    signature_path = f"{session_folder}/{signature_filename}"
-    if not save_signature_to_file(user, signature_path):
+    signature_path = _build_session_file_path(session_folder, signature_filename)
+    if not save_signature_to_file(user, str(signature_path)):
         logger.warning(f"Could not save signature for user {email}")
 
     submitted_forms = []
 
-    # Process each of the 10 possible forms
-    for form_num in range(1, 11):
+    for form_num in range(1, MAX_FORMS + 1):
         vendor_name = _form_str(form_data.get(f"vendor_name_{form_num}"))
 
         if vendor_name:
@@ -169,18 +195,15 @@ async def submit_all_requests(
         proof_of_payment_file = form_data.get(f"proof_of_payment_{form_num}")
         currency = _form_str(form_data.get(f"currency_{form_num}"), "CAD")
 
-        # Skip empty forms (no vendor name or invoice)
         if not vendor_name or not isinstance(invoice_file, UploadFile):
             continue
 
-        # For USD purchases, proof of payment is required
         if currency == "USD" and not isinstance(proof_of_payment_file, UploadFile):
             logger.warning(
                 f"Form {form_num} in USD currency missing proof of payment - skipping"
             )
             continue
 
-        # Extract financial data based on currency
         if currency == "USD":
             us_total = _form_float(form_data.get(f"us_total_{form_num}"))
             usd_taxes = _form_float(form_data.get(f"usd_taxes_{form_num}"))
@@ -196,9 +219,8 @@ async def submit_all_requests(
             total_amount = _form_float(form_data.get(f"total_amount_{form_num}"))
             us_total = usd_taxes = canadian_amount = 0
 
-        # Extract items for this form
         items = []
-        for item_num in range(1, 50):  # Reasonable limit
+        for item_num in range(1, MAX_ITEMS_PER_FORM + 1):
             item_name = _form_str(form_data.get(f"item_name_{form_num}_{item_num}"))
             if not item_name:
                 break
@@ -218,34 +240,28 @@ async def submit_all_requests(
                     }
                 )
 
-        # Skip forms with no items
         if not items:
             continue
 
-        # Save uploaded invoice file in session folder
-        invoice_fn = invoice_file.filename or "invoice"
-        invoice_extension = invoice_fn.split(".")[-1] if "." in invoice_fn else "pdf"
-        invoice_filename = f"{form_num}_{vendor_name}.{invoice_extension}"
-        invoice_file_location = f"{session_folder}/{invoice_filename}"
+        invoice_extension = _file_extension(invoice_file.filename)
+        safe_vendor_name = _safe_filename_component(vendor_name)
+        invoice_filename = f"{form_num}_{safe_vendor_name}.{invoice_extension}"
+        invoice_file_path = _build_session_file_path(session_folder, invoice_filename)
+        await _save_uploaded_file(invoice_file, invoice_file_path)
+        invoice_file_location = str(invoice_file_path)
 
-        # Save the invoice file
-        with open(invoice_file_location, "wb") as file_object:
-            content = await invoice_file.read()
-            file_object.write(content)
-
-        # Save proof of payment file only for USD currency
         proof_of_payment_filename = proof_of_payment_location = None
         if currency == "USD" and isinstance(proof_of_payment_file, UploadFile):
-            pop_fn = proof_of_payment_file.filename or "payment"
-            payment_extension = pop_fn.split(".")[-1] if "." in pop_fn else "pdf"
+            payment_extension = _file_extension(proof_of_payment_file.filename)
             proof_of_payment_filename = (
                 f"{form_num}_proof_of_payment.{payment_extension}"
             )
-            proof_of_payment_location = f"{session_folder}/{proof_of_payment_filename}"
-            with open(proof_of_payment_location, "wb") as file_object:
-                file_object.write(await proof_of_payment_file.read())
+            proof_of_payment_path = _build_session_file_path(
+                session_folder, proof_of_payment_filename
+            )
+            await _save_uploaded_file(proof_of_payment_file, proof_of_payment_path)
+            proof_of_payment_location = str(proof_of_payment_path)
 
-        # Store form data
         form_submission = {
             "form_number": form_num,
             "vendor_name": vendor_name,
@@ -267,9 +283,7 @@ async def submit_all_requests(
 
         submitted_forms.append(form_submission)
 
-    # Print all submitted forms
     if submitted_forms:
-        # Create Excel export in session folder
         user_info = {
             "name": name,
             "email": email,
@@ -283,7 +297,6 @@ async def submit_all_requests(
         except Exception:
             logger.exception("Failed to create purchase request (continuing anyway)")
 
-        # Copy expense report template to session folder
         try:
             create_expense_report(session_folder, user_info, submitted_forms)
         except Exception:
@@ -309,16 +322,18 @@ async def submit_all_requests(
                 logger.exception(
                     "Failed to create Google Drive folder (continuing anyway)"
                 )
-
             # Log to Google Sheets (with Drive folder URL)
+            sheets_client: GoogleSheetsClient | None = None
             try:
                 sheets_client = GoogleSheetsClient()
                 sheets_client.log_purchase_request(
                     user_info, submitted_forms, session_folder, drive_folder_url
                 )
-                sheets_client.close()
             except Exception:
                 logger.exception("Failed to log to Google Sheets (continuing anyway)")
+            finally:
+                if sheets_client is not None:
+                    sheets_client.close()
 
             sentry_sdk.add_breadcrumb(
                 category="external_api",
@@ -337,7 +352,6 @@ async def submit_all_requests(
         finally:
             drive_client.close()
 
-        # Clean up session folder if at least one upload was successful
         if drive_upload_success:
             try:
                 shutil.rmtree(session_folder)
@@ -347,13 +361,11 @@ async def submit_all_requests(
 
     else:
         logger.warning("No forms were submitted (all forms were empty)")
-        # Redirect back to dashboard with error message instead of success
         return RedirectResponse(
             url=f"/dashboard?user_email={email}&error=no_forms",
             status_code=303,
         )
 
-    # Redirect back to home with success message and session info for download
     return RedirectResponse(
         url=f"/success?drive_folder_id={drive_folder_id}&excel_file=purchase_request.xlsx&user_email={email}",
         status_code=303,

@@ -1,4 +1,3 @@
-import base64
 import os
 import sys
 
@@ -70,17 +69,6 @@ class User(Base):
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>"
-
-    def get_signature_as_base64(self) -> str | None:
-        """Return the signature as a base64-encoded string (for display)."""
-        if self.signature_data:
-            return base64.b64encode(self.signature_data).decode("utf-8")
-        return None
-
-    def set_signature_from_base64(self, base64_data: str):
-        """Set the signature binary data from a base64-encoded string."""
-        if base64_data:
-            self.signature_data = base64.b64decode(base64_data)
 
 
 def get_db():

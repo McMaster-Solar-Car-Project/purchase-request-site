@@ -434,32 +434,6 @@ class GoogleDriveClient:
             logger.exception(f"Error uploading session folder: {e}")
             return False
 
-    def test_connection(self) -> bool:
-        """Test the connection to Google Drive"""
-        if not self.service and not self._authenticate():
-            return False
-
-        service = self.service
-        if service is None:
-            return False
-
-        try:
-            # Try to get Drive storage info
-            about = service.about().get(fields="storageQuota,user").execute()
-
-            storage_quota = about.get("storageQuota", {})
-            usage = storage_quota.get("usage", 0)
-            limit = storage_quota.get("limit", 0)
-
-            return True if usage < limit else False
-
-        except HttpError as e:
-            logger.exception(f"HTTP error testing Google Drive connection: {e}")
-            return False
-        except Exception as e:
-            logger.exception(f"Error testing Google Drive connection: {e}")
-            return False
-
     def download_file(self, file_id: str, file_name: str) -> bytes:
         """Download a file from Google Drive by file ID
 
