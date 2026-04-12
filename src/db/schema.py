@@ -10,12 +10,17 @@ logger = setup_logger(__name__)
 def _normalize_postgres_url(url: str) -> str:
     if url.startswith("postgres://"):
         return "postgresql://" + url[len("postgres://") :]
-    return "sqlite:////tmp/purchase_request_site_pytest.sqlite3"
+    return url
 
 
 def _resolve_database_url() -> str:
     settings = get_settings()
-    return _normalize_postgres_url(settings.aiven_database_url)
+    raw_url = settings.aiven_database_url.strip()
+    if raw_url:
+        return _normalize_postgres_url(raw_url)
+    if settings.is_testing:
+        return "sqlite:////tmp/purchase_request_site_pytest.sqlite3"
+    raise ValueError("❌ Database URL not set. Provide AIVEN_DATABASE_URL.")
 
 
 DATABASE_URL = _resolve_database_url()
