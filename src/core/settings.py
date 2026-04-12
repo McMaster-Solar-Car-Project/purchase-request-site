@@ -58,7 +58,6 @@ class Settings(BaseSettings):
     def _require_expected_env_fields(self) -> "Settings":
         always_required_str_fields = (
             "host",
-            "aiven_database_url",
             "google_sheet_id",
             "google_sheet_tab_name",
             "google_drive_folder_id",
@@ -71,6 +70,7 @@ class Settings(BaseSettings):
         )
         production_only_required_str_fields = (
             "environment",
+            "aiven_database_url",
             "google_places_api_key",
             "smtp_server",
             "smtp_username",
