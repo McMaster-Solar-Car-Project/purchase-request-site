@@ -1,5 +1,3 @@
-import sys
-
 from sqlalchemy import Integer, LargeBinary, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
@@ -15,22 +13,23 @@ def _normalize_postgres_url(url: str) -> str:
     return url
 
 
-def _resolve_database_url() -> str:
-    settings = get_settings()
-    # Prefer explicit Aiven URL, then fall back to generic DATABASE_URL.
-    raw_url = settings.aiven_database_url or settings.database_url
-    if raw_url:
-        return _normalize_postgres_url(raw_url)
-    # Pytest imports this module before DATABASE_URL is configured; use SQLite so
-    # API tests that override get_db can collect without a live Postgres URL.
-    if "pytest" in sys.modules:
-        return "sqlite:////tmp/purchase_request_site_pytest.sqlite3"
-    raise ValueError(
-        "❌ Database URL not set. Provide AIVEN_DATABASE_URL or DATABASE_URL."
-    )
+# def _resolve_database_url() -> str:
+#     settings = get_settings()
+#     # Prefer explicit Aiven URL, then fall back to generic DATABASE_URL.
+#     raw_url = settings.aiven_database_url
+#     if raw_url:
+#         return _normalize_postgres_url(settings.aiven_database_url)
+#     # Pytest imports this module before DATABASE_URL is configured; use SQLite so
+#     # API tests that override get_db can collect without a live Postgres URL.
+#     if "pytest" in sys.modules:
+#         return "sqlite:////tmp/purchase_request_site_pytest.sqlite3"
+#     raise ValueError(
+#         "❌ Database URL not set. Provide AIVEN_DATABASE_URL or DATABASE_URL."
+#     )
 
 
-DATABASE_URL = _resolve_database_url()
+settings = get_settings()
+DATABASE_URL = _normalize_postgres_url(settings.aiven_database_url)
 
 engine = create_engine(
     DATABASE_URL,
