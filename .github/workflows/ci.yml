@@ -18,7 +18,7 @@ jobs:
       GOOGLE_SHEET_TAB_NAME: ${{ vars.GOOGLE_SHEET_TAB_NAME }}
       HOST: ${{ vars.HOST }}
       PORT: ${{ vars.PORT }}
-      RUN_LIVE_PIPELINE_TEST: ${{ vars.RUN_LIVE_PIPELINE_TEST }}
+      RUN_LIVE_PIPELINE_TEST: ${{ vars.RUN_LIVE_PIPELINE_TEST || '1' }}
       # App reads GOOGLE_DRIVE_FOLDER_ID (src/google_drive.py); GitHub variable is PARENT_FOLDER_ID.
       GOOGLE_DRIVE_FOLDER_ID: ${{ vars.PARENT_FOLDER_ID }}
       # Service account JSON fields — add these under Actions → Secrets (same names as below).
@@ -62,6 +62,13 @@ jobs:
         run: ruff check --output-format=github .
       - name: Run ty
         run: ty check src tests
+      - name: Debug test env gate
+        run: |
+          python - <<'PYENV'
+          import os
+          print('RUN_LIVE_PIPELINE_TEST=', repr(os.getenv('RUN_LIVE_PIPELINE_TEST')))
+          print('GITHUB_EVENT_NAME=', repr(os.getenv('GITHUB_EVENT_NAME')))
+          PYENV
       - name: Run tests
         run: pytest -vv
       # Check YAML formatting (pull request only)

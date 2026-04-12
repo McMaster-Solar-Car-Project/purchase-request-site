@@ -48,9 +48,11 @@ def _live_pipeline_env_enabled() -> bool:
 
 
 def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
+    raw_live_flag = os.environ.get("RUN_LIVE_PIPELINE_TEST")
     if not _live_pipeline_env_enabled():
         pytest.skip(
-            "Set RUN_LIVE_PIPELINE_TEST to 1, true, or yes (repository variable or env)."
+            "RUN_LIVE_PIPELINE_TEST not enabled; expected one of [1,true,yes], "
+            f"got {raw_live_flag!r}"
         )
     import src.routers.dashboard as dashboard_module
 
