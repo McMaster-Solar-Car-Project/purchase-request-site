@@ -323,14 +323,17 @@ async def submit_all_requests(
                     "Failed to create Google Drive folder (continuing anyway)"
                 )
             # Log to Google Sheets (with Drive folder URL)
+            sheets_client: GoogleSheetsClient | None = None
             try:
                 sheets_client = GoogleSheetsClient()
                 sheets_client.log_purchase_request(
                     user_info, submitted_forms, session_folder, drive_folder_url
                 )
-                sheets_client.close()
             except Exception:
                 logger.exception("Failed to log to Google Sheets (continuing anyway)")
+            finally:
+                if sheets_client is not None:
+                    sheets_client.close()
 
             sentry_sdk.add_breadcrumb(
                 category="external_api",
