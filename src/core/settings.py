@@ -12,7 +12,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    environment: str = Field(default="development", alias="ENVIRONMENT")
+    environment: str = Field(default="testing", alias="ENVIRONMENT")
     sentry_dsn: str | None = Field(default=None, alias="SENTRY_DSN")
     sentry_release: str | None = Field(default=None, alias="SENTRY_RELEASE")
     host: str = Field(default="0.0.0.0", alias="HOST")
@@ -56,26 +56,31 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _require_expected_env_fields(self) -> "Settings":
-        required_str_fields = (
-            "environment",
+        always_required_str_fields = (
             "host",
             "aiven_database_url",
             "google_sheet_id",
             "google_sheet_tab_name",
             "google_drive_folder_id",
-            "google_places_api_key",
             "google_settings_project_id",
             "google_settings_private_key",
             "google_settings_client_email",
             "google_settings_private_key_id",
             "google_settings_client_id",
             "google_settings_client_x509_cert_url",
+        )
+        production_only_required_str_fields = (
+            "environment",
+            "google_places_api_key",
             "smtp_server",
             "smtp_username",
             "smtp_password",
             "error_email_from",
             "error_email_to",
         )
+        required_str_fields = always_required_str_fields
+        if self.is_production:
+            required_str_fields += production_only_required_str_fields
         missing = [
             field_name
             for field_name in required_str_fields

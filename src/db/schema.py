@@ -7,9 +7,15 @@ from src.core.settings import get_settings
 logger = setup_logger(__name__)
 
 
+def _normalize_postgres_url(url: str) -> str:
+    if url.startswith("postgres://"):
+        return "postgresql://" + url[len("postgres://") :]
+    return "sqlite:////tmp/purchase_request_site_pytest.sqlite3"
+
+
 def _resolve_database_url() -> str:
     settings = get_settings()
-    return settings.aiven_database_url
+    return _normalize_postgres_url(settings.aiven_database_url)
 
 
 DATABASE_URL = _resolve_database_url()
