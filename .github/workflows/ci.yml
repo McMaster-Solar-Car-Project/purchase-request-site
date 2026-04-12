@@ -11,14 +11,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # Actions "Variables" are not process environment variables unless mapped here.
-      DEBUG: false
-      ENVIRONMENT: testing
-      GOOGLE_SHEET_ID: "1JRoYYOu1ndvOfrOWvGpR4QGfuHiU4h9W79JQE3poRRc"
-      GOOGLE_SHEET_TAB_NAME: "Website Responses"
-      RUN_LIVE_PIPELINE_TEST: 1
-      # Repo variable is PARENT_FOLDER_ID; app reads GOOGLE_DRIVE_FOLDER_ID (see src/google_drive.py).
-      PARENT_FOLDER_ID: "1fH2GB4LtYjGGhusqbjOLftB7jqgLNehW"
+      # Repository variables → process env (see Settings → Secrets and variables → Actions).
+      DEBUG: ${{ vars.DEBUG }}
+      ENVIRONMENT: ${{ vars.ENVIRONMENT }}
+      GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID }}
+      GOOGLE_SHEET_TAB_NAME: ${{ vars.GOOGLE_SHEET_TAB_NAME }}
+      HOST: ${{ vars.HOST }}
+      PORT: ${{ vars.PORT }}
+      RUN_LIVE_PIPELINE_TEST: ${{ vars.RUN_LIVE_PIPELINE_TEST }}
+      # App reads GOOGLE_DRIVE_FOLDER_ID (src/google_drive.py); GitHub variable is PARENT_FOLDER_ID.
+      GOOGLE_DRIVE_FOLDER_ID: ${{ vars.PARENT_FOLDER_ID }}
+      # Service account JSON fields — add these under Actions → Secrets (same names as below).
+      GOOGLE_SETTINGS__PROJECT_ID: ${{ secrets.GOOGLE_SETTINGS__PROJECT_ID }}
+      GOOGLE_SETTINGS__PRIVATE_KEY: ${{ secrets.GOOGLE_SETTINGS__PRIVATE_KEY }}
+      GOOGLE_SETTINGS__CLIENT_EMAIL: ${{ secrets.GOOGLE_SETTINGS__CLIENT_EMAIL }}
+      GOOGLE_SETTINGS__PRIVATE_KEY_ID: ${{ secrets.GOOGLE_SETTINGS__PRIVATE_KEY_ID }}
+      GOOGLE_SETTINGS__CLIENT_ID: ${{ secrets.GOOGLE_SETTINGS__CLIENT_ID }}
+      GOOGLE_SETTINGS__CLIENT_X509_CERT_URL: ${{ secrets.GOOGLE_SETTINGS__CLIENT_X509_CERT_URL }}
     steps:
       - uses: actions/checkout@v4
         with:
