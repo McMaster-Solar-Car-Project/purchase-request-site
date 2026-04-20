@@ -18,7 +18,10 @@ class Settings(BaseSettings):
     host: str = Field(default="0.0.0.0", alias="HOST")
     port: int = Field(default=8000, alias="PORT")
     debug: bool = Field(default=False, alias="DEBUG")
-    aiven_database_url: str = Field(default="", alias="AIVEN_DATABASE_URL")
+    database_url: str = Field(
+        default="",
+        alias="DATABASE_URL",
+    )
 
     google_sheet_id: str = Field(default="", alias="GOOGLE_SHEET_ID")
     google_sheet_tab_name: str = Field(default="", alias="GOOGLE_SHEET_TAB_NAME")
@@ -70,7 +73,6 @@ class Settings(BaseSettings):
         )
         production_only_required_str_fields = (
             "environment",
-            "aiven_database_url",
             "google_places_api_key",
             "smtp_server",
             "smtp_username",
@@ -90,6 +92,8 @@ class Settings(BaseSettings):
             raise ValueError(
                 "Missing required settings values: " + ", ".join(sorted(missing))
             )
+        if self.is_production and not self.database_url:
+            raise ValueError("Missing required settings values: DATABASE_URL")
         return self
 
     @property

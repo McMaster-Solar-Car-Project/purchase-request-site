@@ -15,12 +15,12 @@ def _normalize_postgres_url(url: str) -> str:
 
 def _resolve_database_url() -> str:
     settings = get_settings()
-    raw_url = settings.aiven_database_url.strip()
+    raw_url = settings.database_url
     if raw_url:
         return _normalize_postgres_url(raw_url)
     if settings.is_testing:
         return "sqlite:////tmp/purchase_request_site_pytest.sqlite3"
-    raise ValueError("❌ Database URL not set. Provide AIVEN_DATABASE_URL.")
+    raise ValueError("❌ Database URL not set. Provide DATABASE_URL.")
 
 
 DATABASE_URL = _resolve_database_url()
