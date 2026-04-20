@@ -172,7 +172,7 @@ The project uses Lefthook for git hooks. These run automatically on commit:
 
 - **Platform**: Digital Ocean
 - **Deployment**: Automatic via GitHub Actions
-- **Database**: Aiven PostgreSQL
+- **Database**: Neon PostgreSQL
 
 ## Opening GitHub Issues
 
