@@ -37,8 +37,8 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
 
     # Second row (USD) is row 7.
     assert ws["C7"].value == "USD Vendor"
-    assert ws["D7"].value == 100.0
-    assert ws["E7"].value == 1.35
-    assert ws["F7"].value == 135.0
-    assert ws["G7"].value == 135.0
-    assert ws["H7"].value == 0
+    assert ws["D7"].value == 100.0  # US total
+    assert ws["E7"].value == 1.35  # Exchange rate
+    assert ws["F7"].value == 135.0  # Total amount in CAD
+    assert ws["G7"].value == 135.0  # Total amount in CAD
+    assert ws["H7"].value == 0  # No HST for US
