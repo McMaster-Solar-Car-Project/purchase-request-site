@@ -6,7 +6,6 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Literal
 
 import sentry_sdk
 from fastapi import (
@@ -16,7 +15,6 @@ from fastapi import (
     Request,
 )
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 from starlette.datastructures import UploadFile
 
@@ -25,6 +23,11 @@ from src.data_processing import create_expense_report, create_purchase_request
 from src.db.schema import get_db
 from src.google_drive import GoogleDriveClient
 from src.google_sheets import GoogleSheetsClient
+from src.models.submissions import (
+    SubmissionForm,
+    SubmissionLineItem,
+    SubmissionUserInfo,
+)
 from src.models.user_service import (
     get_user_by_email,
     save_signature_to_file,
@@ -37,48 +40,6 @@ router = APIRouter(tags=["dashboard"])
 MAX_FORMS = 10
 MAX_ITEMS_PER_FORM = 50
 SESSIONS_ROOT = Path("sessions").resolve()
-
-
-class SubmissionLineItem(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    name: str
-    usage: str
-    quantity: int
-    unit_price: float
-    total: float
-
-
-class SubmissionForm(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    form_number: int
-    vendor_name: str
-    currency: Literal["CAD", "USD"]
-    invoice_filename: str
-    invoice_file_location: str
-    proof_of_payment_filename: str | None = None
-    proof_of_payment_location: str | None = None
-    subtotal_amount: float
-    discount_amount: float
-    hst_gst_amount: float
-    shipping_amount: float
-    total_amount: float
-    us_total: float
-    usd_taxes: float
-    canadian_amount: float
-    items: list[SubmissionLineItem]
-
-
-class SubmissionUserInfo(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    name: str
-    email: str
-    e_transfer_email: str
-    address: str
-    team: str
-    signature: str
 
 
 def _form_str(value: object, default: str = "") -> str:
@@ -341,16 +302,12 @@ async def submit_all_requests(
             submission.model_dump() for submission in submitted_forms
         ]
         try:
-            create_purchase_request(
-                user_info_payload, submitted_forms_payload, session_folder
-            )
+            create_purchase_request(user_info, submitted_forms, session_folder)
         except Exception:
             logger.exception("Failed to create purchase request (continuing anyway)")
 
         try:
-            create_expense_report(
-                session_folder, user_info_payload, submitted_forms_payload
-            )
+            create_expense_report(session_folder, user_info, submitted_forms)
         except Exception:
             logger.exception(
                 "Failed to copy and populate expense report template (continuing anyway)"
