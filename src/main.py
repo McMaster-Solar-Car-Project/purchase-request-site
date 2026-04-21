@@ -71,17 +71,8 @@ def _is_unwanted_log(event: Event, hint: Hint) -> bool:
     return False
 
 
-def _drop_unwanted_events(event: Event, hint: Hint) -> Event | None:
-    """Prevent unwanted errors/log events from being sent to Sentry."""
-    if _event_is_for_health_endpoint(event):
-        return None
-    if _is_unwanted_log(event, hint):
-        return None
-    return event
-
-
-def _drop_unwanted_transactions(event: Event, hint: Hint) -> Event | None:
-    """Prevent unwanted transactions from being sent to Sentry."""
+def _drop_unwanted_sentry_payload(event: Event, hint: Hint) -> Event | None:
+    """Prevent unwanted Sentry events/transactions from being sent."""
     if _event_is_for_health_endpoint(event):
         return None
     if _is_unwanted_log(event, hint):
@@ -145,8 +136,8 @@ sentry_sdk.init(
     traces_sample_rate=1.0,
     profile_session_sample_rate=1.0,
     profile_lifecycle="trace",
-    before_send=_drop_unwanted_events,
-    before_send_transaction=_drop_unwanted_transactions,
+    before_send=_drop_unwanted_sentry_payload,
+    before_send_transaction=_drop_unwanted_sentry_payload,
 )
 
 configure_uvicorn_access_log_filter()
