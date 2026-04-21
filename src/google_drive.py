@@ -6,6 +6,7 @@ This module handles uploading session data (Excel files, invoices, signatures) t
 
 import mimetypes
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -348,7 +349,7 @@ class GoogleDriveClient:
                     drive_folder_name, month_year_folder_id
                 )
 
-            # Upload all files in the session folder sequentially
+            # Upload all files in the session folder
             uploaded_files = []
             session_path = Path(session_folder_path)
 
@@ -369,16 +370,26 @@ class GoogleDriveClient:
                 )
                 return True
 
-            # Upload files one by one (simple and reliable)
-            for file_path in files_to_upload:
-                try:
-                    file_id = self._upload_file(str(file_path), session_folder_id)
-                    if file_id:
-                        uploaded_files.append({"name": file_path.name, "id": file_id})
-                    else:
-                        logger.warning(f"Failed to upload {file_path.name}")
-                except Exception as e:
-                    logger.exception(f"Error uploading {file_path.name}: {e}")
+            max_workers = min(4, len(files_to_upload))
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_to_path = {
+                    executor.submit(
+                        self._upload_file, str(file_path), session_folder_id
+                    ): file_path
+                    for file_path in files_to_upload
+                }
+                for future in as_completed(future_to_path):
+                    file_path = future_to_path[future]
+                    try:
+                        file_id = future.result()
+                        if file_id:
+                            uploaded_files.append(
+                                {"name": file_path.name, "id": file_id}
+                            )
+                        else:
+                            logger.warning(f"Failed to upload {file_path.name}")
+                    except Exception as e:
+                        logger.exception(f"Error uploading {file_path.name}: {e}")
 
             return True
 
