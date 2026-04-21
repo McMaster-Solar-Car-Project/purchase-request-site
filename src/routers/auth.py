@@ -2,6 +2,8 @@
 Authentication router for the /login and /logout endpoints.
 """
 
+from urllib.parse import urlencode
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -57,13 +59,15 @@ def login(
 
         # Redirect to dashboard; include a prompt if profile is incomplete.
         if is_user_profile_complete(user):
+            query = urlencode({"user_email": user.email})
             return RedirectResponse(
-                url=f"/dashboard?user_email={email}",
+                url=f"/dashboard?{query}",
                 status_code=303,
             )
 
+        query = urlencode({"user_email": user.email, "profile_incomplete": "true"})
         return RedirectResponse(
-            url=f"/dashboard?user_email={email}&profile_incomplete=true",
+            url=f"/dashboard?{query}",
             status_code=303,
         )
     else:
