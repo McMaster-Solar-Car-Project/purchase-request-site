@@ -232,7 +232,6 @@ async def submit_all_requests(
             item_usage = _form_str(form_data.get(f"item_usage_{form_num}_{item_num}"))
             item_quantity = form_data.get(f"item_quantity_{form_num}_{item_num}")
             item_price = form_data.get(f"item_price_{form_num}_{item_num}")
-            item_total = form_data.get(f"item_total_{form_num}_{item_num}")
 
             if item_name and item_usage and item_quantity and item_price:
                 items.append(
@@ -241,7 +240,6 @@ async def submit_all_requests(
                         usage=item_usage,
                         quantity=_form_int(item_quantity),
                         unit_price=_form_float(item_price),
-                        total=_form_float(item_total),
                     )
                 )
 

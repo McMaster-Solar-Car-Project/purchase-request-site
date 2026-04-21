@@ -163,15 +163,13 @@ def create_purchase_request(
             ws[f"F{row}"] = item.total
 
         # Financial summary
-        ws["E25"] = "Taxes" if is_usd else "HST/GST"
         ws["F24"] = form.us_subtotal if is_usd else form.subtotal_amount
         ws["F25"] = form.us_additional_fees if is_usd else form.hst_gst_amount
-        ws["F26"] = form.shipping_amount
+        ws["F26"] = form.us_total if is_usd else form.shipping_amount
         ws["F27"] = form.total_cad_amount
 
         # USD conversion rate
         if is_usd:
-            ws["C7"] = "Conversion Rate"
             exchange_rate = (
                 round(form.total_cad_amount / form.us_total, 4)
                 if form.us_total > 0 and form.total_cad_amount > 0

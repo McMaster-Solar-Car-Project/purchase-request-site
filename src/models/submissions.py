@@ -17,7 +17,10 @@ class SubmissionLineItem(BaseModel):
     usage: str
     quantity: int
     unit_price: float
-    total: float
+
+    @property
+    def total(self) -> float:
+        return self.unit_price * self.quantity
 
 
 class Invoice(BaseModel):
