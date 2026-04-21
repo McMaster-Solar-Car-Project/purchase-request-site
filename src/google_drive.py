@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
+from src.models.submissions import SubmissionUserInfo
 
 # Set up logger
 logger = setup_logger(__name__)
@@ -52,17 +53,6 @@ class GoogleServiceAccountEnv(BaseModel):
         }
 
 
-class DriveUserInfo(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    name: str = "Unknown"
-    email: str | None = None
-    e_transfer_email: str | None = None
-    address: str | None = None
-    team: str | None = None
-    signature: str | None = None
-
-
 class GoogleDriveClient:
     """Client for interacting with Google Drive API"""
 
@@ -93,10 +83,12 @@ class GoogleDriveClient:
         return credentials_env.to_service_account_info()
 
     @staticmethod
-    def _coerce_user_info(user_info: dict[str, Any] | DriveUserInfo) -> DriveUserInfo:
-        if isinstance(user_info, DriveUserInfo):
+    def _coerce_user_info(
+        user_info: dict[str, Any] | SubmissionUserInfo,
+    ) -> SubmissionUserInfo:
+        if isinstance(user_info, SubmissionUserInfo):
             return user_info
-        return DriveUserInfo.model_validate(user_info)
+        return SubmissionUserInfo.model_validate(user_info)
 
     def _authenticate(self):
         """Authenticate with Google Drive API using environment variables"""
@@ -317,7 +309,7 @@ class GoogleDriveClient:
                     return None
 
     def create_session_folder_structure(
-        self, session_folder_path: str, user_info: dict[str, Any] | DriveUserInfo
+        self, session_folder_path: str, user_info: dict[str, Any] | SubmissionUserInfo
     ) -> tuple[bool, str, str]:
         """
         Create the folder structure in Google Drive and return folder URL and ID
@@ -365,7 +357,7 @@ class GoogleDriveClient:
     def upload_session_folder(
         self,
         session_folder_path: str,
-        user_info: dict[str, Any] | DriveUserInfo,
+        user_info: dict[str, Any] | SubmissionUserInfo,
         session_folder_id: str | None = None,
     ) -> bool:
         """

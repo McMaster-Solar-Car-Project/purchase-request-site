@@ -8,7 +8,7 @@ import random
 import ssl
 import time
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
+from src.models.submissions import SubmissionUserInfo
 
 # Set up logger
 logger = setup_logger(__name__)
@@ -58,20 +59,9 @@ class GoogleServiceAccountEnv(BaseModel):
         }
 
 
-class SheetsUserInfo(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    name: str = ""
-    email: str = ""
-    e_transfer_email: str = ""
-    address: str = ""
-    team: str = ""
-
-
 class SheetsSubmissionForm(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    currency: Literal["CAD", "USD"] | str = "CAD"
     total_cad_amount: float = 0.0
 
 
@@ -104,10 +94,12 @@ class GoogleSheetsClient:
         return credentials_env.to_service_account_info()
 
     @staticmethod
-    def _coerce_user_info(user_info: dict[str, Any] | SheetsUserInfo) -> SheetsUserInfo:
-        if isinstance(user_info, SheetsUserInfo):
+    def _coerce_user_info(
+        user_info: dict[str, Any] | SubmissionUserInfo,
+    ) -> SubmissionUserInfo:
+        if isinstance(user_info, SubmissionUserInfo):
             return user_info
-        return SheetsUserInfo.model_validate(user_info)
+        return SubmissionUserInfo.model_validate(user_info)
 
     @staticmethod
     def _coerce_forms(
@@ -183,7 +175,7 @@ class GoogleSheetsClient:
 
     def log_purchase_request(
         self,
-        user_info: dict[str, Any] | SheetsUserInfo,
+        user_info: dict[str, Any] | SubmissionUserInfo,
         forms: list[dict[str, Any] | SheetsSubmissionForm],
         session_folder: str,
         drive_folder_url: str = "",
