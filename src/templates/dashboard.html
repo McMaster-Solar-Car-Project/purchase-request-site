@@ -630,20 +630,64 @@
                 const itemsContainer = document.getElementById(`items-container-${formNumber}`);
                 if (itemsContainer) {
                     const itemRows = itemsContainer.querySelectorAll('.item-row');
-                    
+                    const completedItemNumbers = [];
+                    let hasPartialItemRow = false;
+
                     for (let row of itemRows) {
                         const nameInput = row.querySelector('input[name*="_name_"]');
                         const usageInput = row.querySelector('input[name*="_usage_"]');
                         const quantityInput = row.querySelector('input[name*="_quantity_"]');
                         const priceInput = row.querySelector('input[name*="_price_"]');
 
-                        if (nameInput && nameInput.value.trim() && 
-                            usageInput && usageInput.value.trim() && 
-                            quantityInput && quantityInput.value && parseFloat(quantityInput.value) > 0 &&
-                            priceInput && priceInput.value && parseFloat(priceInput.value) > 0) {
-                            hasValidItem = true;
-                            break;
+                        const itemName = nameInput ? nameInput.value.trim() : '';
+                        const itemUsage = usageInput ? usageInput.value.trim() : '';
+                        const itemQuantity = quantityInput ? parseFloat(quantityInput.value) : 0;
+                        const itemPrice = priceInput ? parseFloat(priceInput.value) : 0;
+
+                        const hasAnyValue =
+                            Boolean(itemName) ||
+                            Boolean(itemUsage) ||
+                            Boolean(quantityInput && quantityInput.value) ||
+                            Boolean(priceInput && priceInput.value);
+
+                        const isComplete =
+                            Boolean(itemName) &&
+                            Boolean(itemUsage) &&
+                            itemQuantity > 0 &&
+                            itemPrice > 0;
+
+                        if (hasAnyValue && !isComplete) {
+                            hasPartialItemRow = true;
                         }
+
+                        if (isComplete && nameInput) {
+                            const match = nameInput.name.match(new RegExp(`^item_name_${formNumber}_(\\d+)$`));
+                            if (match) {
+                                completedItemNumbers.push(parseInt(match[1], 10));
+                            }
+                        }
+                    }
+
+                    if (hasPartialItemRow) {
+                        alert(
+                            `Invoice #${formNumber} has an incomplete item row. Please fully complete each item (name, usage, quantity, and cost) or clear the row before submitting.`
+                        );
+                        return false;
+                    }
+
+                    if (completedItemNumbers.length > 0) {
+                        const sortedUnique = [...new Set(completedItemNumbers)].sort((a, b) => a - b);
+                        const hasGap =
+                            sortedUnique[0] !== 1 ||
+                            sortedUnique.some((num, index) => index > 0 && num !== sortedUnique[index - 1] + 1);
+
+                        if (hasGap) {
+                            alert(
+                                `Invoice #${formNumber} has skipped item rows. Please ensure items are filled contiguously starting from Item 1.`
+                            );
+                            return false;
+                        }
+                        hasValidItem = true;
                     }
                 }
 
