@@ -20,6 +20,19 @@
       });
     });
   </script>
+  <style>
+    /* Remove number input spinner/step buttons */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+  </style>
 </head>
 
 <body class="font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-10 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] min-h-screen text-zinc-200">
