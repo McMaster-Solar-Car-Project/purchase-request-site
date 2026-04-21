@@ -23,13 +23,6 @@ from src.models.submissions import SubmissionUserInfo
 logger = setup_logger(__name__)
 
 # Google Sheets configuration
-settings = get_settings()
-SHEET_ID = settings.google_sheet_id
-SHEET_TAB_NAME = "Test Responses" if settings.is_testing else "Website Responses"
-
-# Clean the tab name in case it has comments or extra text
-if SHEET_TAB_NAME and "#" in SHEET_TAB_NAME:
-    SHEET_TAB_NAME = SHEET_TAB_NAME.split("#")[0].strip()
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 
@@ -44,7 +37,9 @@ class GoogleSheetsClient:
 
     def __init__(self):
         """Initialize the Google Sheets client using environment variables"""
-        self.sheet_id = SHEET_ID
+        settings = get_settings()
+        self.sheet_id = settings.google_sheet_id
+        self.sheet_tab_name = settings.sheet_tab_name
         # google-api-python-client builds a dynamic Resource; stubs omit API methods like spreadsheets().
         self.service: Any | None = None
 
@@ -171,7 +166,7 @@ class GoogleSheetsClient:
             ]
 
             # Write to the sheet
-            range_name = f"{SHEET_TAB_NAME}!A:H"  # 8 columns: Timestamp, Name, Mac Email, Address, Email Address, Team, Total Amount, Drive Link
+            range_name = f"{self.sheet_tab_name}!A:H"  # 8 columns: Timestamp, Name, Mac Email, Address, Email Address, Team, Total Amount, Drive Link
             body = {
                 "values": [row]  # Single row
             }

@@ -108,6 +108,10 @@ class Settings(BaseSettings):
         return self.environment == "testing"
 
     @property
+    def sheet_tab_name(self) -> str:
+        return "Test Responses" if self.is_testing else "Website Responses"
+
+    @property
     def google_service_account_info(self) -> dict[str, Any]:
         credentials_env = GoogleServiceAccountEnv(
             project_id=self.google_settings_project_id,
