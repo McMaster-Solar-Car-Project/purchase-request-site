@@ -123,7 +123,7 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
             "discount_amount_1": "1",
             "hst_gst_amount_1": "1.17",
             "shipping_amount_1": "2",
-            "total_amount_1": "12.17",
+            "total_cad_amount_1": "12.17",
             "item_name_1_1": "Cable",
             "item_usage_1_1": "Power",
             "item_quantity_1_1": "1",

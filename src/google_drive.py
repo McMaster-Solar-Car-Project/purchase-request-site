@@ -14,53 +14,17 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import ValidationError
 
 from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
+from src.models.submissions import SubmissionUserInfo
 
 # Set up logger
 logger = setup_logger(__name__)
 
 # Google Drive configuration
 DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"]
-
-
-class GoogleServiceAccountEnv(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    project_id: str = Field(min_length=1)
-    private_key: str = Field(min_length=1)
-    client_email: str = Field(min_length=1)
-    private_key_id: str | None = None
-    client_id: str | None = None
-    client_x509_cert_url: str | None = None
-
-    def to_service_account_info(self) -> dict[str, Any]:
-        normalized_private_key = self.private_key.replace("\\n", "\n")
-        return {
-            "type": "service_account",
-            "project_id": self.project_id,
-            "private_key_id": self.private_key_id,
-            "private_key": normalized_private_key,
-            "client_email": self.client_email,
-            "client_id": self.client_id,
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": self.client_x509_cert_url,
-        }
-
-
-class DriveUserInfo(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    name: str = "Unknown"
-    email: str | None = None
-    e_transfer_email: str | None = None
-    address: str | None = None
-    team: str | None = None
-    signature: str | None = None
 
 
 class GoogleDriveClient:
@@ -73,37 +37,19 @@ class GoogleDriveClient:
         self.parent_folder_id: str | None = None
 
     @staticmethod
-    def _get_credentials_from_env() -> dict[str, Any]:
-        """
-        Build service account credentials from environment variables
-
-        Returns:
-            Dict containing the service account information
-        """
-        settings = get_settings()
-
-        credentials_env = GoogleServiceAccountEnv(
-            project_id=settings.google_settings_project_id,
-            private_key=settings.google_settings_private_key,
-            client_email=settings.google_settings_client_email,
-            private_key_id=settings.google_settings_private_key_id,
-            client_id=settings.google_settings_client_id,
-            client_x509_cert_url=settings.google_settings_client_x509_cert_url,
-        )
-        return credentials_env.to_service_account_info()
-
-    @staticmethod
-    def _coerce_user_info(user_info: dict[str, Any] | DriveUserInfo) -> DriveUserInfo:
-        if isinstance(user_info, DriveUserInfo):
+    def _coerce_user_info(
+        user_info: dict[str, Any] | SubmissionUserInfo,
+    ) -> SubmissionUserInfo:
+        if isinstance(user_info, SubmissionUserInfo):
             return user_info
-        return DriveUserInfo.model_validate(user_info)
+        return SubmissionUserInfo.model_validate(user_info)
 
     def _authenticate(self):
         """Authenticate with Google Drive API using environment variables"""
         if self.service:
             return True
         try:
-            service_account_info = self._get_credentials_from_env()
+            service_account_info = get_settings().google_service_account_info
             credentials = Credentials.from_service_account_info(
                 service_account_info, scopes=DRIVE_SCOPES
             )
@@ -250,7 +196,6 @@ class GoogleDriveClient:
         self,
         file_path: str,
         folder_id: str,
-        file_name: str | None = None,
     ) -> str | None:
         """
         Upload a file to Google Drive with retry logic
@@ -281,8 +226,7 @@ class GoogleDriveClient:
                     return None
 
                 # Determine file name and MIME type
-                if not file_name:
-                    file_name = Path(file_path).name
+                file_name = Path(file_path).name
 
                 mime_type, _ = mimetypes.guess_type(file_path)
                 if not mime_type:
@@ -317,7 +261,7 @@ class GoogleDriveClient:
                     return None
 
     def create_session_folder_structure(
-        self, session_folder_path: str, user_info: dict[str, Any] | DriveUserInfo
+        self, session_folder_path: str, user_info: SubmissionUserInfo
     ) -> tuple[bool, str, str]:
         """
         Create the folder structure in Google Drive and return folder URL and ID
@@ -365,7 +309,7 @@ class GoogleDriveClient:
     def upload_session_folder(
         self,
         session_folder_path: str,
-        user_info: dict[str, Any] | DriveUserInfo,
+        user_info: SubmissionUserInfo,
         session_folder_id: str | None = None,
     ) -> bool:
         """

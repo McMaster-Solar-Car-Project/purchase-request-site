@@ -95,7 +95,7 @@ def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
             "discount_amount_1": "0",
             "hst_gst_amount_1": "3.25",
             "shipping_amount_1": "0",
-            "total_amount_1": "28.25",
+            "total_cad_amount_1": "28.25",
             "item_name_1_1": "USB Adapter",
             "item_usage_1_1": "Testing",
             "item_quantity_1_1": "1",

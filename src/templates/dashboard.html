@@ -20,6 +20,19 @@
       });
     });
   </script>
+  <style>
+    /* Remove number input spinner/step buttons */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+  </style>
 </head>
 
 <body class="font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-10 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] min-h-screen text-zinc-200">
@@ -44,6 +57,13 @@
         </div>
         {% endif %}
 
+        {% if profile_warning_message %}
+        <div class="profile-warning-message rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 mb-4 text-amber-200">
+            {{ profile_warning_message }}
+            <a href="/edit-profile?user_email={{ user_email }}" class="ml-1 underline hover:text-amber-100">Update profile</a>
+        </div>
+        {% endif %}
+
         <p class="subtitle mt-1 mb-6 text-zinc-300">Fill out up to 10 separate purchase requests and submit them all together</p>
 
         <div class="user-info rounded-xl border border-zinc-700/70 bg-zinc-900/45 p-4 mb-8">
@@ -58,6 +78,7 @@
         <form method="POST" action="/submit-all-requests" enctype="multipart/form-data"
             onsubmit="return validateSubmission()">
             <!-- Hidden fields for user data -->
+            <input type="hidden" id="profile-is-complete" value="{{ 'true' if profile_is_complete else 'false' }}">
             <input type="hidden" name="name" value="{{ name }}">
             <input type="hidden" name="email" value="{{ email }}">
             <input type="hidden" name="e_transfer_email" value="{{ e_transfer_email }}">
@@ -171,7 +192,7 @@
                                                     value="1" data-action="calc-item" data-form="{{ form_num }}" data-item="1" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                                             </div>
                                             <div class="item-input-group md:col-span-2">
-                                                <label class="block mb-1 text-xs font-medium text-zinc-300">Unit Price</label>
+                                                <label class="block mb-1 text-xs font-medium text-zinc-300">Item Cost (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
                                                 <input type="number" name="item_price_{{ form_num }}_1" min="0"
                                                     step="0.00000001" placeholder="0.00"
                                                     data-action="calc-item" data-form="{{ form_num }}" data-item="1" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
@@ -250,17 +271,6 @@
                                             </div>
                                         </div>
 
-                                        <div class="form-row total-row">
-                                            <div class="form-group">
-                                                <label for="total_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Total Reimbursement Amount
-                                                    (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
-                                                <input type="number" id="total_amount_{{ form_num }}"
-                                                    name="total_amount_{{ form_num }}" readonly min="0" step="0.00000001"
-                                                    placeholder="0.00" class="total-field w-full rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
-                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Automatically calculated (Subtotal -
-                                                    Discount + Tax + Shipping)</small>
-                                            </div>
-                                        </div>
                                     </div>
 
                                     <!-- USD Financial Breakdown -->
@@ -268,35 +278,34 @@
                                         style="display: none;">
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="us_total_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">US Subtotal (USD)</label>
-                                                <input type="number" id="us_total_{{ form_num }}"
-                                                    name="us_total_{{ form_num }}" min="0" step="0.00000001"
-                                                    placeholder="0.00" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
-                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Subtotal in US dollars</small>
+                                                <label for="us_subtotal_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">US Subtotal (USD)</label>
+                                                <input type="number" id="us_subtotal_{{ form_num }}"
+                                                    name="us_subtotal_{{ form_num }}" readonly min="0" step="0.00000001"
+                                                    placeholder="0.00" class="total-field w-full rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
+                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Automatically calculated from item costs above</small>
                                             </div>
                                         </div>
 
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="usd_taxes_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Taxes (USD)</label>
-                                                <input type="number" id="usd_taxes_{{ form_num }}"
-                                                    name="usd_taxes_{{ form_num }}" min="0" step="0.00000001"
+                                                <label for="us_additional_fees_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Additional Fees (USD)</label>
+                                                <input type="number" id="us_additional_fees_{{ form_num }}"
+                                                    name="us_additional_fees_{{ form_num }}" min="0" step="0.00000001"
                                                     placeholder="0.00" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
-                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Sales tax, state tax, or other applicable
-                                                    taxes</small>
+                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Taxes, tariffs, shipping, or other fees not included in item costs</small>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="canadian_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200">Canadian Amount
-                                                    (CAD)</label>
-                                                <input type="number" id="canadian_amount_{{ form_num }}"
-                                                    name="canadian_amount_{{ form_num }}" min="0" step="0.00000001"
-                                                    placeholder="0.00" class="w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
-                                                <small class="financial-help mt-1 block text-xs text-zinc-400">Equivalent amount in Canadian dollars for
-                                                    reimbursement</small>
-                                            </div>
+                                    <div class="form-row total-row mt-3">
+                                        <div class="form-group">
+                                            <label for="total_cad_amount_{{ form_num }}" class="block mb-1 text-sm font-medium text-zinc-200"><span class="total-label-{{ form_num }}">Total Reimbursement Amount</span>
+                                                (CAD)</label>
+                                            <input type="number" id="total_cad_amount_{{ form_num }}"
+                                                name="total_cad_amount_{{ form_num }}" readonly min="0" step="0.00000001"
+                                                placeholder="0.00" class="total-field w-full rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 py-2 text-sm text-zinc-200">
+                                            <small class="financial-help total-help-{{ form_num }} mt-1 block text-xs text-zinc-400">Automatically calculated (Subtotal -
+                                                Discount + Tax + Shipping)</small>
                                         </div>
                                     </div>
                                 </div>
@@ -309,13 +318,28 @@
 
             <div class="dashboard-actions mt-8">
                 <div class="form-group">
-                    <button type="submit" id="submit-all-btn" class="btn btn-large w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-white border-none px-6 py-3 text-sm font-medium transition-all duration-200 hover:from-[#4f46e5] hover:to-[#7c3aed] hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)]">Submit All Purchase Requests</button>
+                    <button
+                        type="submit"
+                        id="submit-all-btn"
+                        class="btn btn-large w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-white border-none px-6 py-3 text-sm font-medium transition-all duration-200 hover:from-[#4f46e5] hover:to-[#7c3aed] hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:from-[#6366f1] disabled:hover:to-[#8b5cf6]"
+                        {% if not profile_is_complete %}disabled aria-disabled="true"{% endif %}
+                    >
+                        Submit All Purchase Requests
+                    </button>
+                    {% if not profile_is_complete %}
+                    <p class="mt-2 text-sm text-amber-200">
+                        Submission is disabled until your profile is complete.
+                    </p>
+                    {% endif %}
                 </div>
             </div>
         </form>
     </div>
 
     <script>
+        const profileCompleteField = document.getElementById("profile-is-complete");
+        const profileIsComplete = profileCompleteField?.value === "true";
+
         // Track item counts for each form
         const itemCounts = {};
         const maxItems = 15;
@@ -347,6 +371,8 @@
 
             itemCounts[formNumber]++;
             const container = document.getElementById(`items-container-${formNumber}`);
+            const currencySelect = document.getElementById(`currency_${formNumber}`);
+            const currentCurrency = currencySelect ? currencySelect.value : 'CAD';
             const newRow = document.createElement('div');
             newRow.className = 'item-row grid gap-3 md:grid-cols-12 p-3 rounded-lg border border-zinc-700/70 bg-zinc-900/70';
             newRow.innerHTML = `
@@ -363,7 +389,7 @@
                     <input type="number" name="item_quantity_${formNumber}_${itemCounts[formNumber]}" min="1" value="1" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                 </div>
                 <div class="item-input-group md:col-span-2">
-                    <label class="block mb-1 text-xs font-medium text-zinc-300">Unit Price</label>
+                    <label class="block mb-1 text-xs font-medium text-zinc-300">Item Cost (<span class="currency-label-${formNumber}">${currentCurrency}</span>)</label>
                     <input type="number" name="item_price_${formNumber}_${itemCounts[formNumber]}" min="0" step="0.00000001" placeholder="0.00" oninput="calculateItemTotal(${formNumber}, ${itemCounts[formNumber]})" class="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30">
                 </div>
                 <div class="item-input-group md:col-span-1">
@@ -413,20 +439,23 @@
             const container = document.getElementById(`items-container-${formNumber}`);
             const totalInputs = container.querySelectorAll('input[name^="item_total_"]');
             let subtotal = 0;
-            
+
             totalInputs.forEach(input => {
                 const value = parseFloat(input.value) || 0;
                 subtotal += value;
             });
-            
-            // Always update the subtotal field (even if hidden for USD)
+
+            const formattedSubtotal = subtotal.toFixed(8);
             const subtotalField = document.getElementById(`subtotal_amount_${formNumber}`);
-            if (subtotalField) {
-                subtotalField.value = subtotal.toFixed(8);
+            if (subtotalField) subtotalField.value = formattedSubtotal;
+            const usSubtotalField = document.getElementById(`us_subtotal_${formNumber}`);
+            if (usSubtotalField) usSubtotalField.value = formattedSubtotal;
+
+            const currencySelect = document.getElementById(`currency_${formNumber}`);
+            if (!currencySelect || currencySelect.value === 'CAD') {
+                updateHstRequirement(formNumber, subtotal);
+                calculateFinalTotal(formNumber);
             }
-            
-            updateHstRequirement(formNumber, subtotal);
-            calculateFinalTotal(formNumber);
         }
 
         function updateHstRequirement(formNumber, subtotal) {
@@ -459,7 +488,7 @@
             const shipping = parseFloat(document.getElementById(`shipping_amount_${formNumber}`).value) || 0;
             
             const total = subtotal - discount + hstGst + shipping;
-            document.getElementById(`total_amount_${formNumber}`).value = Math.max(0, total).toFixed(8);
+            document.getElementById(`total_cad_amount_${formNumber}`).value = Math.max(0, total).toFixed(8);
         }
 
         function updateCurrencyLabels(formNumber) {
@@ -473,7 +502,10 @@
             const usdBreakdown = document.querySelector(`.usd-breakdown-${formNumber}`);
             const hstGstInput = document.getElementById(`hst_gst_amount_${formNumber}`);
             const hstGstLabel = document.querySelector(`label[for="hst_gst_amount_${formNumber}"]`);
-            
+            const totalInput = document.getElementById(`total_cad_amount_${formNumber}`);
+            const totalLabel = document.querySelector(`.total-label-${formNumber}`);
+            const totalHelp = document.querySelector(`.total-help-${formNumber}`);
+
             currencyLabels.forEach(label => {
                 label.textContent = selectedCurrency;
             });
@@ -492,11 +524,16 @@
                 if (hstGstLabel) {
                     hstGstLabel.innerHTML = `<span class="tax-label-${formNumber}">Taxes</span> (<span class="currency-label-${formNumber}">USD</span>)`;
                 }
-                
-                // Show USD breakdown, hide CAD breakdown
+
                 if (cadBreakdown) cadBreakdown.style.display = 'none';
                 if (usdBreakdown) usdBreakdown.style.display = 'block';
-                
+
+                if (totalInput) {
+                    totalInput.removeAttribute('readonly');
+                    totalInput.value = '';
+                }
+                if (totalLabel) totalLabel.textContent = 'Canadian Amount';
+                if (totalHelp) totalHelp.textContent = 'Equivalent amount in Canadian dollars for reimbursement';
             } else {
                 taxLabels.forEach(label => {
                     label.textContent = 'HST/GST';
@@ -509,10 +546,14 @@
                 const subtotalInput = document.getElementById(`subtotal_amount_${formNumber}`);
                 const currentSubtotal = parseFloat(subtotalInput ? subtotalInput.value : 0) || 0;
                 updateHstRequirement(formNumber, currentSubtotal);
-                
-                // Show CAD breakdown, hide USD breakdown
+
                 if (cadBreakdown) cadBreakdown.style.display = 'block';
                 if (usdBreakdown) usdBreakdown.style.display = 'none';
+
+                if (totalInput) totalInput.setAttribute('readonly', '');
+                if (totalLabel) totalLabel.textContent = 'Total Reimbursement Amount';
+                if (totalHelp) totalHelp.textContent = 'Automatically calculated (Subtotal - Discount + Tax + Shipping)';
+                calculateSubtotal(formNumber);
             }
             
             // Show/hide proof of payment section based on currency
@@ -621,28 +662,13 @@
             let totalCanadianAmount = 0;
             for (let formNumber = 1; formNumber <= 10; formNumber++) {
                 const vendorName = document.getElementById(`vendor_name_${formNumber}`);
-                const currencySelect = document.getElementById(`currency_${formNumber}`);
-                
-                // Skip if vendor name is not filled (form not in use)
                 if (!vendorName || !vendorName.value.trim()) {
                     continue;
                 }
-
-                
-                if (currencySelect && currencySelect.value === 'CAD') {
-                    // For CAD forms, use the total_amount field
-                    const totalAmountField = document.getElementById(`total_amount_${formNumber}`);
-                    if (totalAmountField && totalAmountField.value) {
-                        totalCanadianAmount += parseFloat(totalAmountField.value) || 0;
-                    }
-                } else if (currencySelect && currencySelect.value === 'USD') {
-                    // For USD forms, use the canadian_amount field
-                    const canadianAmountField = document.getElementById(`canadian_amount_${formNumber}`);
-                    if (canadianAmountField && canadianAmountField.value) {
-                        totalCanadianAmount += parseFloat(canadianAmountField.value) || 0;
-                    }
+                const totalField = document.getElementById(`total_cad_amount_${formNumber}`);
+                if (totalField && totalField.value) {
+                    totalCanadianAmount += parseFloat(totalField.value) || 0;
                 }
-                
             }
             if (totalCanadianAmount < 100) {
                 alert(`Total Canadian amount must be greater than $100.00 CAD.\nCurrent total: $${totalCanadianAmount.toFixed(8)} CAD`);
@@ -712,28 +738,17 @@
                 updateRemoveButtons(formNumber);
             }
 
-            // Clear financial breakdown fields for CAD
-            const cadFinancialFields = [
+            const financialFields = [
                 `subtotal_amount_${formNumber}`,
                 `discount_amount_${formNumber}`,
                 `hst_gst_amount_${formNumber}`,
                 `shipping_amount_${formNumber}`,
-                `total_amount_${formNumber}`
+                `us_subtotal_${formNumber}`,
+                `us_additional_fees_${formNumber}`,
+                `total_cad_amount_${formNumber}`
             ];
 
-            cadFinancialFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (field) field.value = '';
-            });
-
-            // Clear financial breakdown fields for USD
-            const usdFinancialFields = [
-                `us_total_${formNumber}`,
-                `usd_taxes_${formNumber}`,
-                `canadian_amount_${formNumber}`
-            ];
-
-            usdFinancialFields.forEach(fieldId => {
+            financialFields.forEach(fieldId => {
                 const field = document.getElementById(fieldId);
                 if (field) field.value = '';
             });
@@ -850,6 +865,11 @@
             const submitBtn = document.getElementById("submit-all-btn");
 
             form.addEventListener("submit", (e) => {
+                if (!profileIsComplete) {
+                    e.preventDefault();
+                    return;
+                }
+
                 if (isSubmitting) {
                     // already in flight, block
                     e.preventDefault();

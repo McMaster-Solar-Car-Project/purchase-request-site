@@ -8,7 +8,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from src.core.logging_utils import setup_logger
 from src.image_processing import insert_signature_at_cell
-from src.models.submissions import SubmissionForm, SubmissionUserInfo
+from src.models.submissions import Invoice, SubmissionUserInfo
 
 logger = setup_logger(__name__)
 
@@ -16,7 +16,7 @@ logger = setup_logger(__name__)
 def create_expense_report(
     session_folder: str,
     user_info: SubmissionUserInfo,
-    submitted_forms: list[SubmissionForm],
+    submitted_forms: list[Invoice],
 ) -> bool:
     """Copy the expense report template to the session folder and populate with user data"""
 
@@ -72,7 +72,7 @@ def create_expense_report(
 
 
 def populate_expense_rows_from_submitted_forms(
-    ws: Worksheet, submitted_forms: list[SubmissionForm]
+    ws: Worksheet, submitted_forms: list[Invoice]
 ) -> bool:
     """Populate expense report rows from submitted form data"""
 
@@ -90,18 +90,18 @@ def populate_expense_rows_from_submitted_forms(
 
             if form.currency == "CAD":
                 ws[f"F{row}"] = subtotal_after_discount
-                ws[f"G{row}"] = form.total_amount
+                ws[f"G{row}"] = form.total_cad_amount
                 ws[f"H{row}"] = form.hst_gst_amount
             else:
                 exchange_rate = (
-                    form.canadian_amount / form.us_total
-                    if form.us_total > 0 and form.canadian_amount > 0
+                    form.total_cad_amount / form.us_total
+                    if form.us_total > 0 and form.total_cad_amount > 0
                     else 0
                 )
                 ws[f"D{row}"] = form.us_total
                 ws[f"E{row}"] = exchange_rate
-                ws[f"F{row}"] = form.canadian_amount
-                ws[f"G{row}"] = form.canadian_amount
+                ws[f"F{row}"] = form.total_cad_amount
+                ws[f"G{row}"] = form.total_cad_amount
                 ws[f"H{row}"] = 0
 
         return True
@@ -113,7 +113,7 @@ def populate_expense_rows_from_submitted_forms(
 
 def create_purchase_request(
     user_info: SubmissionUserInfo,
-    submitted_forms: list[SubmissionForm],
+    submitted_forms: list[Invoice],
     session_folder: str,
 ) -> dict[str, Any]:
     """Create Purchase Request using the template with multiple tabs for each submitted form"""
@@ -163,18 +163,16 @@ def create_purchase_request(
             ws[f"F{row}"] = item.total
 
         # Financial summary
-        ws["E25"] = "Taxes" if is_usd else "HST/GST"
-        ws["F24"] = form.us_total if is_usd else form.subtotal_amount
-        ws["F25"] = form.hst_gst_amount
-        ws["F26"] = form.shipping_amount
-        ws["F27"] = form.total_amount
+        ws["F24"] = form.us_subtotal if is_usd else form.subtotal_amount
+        ws["F25"] = form.us_additional_fees if is_usd else form.hst_gst_amount
+        ws["F26"] = form.us_total if is_usd else form.shipping_amount
+        ws["F27"] = form.total_cad_amount
 
         # USD conversion rate
         if is_usd:
-            ws["C7"] = "Conversion Rate"
             exchange_rate = (
-                round(form.canadian_amount / form.us_total, 4)
-                if form.us_total > 0 and form.canadian_amount > 0
+                round(form.total_cad_amount / form.us_total, 4)
+                if form.us_total > 0 and form.total_cad_amount > 0
                 else 0
             )
             ws["D7"] = exchange_rate

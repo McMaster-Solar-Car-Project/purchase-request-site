@@ -24,12 +24,13 @@ from src.db.schema import get_db
 from src.google_drive import GoogleDriveClient
 from src.google_sheets import GoogleSheetsClient
 from src.models.submissions import (
-    SubmissionForm,
+    Invoice,
     SubmissionLineItem,
     SubmissionUserInfo,
 )
 from src.models.user_service import (
     get_user_by_email,
+    is_user_profile_complete,
     save_signature_to_file,
 )
 from src.routers.utils import require_auth, templates
@@ -106,6 +107,7 @@ async def dashboard(
     request: Request,
     user_email: str,
     updated: bool = False,
+    profile_incomplete: bool = False,
     error: str | None = None,
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
@@ -118,11 +120,19 @@ async def dashboard(
 
     error_message = None
     success_message = None
+    profile_warning_message = None
 
     if error == "no_forms":
         error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, upload an invoice file, and add at least one item."
     elif updated:
         success_message = "✅ Your profile has been updated successfully!"
+
+    profile_is_complete = is_user_profile_complete(user)
+    if profile_incomplete or not profile_is_complete:
+        profile_warning_message = (
+            "Your profile is incomplete. Please update your information before "
+            "submitting purchase requests."
+        )
 
     return templates.TemplateResponse(
         request=request,
@@ -139,6 +149,8 @@ async def dashboard(
             "team": user.team,
             "error_message": error_message,
             "success_message": success_message,
+            "profile_warning_message": profile_warning_message,
+            "profile_is_complete": profile_is_complete,
         },
     )
 
@@ -185,7 +197,7 @@ async def submit_all_requests(
     if not save_signature_to_file(user, str(signature_path)):
         logger.warning(f"Could not save signature for user {email}")
 
-    submitted_forms: list[SubmissionForm] = []
+    submitted_forms: list[Invoice] = []
 
     for form_num in range(1, MAX_FORMS + 1):
         vendor_name = _form_str(form_data.get(f"vendor_name_{form_num}"))
@@ -209,20 +221,20 @@ async def submit_all_requests(
             )
             continue
 
+        total_cad_amount = _form_float(form_data.get(f"total_cad_amount_{form_num}"))
+
         if currency == "USD":
-            us_total = _form_float(form_data.get(f"us_total_{form_num}"))
-            usd_taxes = _form_float(form_data.get(f"usd_taxes_{form_num}"))
-            canadian_amount = _form_float(form_data.get(f"canadian_amount_{form_num}"))
-            subtotal_amount = discount_amount = shipping_amount = 0
-            hst_gst_amount = usd_taxes
-            total_amount = canadian_amount
+            us_subtotal = _form_float(form_data.get(f"us_subtotal_{form_num}"))
+            us_additional_fees = _form_float(
+                form_data.get(f"us_additional_fees_{form_num}")
+            )
+            subtotal_amount = discount_amount = hst_gst_amount = shipping_amount = 0
         else:
             subtotal_amount = _form_float(form_data.get(f"subtotal_amount_{form_num}"))
             discount_amount = _form_float(form_data.get(f"discount_amount_{form_num}"))
             hst_gst_amount = _form_float(form_data.get(f"hst_gst_amount_{form_num}"))
             shipping_amount = _form_float(form_data.get(f"shipping_amount_{form_num}"))
-            total_amount = _form_float(form_data.get(f"total_amount_{form_num}"))
-            us_total = usd_taxes = canadian_amount = 0
+            us_subtotal = us_additional_fees = 0
 
         items = []
         for item_num in range(1, MAX_ITEMS_PER_FORM + 1):
@@ -232,7 +244,6 @@ async def submit_all_requests(
             item_usage = _form_str(form_data.get(f"item_usage_{form_num}_{item_num}"))
             item_quantity = form_data.get(f"item_quantity_{form_num}_{item_num}")
             item_price = form_data.get(f"item_price_{form_num}_{item_num}")
-            item_total = form_data.get(f"item_total_{form_num}_{item_num}")
 
             if item_name and item_usage and item_quantity and item_price:
                 items.append(
@@ -241,7 +252,6 @@ async def submit_all_requests(
                         usage=item_usage,
                         quantity=_form_int(item_quantity),
                         unit_price=_form_float(item_price),
-                        total=_form_float(item_total),
                     )
                 )
 
@@ -267,7 +277,7 @@ async def submit_all_requests(
             await _save_uploaded_file(proof_of_payment_file, proof_of_payment_path)
             proof_of_payment_location = str(proof_of_payment_path)
 
-        form_submission = SubmissionForm(
+        form_submission = Invoice(
             form_number=form_num,
             vendor_name=vendor_name,
             currency="USD" if currency == "USD" else "CAD",
@@ -279,10 +289,9 @@ async def submit_all_requests(
             discount_amount=discount_amount,
             hst_gst_amount=hst_gst_amount,
             shipping_amount=shipping_amount,
-            total_amount=total_amount,
-            us_total=us_total,
-            usd_taxes=usd_taxes,
-            canadian_amount=canadian_amount,
+            total_cad_amount=total_cad_amount,
+            us_subtotal=us_subtotal,
+            us_additional_fees=us_additional_fees,
             items=items,
         )
 
@@ -297,7 +306,6 @@ async def submit_all_requests(
             team=team,
             signature=signature_filename,
         )
-        user_info_payload = user_info.model_dump()
         submitted_forms_payload = [
             submission.model_dump() for submission in submitted_forms
         ]
@@ -322,7 +330,7 @@ async def submit_all_requests(
             try:
                 success, drive_folder_url, drive_folder_id = (
                     drive_client.create_session_folder_structure(
-                        session_folder, user_info_payload
+                        session_folder, user_info
                     )
                 )
                 if not success:
@@ -336,7 +344,7 @@ async def submit_all_requests(
             try:
                 sheets_client = GoogleSheetsClient()
                 sheets_client.log_purchase_request(
-                    user_info_payload,
+                    user_info,
                     submitted_forms_payload,
                     session_folder,
                     drive_folder_url,
@@ -354,7 +362,7 @@ async def submit_all_requests(
             )
             try:
                 drive_upload_success = drive_client.upload_session_folder(
-                    session_folder, user_info_payload, drive_folder_id or None
+                    session_folder, user_info, drive_folder_id or None
                 )
                 logger.info(
                     f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"

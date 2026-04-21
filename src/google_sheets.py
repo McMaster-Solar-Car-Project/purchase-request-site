@@ -8,72 +8,28 @@ import random
 import ssl
 import time
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
+from src.models.submissions import SubmissionUserInfo
 
 # Set up logger
 logger = setup_logger(__name__)
 
 # Google Sheets configuration
-settings = get_settings()
-SHEET_ID = settings.google_sheet_id
-SHEET_TAB_NAME = "Test Responses" if settings.is_testing else "Website Responses"
-
-# Clean the tab name in case it has comments or extra text
-if SHEET_TAB_NAME and "#" in SHEET_TAB_NAME:
-    SHEET_TAB_NAME = SHEET_TAB_NAME.split("#")[0].strip()
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-
-
-class GoogleServiceAccountEnv(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    project_id: str = Field(min_length=1)
-    private_key: str = Field(min_length=1)
-    client_email: str = Field(min_length=1)
-    private_key_id: str | None = None
-    client_id: str | None = None
-    client_x509_cert_url: str | None = None
-
-    def to_service_account_info(self) -> dict[str, Any]:
-        normalized_private_key = self.private_key.replace("\\n", "\n")
-        return {
-            "type": "service_account",
-            "project_id": self.project_id,
-            "private_key_id": self.private_key_id,
-            "private_key": normalized_private_key,
-            "client_email": self.client_email,
-            "client_id": self.client_id,
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": self.client_x509_cert_url,
-        }
-
-
-class SheetsUserInfo(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    name: str = ""
-    email: str = ""
-    e_transfer_email: str = ""
-    address: str = ""
-    team: str = ""
 
 
 class SheetsSubmissionForm(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    currency: Literal["CAD", "USD"] | str = "CAD"
-    total_amount: float = 0.0
-    canadian_amount: float = 0.0
+    total_cad_amount: float = 0.0
 
 
 class GoogleSheetsClient:
@@ -81,34 +37,19 @@ class GoogleSheetsClient:
 
     def __init__(self):
         """Initialize the Google Sheets client using environment variables"""
-        self.sheet_id = SHEET_ID
+        settings = get_settings()
+        self.sheet_id = settings.google_sheet_id
+        self.sheet_tab_name = settings.sheet_tab_name
         # google-api-python-client builds a dynamic Resource; stubs omit API methods like spreadsheets().
         self.service: Any | None = None
 
-    def _get_credentials_from_env(self) -> dict[str, Any]:
-        """
-        Build service account credentials from environment variables
-
-        Returns:
-            Dict containing the service account information
-        """
-        settings = get_settings()
-
-        credentials_env = GoogleServiceAccountEnv(
-            project_id=settings.google_settings_project_id,
-            private_key=settings.google_settings_private_key,
-            client_email=settings.google_settings_client_email,
-            private_key_id=settings.google_settings_private_key_id,
-            client_id=settings.google_settings_client_id,
-            client_x509_cert_url=settings.google_settings_client_x509_cert_url,
-        )
-        return credentials_env.to_service_account_info()
-
     @staticmethod
-    def _coerce_user_info(user_info: dict[str, Any] | SheetsUserInfo) -> SheetsUserInfo:
-        if isinstance(user_info, SheetsUserInfo):
+    def _coerce_user_info(
+        user_info: dict[str, Any] | SubmissionUserInfo,
+    ) -> SubmissionUserInfo:
+        if isinstance(user_info, SubmissionUserInfo):
             return user_info
-        return SheetsUserInfo.model_validate(user_info)
+        return SubmissionUserInfo.model_validate(user_info)
 
     @staticmethod
     def _coerce_forms(
@@ -127,7 +68,7 @@ class GoogleSheetsClient:
         if self.service:
             return True
         try:
-            service_account_info = self._get_credentials_from_env()
+            service_account_info = get_settings().google_service_account_info
             credentials = Credentials.from_service_account_info(
                 service_account_info, scopes=SCOPES
             )
@@ -144,26 +85,6 @@ class GoogleSheetsClient:
         except Exception as e:
             logger.exception(f"Failed to authenticate with Google Sheets API: {e}")
             return False
-
-    def _calculate_total_amount(self, forms: list[SheetsSubmissionForm]) -> float:
-        """
-        Calculate the total amount from all submitted forms in CAD
-
-        Args:
-            forms: List of submitted form data dictionaries
-
-        Returns:
-            float: Total amount in CAD
-        """
-        total = 0.0
-        for form in forms:
-            if form.currency == "USD":
-                # For USD forms, use the Canadian equivalent amount
-                total += form.canadian_amount
-            else:
-                # For CAD forms, use the total amount directly
-                total += form.total_amount
-        return total
 
     def _append_row_with_retries(self, range_name, body, max_attempts=5):
         service = self.service
@@ -204,7 +125,7 @@ class GoogleSheetsClient:
 
     def log_purchase_request(
         self,
-        user_info: dict[str, Any] | SheetsUserInfo,
+        user_info: dict[str, Any] | SubmissionUserInfo,
         forms: list[dict[str, Any] | SheetsSubmissionForm],
         session_folder: str,
         drive_folder_url: str = "",
@@ -230,8 +151,7 @@ class GoogleSheetsClient:
             # Prepare data for sheets - one row per session
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            # Calculate total amount from all forms
-            total_amount = self._calculate_total_amount(validated_forms)
+            total_amount = sum(form.total_cad_amount for form in validated_forms)
 
             # Create single row with user session information
             row = [
@@ -246,7 +166,7 @@ class GoogleSheetsClient:
             ]
 
             # Write to the sheet
-            range_name = f"{SHEET_TAB_NAME}!A:H"  # 8 columns: Timestamp, Name, Mac Email, Address, Email Address, Team, Total Amount, Drive Link
+            range_name = f"{self.sheet_tab_name}!A:H"  # 8 columns: Timestamp, Name, Mac Email, Address, Email Address, Team, Total Amount, Drive Link
             body = {
                 "values": [row]  # Single row
             }
