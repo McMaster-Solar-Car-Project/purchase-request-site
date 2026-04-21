@@ -57,6 +57,13 @@
         </div>
         {% endif %}
 
+        {% if profile_warning_message %}
+        <div class="profile-warning-message rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 mb-4 text-amber-200">
+            {{ profile_warning_message }}
+            <a href="/edit-profile?user_email={{ user_email }}" class="ml-1 underline hover:text-amber-100">Update profile</a>
+        </div>
+        {% endif %}
+
         <p class="subtitle mt-1 mb-6 text-zinc-300">Fill out up to 10 separate purchase requests and submit them all together</p>
 
         <div class="user-info rounded-xl border border-zinc-700/70 bg-zinc-900/45 p-4 mb-8">
@@ -71,6 +78,7 @@
         <form method="POST" action="/submit-all-requests" enctype="multipart/form-data"
             onsubmit="return validateSubmission()">
             <!-- Hidden fields for user data -->
+            <input type="hidden" id="profile-is-complete" value="{{ 'true' if profile_is_complete else 'false' }}">
             <input type="hidden" name="name" value="{{ name }}">
             <input type="hidden" name="email" value="{{ email }}">
             <input type="hidden" name="e_transfer_email" value="{{ e_transfer_email }}">
@@ -310,13 +318,28 @@
 
             <div class="dashboard-actions mt-8">
                 <div class="form-group">
-                    <button type="submit" id="submit-all-btn" class="btn btn-large w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-white border-none px-6 py-3 text-sm font-medium transition-all duration-200 hover:from-[#4f46e5] hover:to-[#7c3aed] hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)]">Submit All Purchase Requests</button>
+                    <button
+                        type="submit"
+                        id="submit-all-btn"
+                        class="btn btn-large w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-white border-none px-6 py-3 text-sm font-medium transition-all duration-200 hover:from-[#4f46e5] hover:to-[#7c3aed] hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:from-[#6366f1] disabled:hover:to-[#8b5cf6]"
+                        {% if not profile_is_complete %}disabled aria-disabled="true"{% endif %}
+                    >
+                        Submit All Purchase Requests
+                    </button>
+                    {% if not profile_is_complete %}
+                    <p class="mt-2 text-sm text-amber-200">
+                        Submission is disabled until your profile is complete.
+                    </p>
+                    {% endif %}
                 </div>
             </div>
         </form>
     </div>
 
     <script>
+        const profileCompleteField = document.getElementById("profile-is-complete");
+        const profileIsComplete = profileCompleteField?.value === "true";
+
         // Track item counts for each form
         const itemCounts = {};
         const maxItems = 15;
@@ -842,6 +865,11 @@
             const submitBtn = document.getElementById("submit-all-btn");
 
             form.addEventListener("submit", (e) => {
+                if (!profileIsComplete) {
+                    e.preventDefault();
+                    return;
+                }
+
                 if (isSubmitting) {
                     // already in flight, block
                     e.preventDefault();

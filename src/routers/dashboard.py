@@ -30,6 +30,7 @@ from src.models.submissions import (
 )
 from src.models.user_service import (
     get_user_by_email,
+    is_user_profile_complete,
     save_signature_to_file,
 )
 from src.routers.utils import require_auth, templates
@@ -106,6 +107,7 @@ async def dashboard(
     request: Request,
     user_email: str,
     updated: bool = False,
+    profile_incomplete: bool = False,
     error: str | None = None,
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
@@ -118,11 +120,19 @@ async def dashboard(
 
     error_message = None
     success_message = None
+    profile_warning_message = None
 
     if error == "no_forms":
         error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, upload an invoice file, and add at least one item."
     elif updated:
         success_message = "✅ Your profile has been updated successfully!"
+
+    profile_is_complete = is_user_profile_complete(user)
+    if profile_incomplete or not profile_is_complete:
+        profile_warning_message = (
+            "Your profile is incomplete. Please update your information before "
+            "submitting purchase requests."
+        )
 
     return templates.TemplateResponse(
         request=request,
@@ -139,6 +149,8 @@ async def dashboard(
             "team": user.team,
             "error_message": error_message,
             "success_message": success_message,
+            "profile_warning_message": profile_warning_message,
+            "profile_is_complete": profile_is_complete,
         },
     )
 
