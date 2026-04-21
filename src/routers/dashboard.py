@@ -296,7 +296,6 @@ async def submit_all_requests(
             team=team,
             signature=signature_filename,
         )
-        user_info_payload = user_info.model_dump()
         submitted_forms_payload = [
             submission.model_dump() for submission in submitted_forms
         ]
@@ -321,7 +320,7 @@ async def submit_all_requests(
             try:
                 success, drive_folder_url, drive_folder_id = (
                     drive_client.create_session_folder_structure(
-                        session_folder, user_info_payload
+                        session_folder, user_info
                     )
                 )
                 if not success:
@@ -335,7 +334,7 @@ async def submit_all_requests(
             try:
                 sheets_client = GoogleSheetsClient()
                 sheets_client.log_purchase_request(
-                    user_info_payload,
+                    user_info,
                     submitted_forms_payload,
                     session_folder,
                     drive_folder_url,
@@ -353,7 +352,7 @@ async def submit_all_requests(
             )
             try:
                 drive_upload_success = drive_client.upload_session_folder(
-                    session_folder, user_info_payload, drive_folder_id or None
+                    session_folder, user_info, drive_folder_id or None
                 )
                 logger.info(
                     f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"

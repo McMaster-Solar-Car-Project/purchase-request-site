@@ -242,7 +242,6 @@ class GoogleDriveClient:
         self,
         file_path: str,
         folder_id: str,
-        file_name: str | None = None,
     ) -> str | None:
         """
         Upload a file to Google Drive with retry logic
@@ -273,8 +272,7 @@ class GoogleDriveClient:
                     return None
 
                 # Determine file name and MIME type
-                if not file_name:
-                    file_name = Path(file_path).name
+                file_name = Path(file_path).name
 
                 mime_type, _ = mimetypes.guess_type(file_path)
                 if not mime_type:
@@ -309,7 +307,7 @@ class GoogleDriveClient:
                     return None
 
     def create_session_folder_structure(
-        self, session_folder_path: str, user_info: dict[str, Any] | SubmissionUserInfo
+        self, session_folder_path: str, user_info: SubmissionUserInfo
     ) -> tuple[bool, str, str]:
         """
         Create the folder structure in Google Drive and return folder URL and ID
@@ -357,7 +355,7 @@ class GoogleDriveClient:
     def upload_session_folder(
         self,
         session_folder_path: str,
-        user_info: dict[str, Any] | SubmissionUserInfo,
+        user_info: SubmissionUserInfo,
         session_folder_id: str | None = None,
     ) -> bool:
         """
