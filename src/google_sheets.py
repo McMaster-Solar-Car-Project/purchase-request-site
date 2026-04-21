@@ -13,7 +13,7 @@ from typing import Any
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
@@ -33,32 +33,6 @@ if SHEET_TAB_NAME and "#" in SHEET_TAB_NAME:
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 
-class GoogleServiceAccountEnv(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    project_id: str = Field(min_length=1)
-    private_key: str = Field(min_length=1)
-    client_email: str = Field(min_length=1)
-    private_key_id: str | None = None
-    client_id: str | None = None
-    client_x509_cert_url: str | None = None
-
-    def to_service_account_info(self) -> dict[str, Any]:
-        normalized_private_key = self.private_key.replace("\\n", "\n")
-        return {
-            "type": "service_account",
-            "project_id": self.project_id,
-            "private_key_id": self.private_key_id,
-            "private_key": normalized_private_key,
-            "client_email": self.client_email,
-            "client_id": self.client_id,
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": self.client_x509_cert_url,
-        }
-
-
 class SheetsSubmissionForm(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
@@ -73,25 +47,6 @@ class GoogleSheetsClient:
         self.sheet_id = SHEET_ID
         # google-api-python-client builds a dynamic Resource; stubs omit API methods like spreadsheets().
         self.service: Any | None = None
-
-    def _get_credentials_from_env(self) -> dict[str, Any]:
-        """
-        Build service account credentials from environment variables
-
-        Returns:
-            Dict containing the service account information
-        """
-        settings = get_settings()
-
-        credentials_env = GoogleServiceAccountEnv(
-            project_id=settings.google_settings_project_id,
-            private_key=settings.google_settings_private_key,
-            client_email=settings.google_settings_client_email,
-            private_key_id=settings.google_settings_private_key_id,
-            client_id=settings.google_settings_client_id,
-            client_x509_cert_url=settings.google_settings_client_x509_cert_url,
-        )
-        return credentials_env.to_service_account_info()
 
     @staticmethod
     def _coerce_user_info(
@@ -118,7 +73,7 @@ class GoogleSheetsClient:
         if self.service:
             return True
         try:
-            service_account_info = self._get_credentials_from_env()
+            service_account_info = get_settings().google_service_account_info
             credentials = Credentials.from_service_account_info(
                 service_account_info, scopes=SCOPES
             )

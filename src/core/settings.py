@@ -1,7 +1,10 @@
 from functools import lru_cache
+from typing import Any
 
 from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from src.models.google_auth import GoogleServiceAccountEnv
 
 
 class Settings(BaseSettings):
@@ -103,6 +106,18 @@ class Settings(BaseSettings):
     @property
     def is_testing(self) -> bool:
         return self.environment == "testing"
+
+    @property
+    def google_service_account_info(self) -> dict[str, Any]:
+        credentials_env = GoogleServiceAccountEnv(
+            project_id=self.google_settings_project_id,
+            private_key=self.google_settings_private_key,
+            client_email=self.google_settings_client_email,
+            private_key_id=self.google_settings_private_key_id,
+            client_id=self.google_settings_client_id,
+            client_x509_cert_url=self.google_settings_client_x509_cert_url,
+        )
+        return credentials_env.to_service_account_info()
 
 
 @lru_cache(maxsize=1)
