@@ -7,7 +7,6 @@ from typing import cast
 from urllib.parse import urlparse
 
 import sentry_sdk
-from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -20,6 +19,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from src.core.logging_utils import setup_logger
+from src.core.settings import get_settings
 from src.db.schema import init_database
 from src.request_logging import RequestLoggingMiddleware
 from src.routers.auth import router as auth_router
@@ -29,12 +29,10 @@ from src.routers.profile import router as profile_router
 from src.routers.success import router as success_router
 from src.routers.utils import limiter, templates
 
-# Load environment variables
-load_dotenv()
-
 # Set up logger
 logger = setup_logger(__name__)
 HEALTH_PATH_PREFIX = "/health"
+settings = get_settings()
 
 
 def _event_is_for_health_endpoint(event: Mapping[str, object]) -> bool:
@@ -134,7 +132,7 @@ for directory in required_dirs:
 
 
 sentry_sdk.init(
-    dsn=os.getenv("SENTRY_DSN"),
+    dsn=settings.sentry_dsn,
     integrations=[
         FastApiIntegration(),
         SqlalchemyIntegration(),
@@ -142,8 +140,8 @@ sentry_sdk.init(
         LoggingIntegration(event_level=None, level=None),
     ],
     enable_logs=True,  # Enable Sentry's native structured logs
-    environment=os.getenv("ENVIRONMENT", "development"),
-    release=os.getenv("SENTRY_RELEASE"),
+    environment=settings.environment,
+    release=settings.sentry_release,
     traces_sample_rate=1.0,
     profile_session_sample_rate=1.0,
     profile_lifecycle="trace",
@@ -154,7 +152,12 @@ sentry_sdk.init(
 configure_uvicorn_access_log_filter()
 
 init_database()
-app = FastAPI(title="Purchase Request Site")
+app = FastAPI(
+    title="Purchase Request Site",
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None if settings.is_production else "/redoc",
+    openapi_url=None if settings.is_production else "/openapi.json",
+)
 
 # Add request logging middleware
 app.add_middleware(RequestLoggingMiddleware)
@@ -240,8 +243,8 @@ if __name__ == "__main__":
     logger.info(f"Starting server at {datetime.now().isoformat()}")
     uvicorn.run(
         app,
-        host=os.getenv("HOST", "0.0.0.0"),
-        port=int(os.getenv("PORT", 8000)),
-        reload=os.getenv("DEBUG", "false").lower() == "true",
+        host=settings.host,
+        port=settings.port,
+        reload=settings.debug,
         access_log=False,
     )

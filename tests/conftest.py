@@ -1,3 +1,4 @@
+import logging.handlers
 import sys
 from pathlib import Path
 
@@ -41,3 +42,19 @@ def app() -> FastAPI:
 @pytest.fixture
 def client(app: FastAPI) -> TestClient:
     return TestClient(app, raise_server_exceptions=False)
+
+
+@pytest.fixture(autouse=True)
+def fail_if_error_email_attempted(monkeypatch):
+    """Fail tests whenever SMTP error-notification emails are attempted."""
+    sent_messages: list[str] = []
+
+    def _capture_emit(self: logging.handlers.SMTPHandler, record) -> None:
+        del self
+        sent_messages.append(record.getMessage())
+
+    monkeypatch.setattr(logging.handlers.SMTPHandler, "emit", _capture_emit)
+    yield
+    if sent_messages:
+        details = "; ".join(sent_messages[:3])
+        pytest.fail(f"Error email was attempted during test: {details}")

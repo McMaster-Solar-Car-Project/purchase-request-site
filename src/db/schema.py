@@ -1,10 +1,8 @@
-import base64
-import os
-
 from sqlalchemy import Integer, LargeBinary, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from src.core.logging_utils import setup_logger
+from src.core.settings import get_settings
 
 logger = setup_logger(__name__)
 
@@ -16,13 +14,13 @@ def _normalize_postgres_url(url: str) -> str:
 
 
 def _resolve_database_url() -> str:
-    # Prefer explicit Aiven URL, then fall back to generic DATABASE_URL.
-    raw_url = os.getenv("AIVEN_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not raw_url:
-        raise ValueError(
-            "❌ Database URL not set. Provide AIVEN_DATABASE_URL or DATABASE_URL."
-        )
-    return _normalize_postgres_url(raw_url)
+    settings = get_settings()
+    raw_url = settings.database_url
+    if raw_url:
+        return _normalize_postgres_url(raw_url)
+    if settings.is_testing:
+        return "sqlite:////tmp/purchase_request_site_pytest.sqlite3"
+    raise ValueError("❌ Database URL not set. Provide DATABASE_URL.")
 
 
 DATABASE_URL = _resolve_database_url()
@@ -61,21 +59,10 @@ class User(Base):
     address: Mapped[str] = mapped_column(Text, nullable=False)
     team: Mapped[str] = mapped_column(String(100), nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
-    signature_data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    signature_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>"
-
-    def get_signature_as_base64(self) -> str | None:
-        """Return the signature as a base64-encoded string (for display)."""
-        if self.signature_data:
-            return base64.b64encode(self.signature_data).decode("utf-8")
-        return None
-
-    def set_signature_from_base64(self, base64_data: str):
-        """Set the signature binary data from a base64-encoded string."""
-        if base64_data:
-            self.signature_data = base64.b64decode(base64_data)
 
 
 def get_db():

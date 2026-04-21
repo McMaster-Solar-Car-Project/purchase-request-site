@@ -5,33 +5,26 @@ This module handles uploading session data (Excel files, invoices, signatures) t
 """
 
 import mimetypes
-import os
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
+from pydantic import ValidationError
 
 from src.core.logging_utils import setup_logger
-
-# Load environment variables from .env file (check parent directory too)
-load_dotenv()  # Current directory
-load_dotenv("../.env")  # Parent directory
+from src.core.settings import get_settings
+from src.models.submissions import SubmissionUserInfo
 
 # Set up logger
 logger = setup_logger(__name__)
 
 # Google Drive configuration
 DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"]
-# Use specific folder ID for "My Drive / Test_automation"
-PARENT_FOLDER_ID = os.getenv(
-    "GOOGLE_DRIVE_FOLDER_ID", "1fH2GB4LtYjGGhusqbjOLftB7jqgLNehW"
-)  # gitleaks: allowlist
 
 
 class GoogleDriveClient:
@@ -44,66 +37,26 @@ class GoogleDriveClient:
         self.parent_folder_id: str | None = None
 
     @staticmethod
-    def _get_credentials_from_env() -> dict[str, Any]:
-        """
-        Build service account credentials from environment variables
-
-        Returns:
-            Dict containing the service account information
-        """
-        # Get credentials from environment variables
-        project_id = os.getenv("GOOGLE_SETTINGS__PROJECT_ID")
-        private_key_id = os.getenv("GOOGLE_SETTINGS__PRIVATE_KEY_ID")
-        private_key = os.getenv("GOOGLE_SETTINGS__PRIVATE_KEY")
-        client_email = os.getenv("GOOGLE_SETTINGS__CLIENT_EMAIL")
-        client_id = os.getenv("GOOGLE_SETTINGS__CLIENT_ID")
-        client_x509_cert_url = os.getenv("GOOGLE_SETTINGS__CLIENT_X509_CERT_URL")
-
-        # Check if all required variables are present
-        required_vars = {
-            "GOOGLE_SETTINGS__PROJECT_ID": project_id,
-            "GOOGLE_SETTINGS__PRIVATE_KEY": private_key,
-            "GOOGLE_SETTINGS__CLIENT_EMAIL": client_email,
-        }
-
-        missing_vars = [var for var, value in required_vars.items() if not value]
-        if missing_vars:
-            raise ValueError(
-                f"Missing required environment variables: {', '.join(missing_vars)}"
-            )
-
-        assert private_key is not None  # ensured by required_vars check above
-        normalized_private_key = private_key.replace("\\n", "\n")
-
-        # Build the service account info dictionary
-        service_account_info: dict[str, Any] = {
-            "type": "service_account",
-            "project_id": project_id,
-            "private_key_id": private_key_id,
-            "private_key": normalized_private_key,  # Fix newlines in private key
-            "client_email": client_email,
-            "client_id": client_id,
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": client_x509_cert_url,
-        }
-
-        return service_account_info
+    def _coerce_user_info(
+        user_info: dict[str, Any] | SubmissionUserInfo,
+    ) -> SubmissionUserInfo:
+        if isinstance(user_info, SubmissionUserInfo):
+            return user_info
+        return SubmissionUserInfo.model_validate(user_info)
 
     def _authenticate(self):
         """Authenticate with Google Drive API using environment variables"""
         if self.service:
             return True
         try:
-            service_account_info = self._get_credentials_from_env()
+            service_account_info = get_settings().google_service_account_info
             credentials = Credentials.from_service_account_info(
                 service_account_info, scopes=DRIVE_SCOPES
             )
             self.service = build("drive", "v3", credentials=credentials)
             # Authentication successful
             return True
-        except ValueError as e:
+        except (ValueError, ValidationError) as e:
             logger.exception(f"Environment variable error: {e}")
             return False
         except Exception as e:
@@ -129,7 +82,7 @@ class GoogleDriveClient:
 
         try:
             # Use the configured folder ID directly
-            self.parent_folder_id = PARENT_FOLDER_ID
+            self.parent_folder_id = get_settings().google_drive_folder_id
 
             # Verify the folder exists and get its name
             (
@@ -243,7 +196,6 @@ class GoogleDriveClient:
         self,
         file_path: str,
         folder_id: str,
-        file_name: str | None = None,
     ) -> str | None:
         """
         Upload a file to Google Drive with retry logic
@@ -274,8 +226,7 @@ class GoogleDriveClient:
                     return None
 
                 # Determine file name and MIME type
-                if not file_name:
-                    file_name = Path(file_path).name
+                file_name = Path(file_path).name
 
                 mime_type, _ = mimetypes.guess_type(file_path)
                 if not mime_type:
@@ -310,7 +261,7 @@ class GoogleDriveClient:
                     return None
 
     def create_session_folder_structure(
-        self, session_folder_path: str, user_info: dict[str, Any]
+        self, session_folder_path: str, user_info: SubmissionUserInfo
     ) -> tuple[bool, str, str]:
         """
         Create the folder structure in Google Drive and return folder URL and ID
@@ -326,6 +277,7 @@ class GoogleDriveClient:
             return False, "", ""
 
         try:
+            user = self._coerce_user_info(user_info)
             # Ensure parent folder exists (Test_automation)
             parent_folder_id = self._ensure_parent_folder()
 
@@ -334,7 +286,7 @@ class GoogleDriveClient:
 
             # Create session folder name with user info and timestamp
             session_name = Path(session_folder_path).name
-            user_name = user_info.get("name", "Unknown").replace(" ", "_")
+            user_name = user.name.replace(" ", "_")
             timestamp = datetime.now().strftime("%d_%m_%Y_%H-%M-%S")
             drive_folder_name = f"{session_name}_{user_name}_{timestamp}"
 
@@ -357,7 +309,7 @@ class GoogleDriveClient:
     def upload_session_folder(
         self,
         session_folder_path: str,
-        user_info: dict[str, Any],
+        user_info: SubmissionUserInfo,
         session_folder_id: str | None = None,
     ) -> bool:
         """
@@ -375,9 +327,10 @@ class GoogleDriveClient:
             return False
 
         try:
+            user = self._coerce_user_info(user_info)
             # Create session folder name with user info and timestamp (always needed for logging)
             session_name = Path(session_folder_path).name
-            user_name = user_info.get("name", "Unknown").replace(" ", "_")
+            user_name = user.name.replace(" ", "_")
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             drive_folder_name = f"{session_name}_{user_name}_{timestamp}"
 
@@ -427,39 +380,10 @@ class GoogleDriveClient:
                 except Exception as e:
                     logger.exception(f"Error uploading {file_path.name}: {e}")
 
-                # Small delay between uploads to be nice to the API
-                time.sleep(0.5)
-
             return True
 
         except Exception as e:
             logger.exception(f"Error uploading session folder: {e}")
-            return False
-
-    def test_connection(self) -> bool:
-        """Test the connection to Google Drive"""
-        if not self.service and not self._authenticate():
-            return False
-
-        service = self.service
-        if service is None:
-            return False
-
-        try:
-            # Try to get Drive storage info
-            about = service.about().get(fields="storageQuota,user").execute()
-
-            storage_quota = about.get("storageQuota", {})
-            usage = storage_quota.get("usage", 0)
-            limit = storage_quota.get("limit", 0)
-
-            return True if usage < limit else False
-
-        except HttpError as e:
-            logger.exception(f"HTTP error testing Google Drive connection: {e}")
-            return False
-        except Exception as e:
-            logger.exception(f"Error testing Google Drive connection: {e}")
             return False
 
     def download_file(self, file_id: str, file_name: str) -> bytes:
@@ -547,71 +471,6 @@ class GoogleDriveClient:
         if self.service is not None:
             self.service.close()
         self.service = None
-
-
-def create_drive_folder_and_get_url(
-    session_folder_path: str, user_info: dict[str, Any]
-) -> tuple[str, str]:
-    """
-    Create Google Drive folder structure and return the folder URL and ID
-
-    Args:
-        session_folder_path: Local path to the session folder
-        user_info: User information dictionary
-
-    Returns:
-        tuple: (folder_url: str, folder_id: str) or ("", "") if failed
-    """
-    try:
-        drive_client = GoogleDriveClient()
-        success, folder_url, folder_id = drive_client.create_session_folder_structure(
-            session_folder_path, user_info
-        )
-        drive_client.close()
-        if success:
-            return folder_url, folder_id
-        else:
-            logger.warning("Failed to create Google Drive folder")
-            return "", ""
-    except Exception as e:
-        logger.exception(f"Unexpected error creating Google Drive folder: {e}")
-        return "", ""
-
-
-def upload_session_to_drive(
-    session_folder_path: str,
-    user_info: dict[str, Any],
-    session_folder_id: str | None = None,
-) -> bool:
-    """
-    Upload session data to Google Drive synchronously
-
-    Args:
-        session_folder_path: Local path to the session folder
-        user_info: User information dictionary
-        session_folder_id: Optional existing folder ID to upload to
-
-    Returns:
-        bool: True if upload was successful, False otherwise
-    """
-    try:
-        logger.info(
-            f"Starting synchronous upload to Google Drive: {session_folder_path}"
-        )
-        drive_client = GoogleDriveClient()
-        success = drive_client.upload_session_folder(
-            session_folder_path, user_info, session_folder_id
-        )
-        drive_client.close()
-        if success:
-            logger.info("✅ Upload to Google Drive completed successfully")
-            return True
-        else:
-            logger.warning("❌ Upload to Google Drive failed")
-            return False
-    except Exception as e:
-        logger.exception(f"Unexpected error in upload to Google Drive: {e}")
-        return False
 
 
 def download_file_from_drive(folder_id: str, file_name: str) -> bytes:
