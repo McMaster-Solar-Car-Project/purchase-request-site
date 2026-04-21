@@ -24,7 +24,7 @@ from src.db.schema import get_db
 from src.google_drive import GoogleDriveClient
 from src.google_sheets import GoogleSheetsClient
 from src.models.submissions import (
-    SubmissionForm,
+    Invoice,
     SubmissionLineItem,
     SubmissionUserInfo,
 )
@@ -185,7 +185,7 @@ async def submit_all_requests(
     if not save_signature_to_file(user, str(signature_path)):
         logger.warning(f"Could not save signature for user {email}")
 
-    submitted_forms: list[SubmissionForm] = []
+    submitted_forms: list[Invoice] = []
 
     for form_num in range(1, MAX_FORMS + 1):
         vendor_name = _form_str(form_data.get(f"vendor_name_{form_num}"))
@@ -209,20 +209,20 @@ async def submit_all_requests(
             )
             continue
 
+        total_cad_amount = _form_float(form_data.get(f"total_cad_amount_{form_num}"))
+
         if currency == "USD":
-            us_total = _form_float(form_data.get(f"us_total_{form_num}"))
-            usd_taxes = _form_float(form_data.get(f"usd_taxes_{form_num}"))
-            canadian_amount = _form_float(form_data.get(f"canadian_amount_{form_num}"))
-            subtotal_amount = discount_amount = shipping_amount = 0
-            hst_gst_amount = usd_taxes
-            total_amount = canadian_amount
+            us_subtotal = _form_float(form_data.get(f"us_subtotal_{form_num}"))
+            us_additional_fees = _form_float(
+                form_data.get(f"us_additional_fees_{form_num}")
+            )
+            subtotal_amount = discount_amount = hst_gst_amount = shipping_amount = 0
         else:
             subtotal_amount = _form_float(form_data.get(f"subtotal_amount_{form_num}"))
             discount_amount = _form_float(form_data.get(f"discount_amount_{form_num}"))
             hst_gst_amount = _form_float(form_data.get(f"hst_gst_amount_{form_num}"))
             shipping_amount = _form_float(form_data.get(f"shipping_amount_{form_num}"))
-            total_amount = _form_float(form_data.get(f"total_amount_{form_num}"))
-            us_total = usd_taxes = canadian_amount = 0
+            us_subtotal = us_additional_fees = 0
 
         items = []
         for item_num in range(1, MAX_ITEMS_PER_FORM + 1):
@@ -267,7 +267,7 @@ async def submit_all_requests(
             await _save_uploaded_file(proof_of_payment_file, proof_of_payment_path)
             proof_of_payment_location = str(proof_of_payment_path)
 
-        form_submission = SubmissionForm(
+        form_submission = Invoice(
             form_number=form_num,
             vendor_name=vendor_name,
             currency="USD" if currency == "USD" else "CAD",
@@ -279,10 +279,9 @@ async def submit_all_requests(
             discount_amount=discount_amount,
             hst_gst_amount=hst_gst_amount,
             shipping_amount=shipping_amount,
-            total_amount=total_amount,
-            us_total=us_total,
-            usd_taxes=usd_taxes,
-            canadian_amount=canadian_amount,
+            total_cad_amount=total_cad_amount,
+            us_subtotal=us_subtotal,
+            us_additional_fees=us_additional_fees,
             items=items,
         )
 

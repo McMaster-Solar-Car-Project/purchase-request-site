@@ -1,11 +1,11 @@
 from openpyxl import Workbook
 
 from src.data_processing import populate_expense_rows_from_submitted_forms
-from src.models.submissions import SubmissionForm
+from src.models.submissions import Invoice
 
 
-def _make_form(**overrides) -> SubmissionForm:
-    """Build a SubmissionForm with sensible defaults for tests."""
+def _make_form(**overrides) -> Invoice:
+    """Build an Invoice with sensible defaults for tests."""
     defaults = {
         "form_number": 1,
         "vendor_name": "Vendor",
@@ -18,14 +18,13 @@ def _make_form(**overrides) -> SubmissionForm:
         "discount_amount": 0.0,
         "hst_gst_amount": 0.0,
         "shipping_amount": 0.0,
-        "total_amount": 0.0,
-        "us_total": 0.0,
-        "usd_taxes": 0.0,
-        "canadian_amount": 0.0,
+        "total_cad_amount": 0.0,
+        "us_subtotal": 0.0,
+        "us_additional_fees": 0.0,
         "items": [],
     }
     defaults.update(overrides)
-    return SubmissionForm(**defaults)
+    return Invoice(**defaults)
 
 
 def test_populate_expense_rows_supports_cad_and_usd() -> None:
@@ -39,15 +38,16 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
             currency="CAD",
             subtotal_amount=120.0,
             discount_amount=20.0,
-            total_amount=113.0,
+            total_cad_amount=113.0,
             hst_gst_amount=13.0,
         ),
         _make_form(
             form_number=2,
             vendor_name="USD Vendor",
             currency="USD",
-            us_total=100.0,
-            canadian_amount=135.0,
+            us_subtotal=80.0,
+            us_additional_fees=20.0,
+            total_cad_amount=135.0,
         ),
     ]
 

@@ -20,7 +20,7 @@ class SubmissionLineItem(BaseModel):
     total: float
 
 
-class SubmissionForm(BaseModel):
+class Invoice(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     form_number: int
@@ -34,11 +34,15 @@ class SubmissionForm(BaseModel):
     discount_amount: float
     hst_gst_amount: float
     shipping_amount: float
-    total_amount: float
-    us_total: float
-    usd_taxes: float
-    canadian_amount: float
+    total_cad_amount: float
+    us_subtotal: float
+    us_additional_fees: float
     items: list[SubmissionLineItem]
+
+    @property
+    def us_total(self) -> float:
+        """Total USD paid (subtotal plus any additional fees/taxes/tariffs)."""
+        return self.us_subtotal + self.us_additional_fees
 
 
 class SubmissionUserInfo(BaseModel):

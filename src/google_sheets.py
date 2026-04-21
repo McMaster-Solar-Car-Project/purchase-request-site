@@ -72,8 +72,7 @@ class SheetsSubmissionForm(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     currency: Literal["CAD", "USD"] | str = "CAD"
-    total_amount: float = 0.0
-    canadian_amount: float = 0.0
+    total_cad_amount: float = 0.0
 
 
 class GoogleSheetsClient:
@@ -145,26 +144,6 @@ class GoogleSheetsClient:
             logger.exception(f"Failed to authenticate with Google Sheets API: {e}")
             return False
 
-    def _calculate_total_amount(self, forms: list[SheetsSubmissionForm]) -> float:
-        """
-        Calculate the total amount from all submitted forms in CAD
-
-        Args:
-            forms: List of submitted form data dictionaries
-
-        Returns:
-            float: Total amount in CAD
-        """
-        total = 0.0
-        for form in forms:
-            if form.currency == "USD":
-                # For USD forms, use the Canadian equivalent amount
-                total += form.canadian_amount
-            else:
-                # For CAD forms, use the total amount directly
-                total += form.total_amount
-        return total
-
     def _append_row_with_retries(self, range_name, body, max_attempts=5):
         service = self.service
         if service is None:
@@ -230,8 +209,7 @@ class GoogleSheetsClient:
             # Prepare data for sheets - one row per session
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            # Calculate total amount from all forms
-            total_amount = self._calculate_total_amount(validated_forms)
+            total_amount = sum(form.total_cad_amount for form in validated_forms)
 
             # Create single row with user session information
             row = [
