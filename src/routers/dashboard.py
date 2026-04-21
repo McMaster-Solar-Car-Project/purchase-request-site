@@ -239,11 +239,20 @@ async def submit_all_requests(
         items = []
         for item_num in range(1, MAX_ITEMS_PER_FORM + 1):
             item_name = _form_str(form_data.get(f"item_name_{form_num}_{item_num}"))
-            if not item_name:
-                break
             item_usage = _form_str(form_data.get(f"item_usage_{form_num}_{item_num}"))
             item_quantity = form_data.get(f"item_quantity_{form_num}_{item_num}")
             item_price = form_data.get(f"item_price_{form_num}_{item_num}")
+
+            # Keep scanning all possible rows so sparse indices (e.g., missing item 1)
+            # don't cause later valid rows to be ignored.
+            has_any_item_value = bool(
+                item_name
+                or item_usage
+                or _form_str(item_quantity)
+                or _form_str(item_price)
+            )
+            if not has_any_item_value:
+                continue
 
             if item_name and item_usage and item_quantity and item_price:
                 items.append(
