@@ -8,7 +8,7 @@ from src.models.google_auth import GoogleServiceAccountEnv
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
+    _ = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         env_ignore_empty=True,
@@ -27,7 +27,6 @@ class Settings(BaseSettings):
     )
 
     google_sheet_id: str = Field(default="", alias="GOOGLE_SHEET_ID")
-    google_sheet_tab_name: str = Field(default="", alias="GOOGLE_SHEET_TAB_NAME")
     google_drive_folder_id: str = Field(
         default="",
         validation_alias=AliasChoices("GOOGLE_DRIVE_FOLDER_ID", "PARENT_FOLDER_ID"),
@@ -65,7 +64,6 @@ class Settings(BaseSettings):
         always_required_str_fields = (
             "host",
             "google_sheet_id",
-            "google_sheet_tab_name",
             "google_drive_folder_id",
             "google_settings_project_id",
             "google_settings_private_key",
