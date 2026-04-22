@@ -18,7 +18,7 @@ from pydantic import ValidationError
 
 from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
-from src.models.submissions import SubmissionUserInfo
+from src.models.user_info import SubmissionUserInfo
 
 # Set up logger
 logger = setup_logger(__name__)

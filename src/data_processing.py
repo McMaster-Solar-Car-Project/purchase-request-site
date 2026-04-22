@@ -8,7 +8,8 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from src.core.logging_utils import setup_logger
 from src.image_processing import insert_signature_at_cell
-from src.models.submissions import Invoice, SubmissionUserInfo
+from src.models.submissions import Invoice
+from src.models.user_info import SubmissionUserInfo
 
 logger = setup_logger(__name__)
 

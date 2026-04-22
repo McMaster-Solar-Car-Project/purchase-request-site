@@ -46,14 +46,3 @@ class Invoice(BaseModel):
     def us_total(self) -> float:
         """Total USD paid (subtotal plus any additional fees/taxes/tariffs)."""
         return self.us_subtotal + self.us_additional_fees
-
-
-class SubmissionUserInfo(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    name: str
-    email: str
-    e_transfer_email: str
-    address: str
-    team: str
-    signature: str

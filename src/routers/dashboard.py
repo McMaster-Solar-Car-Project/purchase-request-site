@@ -26,8 +26,8 @@ from src.google_sheets import GoogleSheetsClient
 from src.models.submissions import (
     Invoice,
     SubmissionLineItem,
-    SubmissionUserInfo,
 )
+from src.models.user_info import SubmissionUserInfo
 from src.models.user_service import (
     get_user_by_email,
     is_user_profile_complete,
