@@ -26,8 +26,8 @@ from src.google_sheets import GoogleSheetsClient
 from src.models.submissions import (
     Invoice,
     SubmissionLineItem,
-    SubmissionUserInfo,
 )
+from src.models.user_info import SubmissionUserInfo
 from src.models.user_service import (
     get_user_by_email,
     is_user_profile_complete,
@@ -47,7 +47,7 @@ def _form_str(value: object, default: str = "") -> str:
     """Coerce multipart form field to str; ignore accidental file parts."""
     if value is None or isinstance(value, UploadFile):
         return default
-    return str(value)
+    return str(value).strip()
 
 
 def _form_float(value: object, default: float = 0.0) -> float:
@@ -289,7 +289,7 @@ async def submit_all_requests(
         form_submission = Invoice(
             form_number=form_num,
             vendor_name=vendor_name,
-            currency="USD" if currency == "USD" else "CAD",
+            is_usd=currency == "USD",
             invoice_filename=invoice_filename,
             invoice_file_location=invoice_file_location,
             proof_of_payment_filename=proof_of_payment_filename,
@@ -315,9 +315,6 @@ async def submit_all_requests(
             team=team,
             signature=signature_filename,
         )
-        submitted_forms_payload = [
-            submission.model_dump() for submission in submitted_forms
-        ]
         try:
             create_purchase_request(user_info, submitted_forms, session_folder)
         except Exception:
@@ -354,7 +351,7 @@ async def submit_all_requests(
                 sheets_client = GoogleSheetsClient()
                 sheets_client.log_purchase_request(
                     user_info,
-                    submitted_forms_payload,
+                    submitted_forms,
                     session_folder,
                     drive_folder_url,
                 )

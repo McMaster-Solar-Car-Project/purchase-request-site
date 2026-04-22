@@ -1,5 +1,6 @@
 import base64
 
+from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
 from src.core.logging_utils import setup_logger
@@ -14,7 +15,7 @@ DEFAULT_TEAM = "Please update your team"
 DEFAULT_SIGNATURE = b"DEFAULT_SIGNATURE"
 
 
-def get_user_by_email(db: Session, email: str) -> User | None:
+def get_user_by_email(db: Session, email: EmailStr) -> User | None:
     """Get user by McMaster email"""
     return db.query(User).filter(User.email == email).first()
 
@@ -43,18 +44,17 @@ def save_signature_to_file(user: User, file_path: str) -> bool:
 
 def create_user_with_defaults(
     db: Session,
-    email: str,
+    email: EmailStr,
     password: str,
 ) -> User:
     """Create a new user using default placeholder profile values."""
-    normalized_email = email.strip()
-    existing_user = get_user_by_email(db, normalized_email)
+    existing_user = get_user_by_email(db, email)
     if existing_user:
         return existing_user
 
     new_user = User(
         name=DEFAULT_NAME,
-        email=normalized_email,
+        email=email,
         personal_email=DEFAULT_PERSONAL_EMAIL,
         address=DEFAULT_ADDRESS,
         team=DEFAULT_TEAM,

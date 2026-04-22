@@ -8,7 +8,8 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from src.core.logging_utils import setup_logger
 from src.image_processing import insert_signature_at_cell
-from src.models.submissions import Invoice, SubmissionUserInfo
+from src.models.submissions import Invoice
+from src.models.user_info import SubmissionUserInfo
 
 logger = setup_logger(__name__)
 
@@ -88,7 +89,7 @@ def populate_expense_rows_from_submitted_forms(
             ws[f"B{row}"] = current_date
             ws[f"C{row}"] = form.vendor_name
 
-            if form.currency == "CAD":
+            if not form.is_usd:
                 ws[f"F{row}"] = subtotal_after_discount
                 ws[f"G{row}"] = form.total_cad_amount
                 ws[f"H{row}"] = form.hst_gst_amount
@@ -142,11 +143,10 @@ def create_purchase_request(
         ws = wb[tab_name]
 
         items = form.items[:15]
-        is_usd = form.currency == "USD"
 
         # Header section
         ws["B1"] = datetime.now().strftime("%Y-%m-%d")
-        ws["D1"] = form.currency
+        ws["D1"] = "USD" if form.is_usd else "CAD"
         ws["B3"] = user_info.name
         ws["D3"] = user_info.e_transfer_email
         ws["B4"] = user_info.team
@@ -163,13 +163,13 @@ def create_purchase_request(
             ws[f"F{row}"] = item.total
 
         # Financial summary
-        ws["F24"] = form.us_subtotal if is_usd else form.subtotal_amount
-        ws["F25"] = form.us_additional_fees if is_usd else form.hst_gst_amount
-        ws["F26"] = form.us_total if is_usd else form.shipping_amount
+        ws["F24"] = form.us_subtotal if form.is_usd else form.subtotal_amount
+        ws["F25"] = form.us_additional_fees if form.is_usd else form.hst_gst_amount
+        ws["F26"] = form.us_total if form.is_usd else form.shipping_amount
         ws["F27"] = form.total_cad_amount
 
         # USD conversion rate
-        if is_usd:
+        if form.is_usd:
             exchange_rate = (
                 round(form.total_cad_amount / form.us_total, 4)
                 if form.us_total > 0 and form.total_cad_amount > 0
