@@ -315,9 +315,6 @@ async def submit_all_requests(
             team=team,
             signature=signature_filename,
         )
-        submitted_forms_payload = [
-            submission.model_dump() for submission in submitted_forms
-        ]
         try:
             create_purchase_request(user_info, submitted_forms, session_folder)
         except Exception:
@@ -354,7 +351,7 @@ async def submit_all_requests(
                 sheets_client = GoogleSheetsClient()
                 sheets_client.log_purchase_request(
                     user_info,
-                    submitted_forms_payload,
+                    submitted_forms,
                     session_folder,
                     drive_folder_url,
                 )
