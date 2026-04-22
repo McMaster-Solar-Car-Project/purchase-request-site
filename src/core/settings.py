@@ -8,7 +8,7 @@ from src.models.google_auth import GoogleServiceAccountEnv
 
 
 class Settings(BaseSettings):
-    _ = SettingsConfigDict(
+    model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         env_ignore_empty=True,
