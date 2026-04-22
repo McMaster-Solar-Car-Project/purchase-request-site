@@ -13,10 +13,11 @@ from typing import Any
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import ValidationError
 
 from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
+from src.models.submissions import Invoice
 from src.models.user_info import SubmissionUserInfo
 
 # Set up logger
@@ -24,12 +25,6 @@ logger = setup_logger(__name__)
 
 # Google Sheets configuration
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-
-
-class SheetsSubmissionForm(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    total_cad_amount: float = 0.0
 
 
 class GoogleSheetsClient:
@@ -42,26 +37,6 @@ class GoogleSheetsClient:
         self.sheet_tab_name = settings.sheet_tab_name
         # google-api-python-client builds a dynamic Resource; stubs omit API methods like spreadsheets().
         self.service: Any | None = None
-
-    @staticmethod
-    def _coerce_user_info(
-        user_info: dict[str, Any] | SubmissionUserInfo,
-    ) -> SubmissionUserInfo:
-        if isinstance(user_info, SubmissionUserInfo):
-            return user_info
-        return SubmissionUserInfo.model_validate(user_info)
-
-    @staticmethod
-    def _coerce_forms(
-        forms: list[dict[str, Any] | SheetsSubmissionForm],
-    ) -> list[SheetsSubmissionForm]:
-        coerced_forms: list[SheetsSubmissionForm] = []
-        for form in forms:
-            if isinstance(form, SheetsSubmissionForm):
-                coerced_forms.append(form)
-            else:
-                coerced_forms.append(SheetsSubmissionForm.model_validate(form))
-        return coerced_forms
 
     def _authenticate(self):
         """Authenticate with Google Sheets API using environment variables"""
@@ -125,8 +100,8 @@ class GoogleSheetsClient:
 
     def log_purchase_request(
         self,
-        user_info: dict[str, Any] | SubmissionUserInfo,
-        forms: list[dict[str, Any] | SheetsSubmissionForm],
+        user_info: SubmissionUserInfo,
+        forms: list[Invoice],
         session_folder: str,
         drive_folder_url: str = "",
     ) -> bool:
@@ -134,8 +109,8 @@ class GoogleSheetsClient:
         Log purchase request session data to Google Sheets (one row per session)
 
         Args:
-            user_info: User information dictionary
-            forms: List of submitted form data (used to calculate total amount)
+            user_info: User information
+            forms: List of submitted invoices
             session_folder: Session folder path
             drive_folder_url: Google Drive folder URL for easy access
 
@@ -146,21 +121,19 @@ class GoogleSheetsClient:
             return False
 
         try:
-            validated_user = self._coerce_user_info(user_info)
-            validated_forms = self._coerce_forms(forms)
             # Prepare data for sheets - one row per session
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            total_amount = sum(form.total_cad_amount for form in validated_forms)
+            total_amount = sum(form.total_cad_amount for form in forms)
 
             # Create single row with user session information
             row = [
                 timestamp,
-                validated_user.name,
-                validated_user.email,  # Mac Email
-                validated_user.address,
-                validated_user.e_transfer_email,  # Email Address
-                validated_user.team,
+                user_info.name,
+                user_info.email,  # Mac Email
+                user_info.address,
+                user_info.e_transfer_email,  # Email Address
+                user_info.team,
                 f"${total_amount:.2f}",  # Total Amount (formatted as currency)
                 drive_folder_url,  # Google Drive folder link
             ]
