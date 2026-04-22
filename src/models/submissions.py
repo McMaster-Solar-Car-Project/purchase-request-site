@@ -5,8 +5,6 @@ dashboard router, data processing (Excel generation), Google Drive/Sheets
 clients, and tests.
 """
 
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict
 
 
@@ -28,7 +26,7 @@ class Invoice(BaseModel):
 
     form_number: int
     vendor_name: str
-    currency: Literal["CAD", "USD"]
+    is_usd: bool
     invoice_filename: str
     invoice_file_location: str
     proof_of_payment_filename: str | None = None

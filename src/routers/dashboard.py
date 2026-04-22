@@ -289,7 +289,7 @@ async def submit_all_requests(
         form_submission = Invoice(
             form_number=form_num,
             vendor_name=vendor_name,
-            currency="USD" if currency == "USD" else "CAD",
+            is_usd=currency == "USD",
             invoice_filename=invoice_filename,
             invoice_file_location=invoice_file_location,
             proof_of_payment_filename=proof_of_payment_filename,

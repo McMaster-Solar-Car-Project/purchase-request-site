@@ -9,7 +9,7 @@ def _make_form(**overrides) -> Invoice:
     defaults = {
         "form_number": 1,
         "vendor_name": "Vendor",
-        "currency": "CAD",
+        "is_usd": False,
         "invoice_filename": "invoice.pdf",
         "invoice_file_location": "/tmp/invoice.pdf",
         "proof_of_payment_filename": None,
@@ -35,7 +35,7 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
         _make_form(
             form_number=1,
             vendor_name="CAD Vendor",
-            currency="CAD",
+            is_usd=False,
             subtotal_amount=120.0,
             discount_amount=20.0,
             total_cad_amount=113.0,
@@ -44,7 +44,7 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
         _make_form(
             form_number=2,
             vendor_name="USD Vendor",
-            currency="USD",
+            is_usd=True,
             us_subtotal=80.0,
             us_additional_fees=20.0,
             total_cad_amount=135.0,
