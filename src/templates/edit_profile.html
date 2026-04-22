@@ -91,44 +91,6 @@
                 {% endif %}
             </div>
 
-            <!-- Password Change Section -->
-            <div class="mt-8 pt-6 border-t border-[rgba(63,63,70,0.5)]">
-                <h3 class="m-0 mb-5 text-xl font-semibold text-white">Change Password</h3>
-
-                <div class="mb-6">
-                    <label for="current_password" class="block mb-2 font-medium text-sm text-[#e4e4e7]">Current Password</label>
-                    <input type="password" id="current_password" name="current_password"
-                        placeholder="Enter your current password" class="w-full py-3.5 px-3.5 bg-[rgba(39,39,42,0.7)] border border-[rgba(63,63,70,0.5)] rounded-lg text-[0.95rem] transition-all duration-200 box-border text-[#e4e4e7] block caret-[#6366f1] focus:outline-none focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)] placeholder:text-[#71717a]">
-                    <small class="block mt-2 text-xs text-[#a1a1aa]">Required only if changing password</small>
-                </div>
-
-                <div class="mb-6">
-                    <label for="new_password" class="block mb-2 font-medium text-sm text-[#e4e4e7]">New Password</label>
-                    <input type="password" id="new_password" name="new_password" placeholder="Enter new password"
-                        minlength="5" oninput="checkPasswordStrength()" class="w-full py-3.5 px-3.5 bg-[rgba(39,39,42,0.7)] border border-[rgba(63,63,70,0.5)] rounded-lg text-[0.95rem] transition-all duration-200 box-border text-[#e4e4e7] block caret-[#6366f1] focus:outline-none focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)] placeholder:text-[#71717a]">
-                    <small class="block mt-2 text-xs text-[#a1a1aa]">Minimum 5 characters</small>
-                    <div class="mt-2 h-2 w-full rounded-full bg-zinc-700 overflow-hidden" id="password-strength">
-                        <div class="h-full w-0 bg-zinc-700 transition-all duration-300"></div>
-                    </div>
-                </div>
-
-                <div class="mb-6">
-                    <label for="confirm_password" class="block mb-2 font-medium text-sm text-[#e4e4e7]">Confirm New Password</label>
-                    <input type="password" id="confirm_password" name="confirm_password"
-                        placeholder="Confirm new password" oninput="checkPasswordMatch()" class="w-full py-3.5 px-3.5 bg-[rgba(39,39,42,0.7)] border border-[rgba(63,63,70,0.5)] rounded-lg text-[0.95rem] transition-all duration-200 box-border text-[#e4e4e7] block caret-[#6366f1] focus:outline-none focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)] placeholder:text-[#71717a]">
-                    <small id="password-match-message" class="block mt-2 text-xs text-[#a1a1aa]">Must match new password</small>
-                </div>
-
-                <div class="rounded-lg border border-[rgba(63,63,70,0.5)] bg-[rgba(39,39,42,0.45)] p-4">
-                    <h4 class="m-0 mb-2 text-sm font-semibold text-zinc-200">Password Requirements:</h4>
-                    <ul class="m-0 pl-5 space-y-1 text-sm text-zinc-300">
-                        <li>At least 5 characters long</li>
-                        <li>Mix of letters and numbers recommended</li>
-                        <li>Avoid using personal information</li>
-                    </ul>
-                </div>
-            </div>
-
             <button type="submit" class="w-full py-3.5 px-3.5 bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-white border-none rounded-lg text-[0.95rem] font-medium cursor-pointer transition-all duration-200 mt-8 hover:from-[#4f46e5] hover:to-[#7c3aed] hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)] hover:-translate-y-px">Update Information</button>
         </form>
     </div>
