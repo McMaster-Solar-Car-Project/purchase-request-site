@@ -136,6 +136,41 @@ class GoogleDriveClient:
             logger.exception(f"Error creating session folder: {e}")
             raise
 
+    def _find_or_create_folder(self, folder_name: str, parent_id: str) -> str:
+        """Find a child folder by name under parent, or create it."""
+        service = self.service
+        if service is None:
+            raise RuntimeError("Google Drive client is not authenticated")
+
+        query = (
+            f"name='{folder_name}' and "
+            "mimeType='application/vnd.google-apps.folder' and "
+            f"'{parent_id}' in parents and trashed=false"
+        )
+        results = service.files().list(q=query, fields="files(id, name)").execute()
+        folders = results.get("files", [])
+        if folders:
+            folder_id = folders[0]["id"]
+            logger.info(f"Found existing folder: {folder_name} (ID: {folder_id})")
+            return folder_id
+
+        folder_metadata = {
+            "name": folder_name,
+            "mimeType": "application/vnd.google-apps.folder",
+            "parents": [parent_id],
+        }
+        folder = service.files().create(body=folder_metadata, fields="id").execute()
+        folder_id = folder.get("id")
+        logger.info(f"Created folder: {folder_name} (ID: {folder_id})")
+        return folder_id
+
+    def _ensure_upload_base_folder(self, parent_id: str) -> str:
+        """Return folder where month-year folders should live."""
+        settings = get_settings()
+        if settings.is_testing:
+            return self._find_or_create_folder("Tests", parent_id)
+        return parent_id
+
     def _ensure_month_year_folder(self, parent_id: str) -> str:
         """
         Create or find a month/year folder (e.g., "July 2025") in the parent directory
@@ -155,36 +190,7 @@ class GoogleDriveClient:
             now = datetime.now()
             month_year_name = now.strftime("%B %Y")  # e.g., "January 2025"
 
-            # Search for existing month/year folder
-            query = f"name='{month_year_name}' and mimeType='application/vnd.google-apps.folder' and '{parent_id}' in parents and trashed=false"
-            results = service.files().list(q=query, fields="files(id, name)").execute()
-
-            folders = results.get("files", [])
-
-            if folders:
-                # Folder exists
-                month_folder_id = folders[0]["id"]
-                logger.info(
-                    f"Found existing month/year folder: {month_year_name} (ID: {month_folder_id})"
-                )
-                return month_folder_id
-            else:
-                # Create new month/year folder
-                folder_metadata = {
-                    "name": month_year_name,
-                    "mimeType": "application/vnd.google-apps.folder",
-                    "parents": [parent_id],
-                }
-
-                folder = (
-                    service.files().create(body=folder_metadata, fields="id").execute()
-                )
-
-                month_folder_id = folder.get("id")
-                logger.info(
-                    f"Created month/year folder: {month_year_name} (ID: {month_folder_id})"
-                )
-                return month_folder_id
+            return self._find_or_create_folder(month_year_name, parent_id)
 
         except HttpError as e:
             logger.exception(f"HTTP error managing month/year folder: {e}")
@@ -282,8 +288,9 @@ class GoogleDriveClient:
             # Ensure parent folder exists (Test_automation)
             parent_folder_id = self._ensure_parent_folder()
 
-            # Ensure month/year folder exists (e.g., "January 2025")
-            month_year_folder_id = self._ensure_month_year_folder(parent_folder_id)
+            # In testing uploads, insert a "Tests" folder before month/year.
+            base_folder_id = self._ensure_upload_base_folder(parent_folder_id)
+            month_year_folder_id = self._ensure_month_year_folder(base_folder_id)
 
             # Create session folder name with user info and timestamp
             session_name = Path(session_folder_path).name
@@ -341,8 +348,8 @@ class GoogleDriveClient:
                 # Ensure parent folder exists (Test_automation)
                 parent_folder_id = self._ensure_parent_folder()
 
-                # Ensure month/year folder exists (e.g., "January 2025")
-                month_year_folder_id = self._ensure_month_year_folder(parent_folder_id)
+                base_folder_id = self._ensure_upload_base_folder(parent_folder_id)
+                month_year_folder_id = self._ensure_month_year_folder(base_folder_id)
 
                 # Create session folder in the month/year folder
                 session_folder_id = self._create_session_folder(
