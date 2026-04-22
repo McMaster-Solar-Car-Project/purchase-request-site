@@ -13,10 +13,10 @@ from fastapi import (
     Depends,
     HTTPException,
     Request,
-    UploadFile,
 )
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
+from starlette.datastructures import UploadFile
 
 from src.core.logging_utils import setup_logger
 from src.data_processing import create_expense_report, create_purchase_request
