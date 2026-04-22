@@ -36,14 +36,6 @@ class GoogleDriveClient:
         self.service: Any | None = None
         self.parent_folder_id: str | None = None
 
-    @staticmethod
-    def _coerce_user_info(
-        user_info: dict[str, Any] | SubmissionUserInfo,
-    ) -> SubmissionUserInfo:
-        if isinstance(user_info, SubmissionUserInfo):
-            return user_info
-        return SubmissionUserInfo.model_validate(user_info)
-
     def _authenticate(self):
         """Authenticate with Google Drive API using environment variables"""
         if self.service:
@@ -277,7 +269,6 @@ class GoogleDriveClient:
             return False, "", ""
 
         try:
-            user = self._coerce_user_info(user_info)
             # Ensure parent folder exists (Test_automation)
             parent_folder_id = self._ensure_parent_folder()
 
@@ -286,7 +277,7 @@ class GoogleDriveClient:
 
             # Create session folder name with user info and timestamp
             session_name = Path(session_folder_path).name
-            user_name = user.name.replace(" ", "_")
+            user_name = user_info.name.replace(" ", "_")
             timestamp = datetime.now().strftime("%d_%m_%Y_%H-%M-%S")
             drive_folder_name = f"{session_name}_{user_name}_{timestamp}"
 
@@ -327,10 +318,9 @@ class GoogleDriveClient:
             return False
 
         try:
-            user = self._coerce_user_info(user_info)
             # Create session folder name with user info and timestamp (always needed for logging)
             session_name = Path(session_folder_path).name
-            user_name = user.name.replace(" ", "_")
+            user_name = user_info.name.replace(" ", "_")
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             drive_folder_name = f"{session_name}_{user_name}_{timestamp}"
 
