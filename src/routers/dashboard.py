@@ -47,7 +47,7 @@ def _form_str(value: object, default: str = "") -> str:
     """Coerce multipart form field to str; ignore accidental file parts."""
     if value is None or isinstance(value, UploadFile):
         return default
-    return str(value)
+    return str(value).strip()
 
 
 def _form_float(value: object, default: float = 0.0) -> float:

@@ -84,7 +84,7 @@ def is_user_profile_complete(user: User) -> bool:
 
     required_text_fields = [
         user.name,
-        EmailStr(user.email),
+        user.email,
         user.personal_email,
         user.address,
         user.team,
