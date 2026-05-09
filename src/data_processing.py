@@ -1,7 +1,6 @@
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
@@ -28,34 +27,22 @@ def create_expense_report(
         return False
 
     try:
-        # Build output filename: MonthDay-Year-ExpenseReport-FullName
         now = datetime.now()
-        month_name = now.strftime("%B")
         day = now.strftime("%d").lstrip("0")
-        year = now.strftime("%Y")
-        today = now.strftime("%Y-%m-%d")
         pascal_name = "".join(word.capitalize() for word in user_info.name.split())
-
-        output_filename = f"{month_name}{day}-{year}-ExpenseReport-{pascal_name}.xlsx"
+        output_filename = f"{now.strftime('%B')}{day}-{now.strftime('%Y')}-ExpenseReport-{pascal_name}.xlsx"
         output_path = f"{session_folder}/{output_filename}"
 
         shutil.copy2(template_path, output_path)
-
         wb = load_workbook(output_path)
         ws = wb.active
 
-        # Header section
         ws["C2"] = user_info.name
-        ws["F2"] = today
+        ws["F2"] = now.strftime("%Y-%m-%d")
         ws["C3"] = user_info.email
         ws["F3"] = user_info.address
 
-        try:
-            populate_expense_rows_from_submitted_forms(ws, submitted_forms)
-        except Exception as e:
-            logger.exception(
-                f"Failed to populate expense rows from submitted forms: {e}"
-            )
+        populate_expense_rows_from_submitted_forms(ws, submitted_forms)
 
         try:
             insert_signature_at_cell(ws, session_folder, "A19", 200, 60)
@@ -64,7 +51,6 @@ def create_expense_report(
 
         wb.save(output_path)
         wb.close()
-
         return True
 
     except Exception as e:
@@ -75,60 +61,45 @@ def create_expense_report(
 def populate_expense_rows_from_submitted_forms(
     ws: Worksheet, submitted_forms: list[Invoice]
 ) -> bool:
-    """Populate expense report rows from submitted form data"""
+    """Populate expense report rows from submitted form data."""
+    current_date = datetime.now().strftime("%Y-%m-%d")
 
-    try:
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        start_row = 6
+    for i, form in enumerate(submitted_forms):
+        row = 6 + i  # starts at row 6 in excel
+        ws[f"B{row}"] = current_date
+        ws[f"C{row}"] = form.vendor_name
 
-        for i, form in enumerate(submitted_forms):
-            row = start_row + i
+        if not form.is_usd:
+            ws[f"F{row}"] = form.subtotal_amount - form.discount_amount
+            ws[f"G{row}"] = form.total_cad_amount
+            ws[f"H{row}"] = form.hst_gst_amount
+        else:
+            exchange_rate = (
+                form.total_cad_amount / form.us_total
+                if form.us_total > 0 and form.total_cad_amount > 0
+                else 0
+            )
+            ws[f"D{row}"] = form.us_total
+            ws[f"E{row}"] = exchange_rate
+            ws[f"F{row}"] = form.total_cad_amount
+            ws[f"G{row}"] = form.total_cad_amount
+            ws[f"H{row}"] = 0
 
-            subtotal_after_discount = form.subtotal_amount - form.discount_amount
-
-            ws[f"B{row}"] = current_date
-            ws[f"C{row}"] = form.vendor_name
-
-            if not form.is_usd:
-                ws[f"F{row}"] = subtotal_after_discount
-                ws[f"G{row}"] = form.total_cad_amount
-                ws[f"H{row}"] = form.hst_gst_amount
-            else:
-                exchange_rate = (
-                    form.total_cad_amount / form.us_total
-                    if form.us_total > 0 and form.total_cad_amount > 0
-                    else 0
-                )
-                ws[f"D{row}"] = form.us_total
-                ws[f"E{row}"] = exchange_rate
-                ws[f"F{row}"] = form.total_cad_amount
-                ws[f"G{row}"] = form.total_cad_amount
-                ws[f"H{row}"] = 0
-
-        return True
-
-    except Exception as e:
-        logger.exception(f"Error populating expense rows: {e}")
-        return False
+    return True
 
 
 def create_purchase_request(
     user_info: SubmissionUserInfo,
     submitted_forms: list[Invoice],
     session_folder: str,
-) -> dict[str, Any]:
-    """Create Purchase Request using the template with multiple tabs for each submitted form"""
-
+) -> None:
+    """Create Purchase Request using a template with one tab per submitted form."""
     template_path = "src/excel_templates/purchase_request_template.xlsx"
-
     if not Path(template_path).exists():
         raise FileNotFoundError(f"Template file not found: {template_path}")
 
-    output_filename = "purchase_request.xlsx"
-    output_path = f"{session_folder}/{output_filename}"
-
+    output_path = f"{session_folder}/purchase_request.xlsx"
     shutil.copy2(template_path, output_path)
-
     wb = load_workbook(output_path)
 
     for form in submitted_forms:
@@ -142,9 +113,6 @@ def create_purchase_request(
 
         ws = wb[tab_name]
 
-        items = form.items[:15]
-
-        # Header section
         ws["B1"] = datetime.now().strftime("%Y-%m-%d")
         ws["D1"] = "USD" if form.is_usd else "CAD"
         ws["B3"] = user_info.name
@@ -153,8 +121,7 @@ def create_purchase_request(
         ws["B7"] = form.vendor_name
         ws["B32"] = user_info.address
 
-        # Item rows (starting at row 9)
-        for i, item in enumerate(items):
+        for i, item in enumerate(form.items[:15]):
             row = 9 + i
             ws[f"B{row}"] = item.name
             ws[f"C{row}"] = item.usage
@@ -162,29 +129,19 @@ def create_purchase_request(
             ws[f"E{row}"] = item.unit_price
             ws[f"F{row}"] = item.total
 
-        # Financial summary
         ws["F24"] = form.us_subtotal if form.is_usd else form.subtotal_amount
         ws["F25"] = form.us_additional_fees if form.is_usd else form.hst_gst_amount
         ws["F26"] = form.us_total if form.is_usd else form.shipping_amount
         ws["F27"] = form.total_cad_amount
 
-        # USD conversion rate
         if form.is_usd:
-            exchange_rate = (
+            ws["D7"] = (
                 round(form.total_cad_amount / form.us_total, 4)
                 if form.us_total > 0 and form.total_cad_amount > 0
                 else 0
             )
-            ws["D7"] = exchange_rate
 
         insert_signature_at_cell(ws, session_folder, "B33", 280, 70)
 
     wb.save(output_path)
     wb.close()
-
-    return {
-        "filename": output_filename,
-        "filepath": output_path,
-        "forms_processed": len(submitted_forms),
-        "tabs_used": [f"Receipt{form.form_number}" for form in submitted_forms],
-    }
