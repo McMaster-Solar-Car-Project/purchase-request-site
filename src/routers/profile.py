@@ -1,8 +1,5 @@
 """Profile router for the /edit-profile endpoints."""
 
-import os
-import tempfile
-
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
@@ -11,7 +8,7 @@ from sqlalchemy.orm import Session
 from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
 from src.db.schema import get_db
-from src.image_processing import convert_signature_to_png
+from src.image_processing import convert_signature_to_png_bytes
 from src.models.user_info import ProfileUpdateInput
 from src.models.user_service import (
     DEFAULT_NAME,
@@ -99,48 +96,21 @@ def edit_profile_post(
         if user.personal_email == DEFAULT_PERSONAL_EMAIL:
             logger.warning("User is still using default personal email.")
 
-        # Handle signature update if provided
         if signature and signature.filename:
-            # Read the signature file content
             signature_content = signature.file.read()
             if signature_content:
-                # Create a temporary file to save the uploaded signature
-                with tempfile.NamedTemporaryFile(
-                    delete=False, suffix=f".{signature.filename.split('.')[-1]}"
-                ) as temp_file:
-                    temp_file.write(signature_content)
-                    temp_signature_path = temp_file.name
-
-                # Create a temporary PNG file path
-                with tempfile.NamedTemporaryFile(
-                    delete=False, suffix=".png"
-                ) as temp_png_file:
-                    temp_png_path = temp_png_file.name
-
-                try:
-                    # Convert signature to PNG
-                    if convert_signature_to_png(temp_signature_path, temp_png_path):
-                        # Read the converted PNG content
-                        with open(temp_png_path, "rb") as png_file:
-                            png_content = png_file.read()
-                        # Save PNG content to database
-                        user.signature_data = png_content
-                        logger.info(
-                            f"Signature converted to PNG and saved for user {profile_input.email}"
-                        )
-                    else:
-                        logger.warning(
-                            f"Failed to convert signature to PNG for user {profile_input.email}"
-                        )
-                        # Fallback: save original content
-                        user.signature_data = signature_content
-                finally:
-                    # Clean up temporary files
-                    try:
-                        os.unlink(temp_signature_path)
-                        os.unlink(temp_png_path)
-                    except OSError:
-                        pass  # Ignore cleanup errors
+                png_bytes = convert_signature_to_png_bytes(signature_content)
+                if png_bytes is not None:
+                    user.signature_data = png_bytes
+                    logger.info(
+                        f"Signature converted to PNG and saved for user {profile_input.email}"
+                    )
+                else:
+                    logger.warning(
+                        f"Failed to convert signature to PNG for user {profile_input.email}; "
+                        "saving original bytes"
+                    )
+                    user.signature_data = signature_content
 
         # Save changes to database
         db.commit()
