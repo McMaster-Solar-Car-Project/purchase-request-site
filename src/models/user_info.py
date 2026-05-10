@@ -11,9 +11,6 @@ class ProfileUpdateInput(BaseModel):
     personal_email: EmailStr
     team: str
     address: str
-    current_password: str = ""
-    new_password: str = ""
-    confirm_password: str = ""
 
 
 class SubmissionUserInfo(BaseModel):
