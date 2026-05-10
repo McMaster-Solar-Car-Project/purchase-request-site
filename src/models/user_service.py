@@ -31,6 +31,16 @@ def get_user_signature_as_data_url(user: User) -> str | None:
     return None
 
 
+def get_user_void_cheque_as_data_url(user: User) -> str | None:
+    """Get user's void cheque as a data URL for HTML display."""
+    if not user.void_cheque:
+        return None
+    if not user.void_cheque.startswith(b"%PDF-"):
+        return None
+    base64_data = base64.b64encode(user.void_cheque).decode("utf-8")
+    return f"data:application/pdf;base64,{base64_data}"
+
+
 def save_signature_to_file(user: User, file_path: str) -> bool:
     """Save user's signature from database to a file"""
     if not user or not user.signature_data:
@@ -94,5 +104,6 @@ def is_user_profile_complete(user: User) -> bool:
     ]
     has_required_text = all(field and field.strip() for field in required_text_fields)
     has_signature = bool(user.signature_data)
+    has_void_cheque = bool(user.void_cheque) and user.void_cheque.startswith(b"%PDF-")
 
-    return has_required_text and has_signature
+    return has_required_text and has_signature and has_void_cheque

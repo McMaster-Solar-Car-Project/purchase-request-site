@@ -15,6 +15,7 @@ from src.models.user_service import (
     DEFAULT_PERSONAL_EMAIL,
     get_user_by_email,
     get_user_signature_as_data_url,
+    get_user_void_cheque_as_data_url,
 )
 from src.routers.utils import require_auth, templates
 
@@ -37,6 +38,7 @@ async def edit_profile_get(
 
     # Convert signature to data URL for display
     signature_data_url = get_user_signature_as_data_url(user)
+    void_cheque_data_url = get_user_void_cheque_as_data_url(user)
 
     return templates.TemplateResponse(
         request=request,
@@ -46,6 +48,7 @@ async def edit_profile_get(
             "title": "Edit Profile - Purchase Request Site",
             "user": user,
             "signature_data_url": signature_data_url,
+            "void_cheque_data_url": void_cheque_data_url,
             "google_api_key": settings.google_places_api_key,
         },
     )
@@ -61,6 +64,7 @@ def edit_profile_post(
     team: str = Form(...),
     address: str = Form(...),
     signature: UploadFile = File(None),
+    void_cheque: UploadFile = File(None),
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
 ):
@@ -105,6 +109,18 @@ def edit_profile_post(
             logger.info(
                 f"Signature converted to PNG and saved for user {profile_input.email}"
             )
+
+        if void_cheque and void_cheque.filename:
+            void_cheque_content = void_cheque.file.read()
+            if not void_cheque_content:
+                raise ValueError("Uploaded void cheque file is empty")
+            if not void_cheque_content.startswith(b"%PDF-"):
+                raise ValueError("Void cheque must be a valid PDF file")
+            user.void_cheque = void_cheque_content
+            logger.info(f"Void cheque PDF saved for user {profile_input.email}")
+
+        if not user.void_cheque:
+            raise ValueError("Void cheque PDF is required")
 
         # Save changes to database
         db.commit()
