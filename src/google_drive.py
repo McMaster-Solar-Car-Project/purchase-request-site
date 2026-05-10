@@ -1,8 +1,4 @@
-"""
-Google Drive integration module for the Purchase Request Site.
-
-This module handles uploading session data (Excel files, invoices, signatures) to Google Drive.
-"""
+"""Google Drive integration: uploads session data (Excel, invoices, signatures)."""
 
 import mimetypes
 import time
@@ -20,279 +16,167 @@ from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
 from src.models.user_info import SubmissionUserInfo
 
-# Set up logger
 logger = setup_logger(__name__)
 
-# Google Drive configuration
 DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"]
+FOLDER_MIME = "application/vnd.google-apps.folder"
 
 
 class GoogleDriveClient:
-    """Client for interacting with Google Drive API"""
+    """Client for interacting with Google Drive API."""
 
-    def __init__(self):
-        """Initialize the Google Drive client using environment variables"""
+    def __init__(self) -> None:
         # google-api-python-client builds a dynamic Resource; stubs omit API methods.
         self.service: Any | None = None
         self.parent_folder_id: str | None = None
 
-    def _authenticate(self):
-        """Authenticate with Google Drive API using environment variables"""
+    def _authenticate(self) -> bool:
         if self.service:
             return True
         try:
-            service_account_info = get_settings().google_service_account_info
             credentials = Credentials.from_service_account_info(
-                service_account_info, scopes=DRIVE_SCOPES
+                get_settings().google_service_account_info, scopes=DRIVE_SCOPES
             )
             self.service = build("drive", "v3", credentials=credentials)
-            # Authentication successful
             return True
         except (ValueError, ValidationError) as e:
             logger.exception(f"Environment variable error: {e}")
-            return False
         except Exception as e:
             logger.exception(f"Failed to authenticate with Google Drive API: {e}")
-            return False
+        return False
+
+    def _service(self) -> Any:
+        """Return an authenticated Drive resource, raising on failure."""
+        if not self.service and not self._authenticate():
+            raise RuntimeError("Failed to authenticate with Google Drive")
+        return self.service
+
+    def _create_folder(self, name: str, parent_id: str) -> str:
+        service = self._service()
+        folder = (
+            service.files()
+            .create(
+                body={"name": name, "mimeType": FOLDER_MIME, "parents": [parent_id]},
+                fields="id",
+            )
+            .execute()
+        )
+        return folder["id"]
 
     def _ensure_parent_folder(self) -> str:
-        """
-        Return the configured parent folder ID (Test_automation folder)
-
-        Returns:
-            str: The folder ID of the parent folder
-        """
+        """Verify and return the configured parent folder ID."""
         if self.parent_folder_id:
             return self.parent_folder_id
 
-        if not self.service and not self._authenticate():
-            raise Exception("Failed to authenticate with Google Drive")
-
-        service = self.service
-        if service is None:
-            raise Exception("Failed to authenticate with Google Drive")
-
+        service = self._service()
+        parent_id = get_settings().google_drive_folder_id
         try:
-            # Use the configured folder ID directly
-            self.parent_folder_id = get_settings().google_drive_folder_id
-
-            # Verify the folder exists and get its name
-            (
-                service.files()
-                .get(fileId=self.parent_folder_id, fields="id, name")
-                .execute()
-            )
-
-            return self.parent_folder_id
-
+            service.files().get(fileId=parent_id, fields="id, name").execute()
         except HttpError as e:
             logger.exception(f"HTTP error accessing parent folder: {e}")
             raise
-        except Exception as e:
-            logger.exception(f"Error accessing parent folder: {e}")
-            raise
 
-    def _create_session_folder(self, session_name: str, parent_id: str) -> str:
-        """
-        Create a session folder in Google Drive
-
-        Args:
-            session_name: Name of the session folder
-            parent_id: ID of the parent folder
-
-        Returns:
-            str: The folder ID of the created session folder
-        """
-        service = self.service
-        if service is None:
-            raise RuntimeError("Google Drive client is not authenticated")
-
-        try:
-            folder_metadata = {
-                "name": session_name,
-                "mimeType": "application/vnd.google-apps.folder",
-                "parents": [parent_id],
-            }
-
-            folder = service.files().create(body=folder_metadata, fields="id").execute()
-
-            folder_id = folder.get("id")
-            # Session folder created
-            return folder_id
-
-        except HttpError as e:
-            logger.exception(f"HTTP error creating session folder: {e}")
-            raise
-        except Exception as e:
-            logger.exception(f"Error creating session folder: {e}")
-            raise
+        self.parent_folder_id = parent_id
+        return parent_id
 
     def _ensure_month_year_folder(self, parent_id: str) -> str:
-        """
-        Create or find a month/year folder (e.g., "July 2025") in the parent directory
-
-        Args:
-            parent_id: ID of the parent folder (Test_automation)
-
-        Returns:
-            str: The folder ID of the month/year folder
-        """
-        service = self.service
-        if service is None:
-            raise RuntimeError("Google Drive client is not authenticated")
-
+        """Find or create a "Month YYYY" folder inside ``parent_id``."""
+        service = self._service()
+        name = datetime.now().strftime("%B %Y")
+        query = (
+            f"name='{name}' and mimeType='{FOLDER_MIME}' "
+            f"and '{parent_id}' in parents and trashed=false"
+        )
         try:
-            # Get current month and year
-            now = datetime.now()
-            month_year_name = now.strftime("%B %Y")  # e.g., "January 2025"
-
-            # Search for existing month/year folder
-            query = f"name='{month_year_name}' and mimeType='application/vnd.google-apps.folder' and '{parent_id}' in parents and trashed=false"
             results = service.files().list(q=query, fields="files(id, name)").execute()
+            existing = results.get("files", [])
+            if existing:
+                folder_id = existing[0]["id"]
+                logger.info(f"Found existing month/year folder: {name} ({folder_id})")
+                return folder_id
 
-            folders = results.get("files", [])
-
-            if folders:
-                # Folder exists
-                month_folder_id = folders[0]["id"]
-                logger.info(
-                    f"Found existing month/year folder: {month_year_name} (ID: {month_folder_id})"
-                )
-                return month_folder_id
-            else:
-                # Create new month/year folder
-                folder_metadata = {
-                    "name": month_year_name,
-                    "mimeType": "application/vnd.google-apps.folder",
-                    "parents": [parent_id],
-                }
-
-                folder = (
-                    service.files().create(body=folder_metadata, fields="id").execute()
-                )
-
-                month_folder_id = folder.get("id")
-                logger.info(
-                    f"Created month/year folder: {month_year_name} (ID: {month_folder_id})"
-                )
-                return month_folder_id
-
+            folder_id = self._create_folder(name, parent_id)
+            logger.info(f"Created month/year folder: {name} ({folder_id})")
+            return folder_id
         except HttpError as e:
             logger.exception(f"HTTP error managing month/year folder: {e}")
             raise
-        except Exception as e:
-            logger.exception(f"Error managing month/year folder: {e}")
-            raise
 
-    def _upload_file(
-        self,
-        file_path: str,
-        folder_id: str,
-    ) -> str | None:
-        """
-        Upload a file to Google Drive with retry logic
+    def _build_session_folder(
+        self, user_info: SubmissionUserInfo, session_name: str
+    ) -> str:
+        """Create the session folder under the current month/year folder; return ID."""
+        parent_id = self._ensure_parent_folder()
+        month_id = self._ensure_month_year_folder(parent_id)
+        timestamp = datetime.now().strftime("%d_%m_%Y_%H-%M-%S")
+        drive_name = f"{session_name}_{user_info.name.replace(' ', '_')}_{timestamp}"
+        folder_id = self._create_folder(drive_name, month_id)
+        logger.info(f"Created Drive session folder: {drive_name} ({folder_id})")
+        return folder_id
 
-        Args:
-            file_path: Local path to the file
-            folder_id: ID of the folder to upload to
-            file_name: Optional custom name for the file
+    def _upload_file(self, file_path: str, folder_id: str) -> str | None:
+        """Upload a single file with retry/backoff. Returns file ID on success."""
+        path = Path(file_path)
+        if not path.exists():
+            logger.warning(f"File not found: {file_path}")
+            return None
 
-        Returns:
-            str | None: The file ID of the uploaded file, or None on failure
-        """
-        max_retries = 3
-        retry_delay = 1  # seconds
-
-        if not self.service and not self._authenticate():
+        try:
+            service = self._service()
+        except RuntimeError:
             logger.exception(f"Failed to authenticate for {file_path}")
             return None
 
-        service = self.service
-        if service is None:
-            return None
+        mime_type = mimetypes.guess_type(file_path)[0] or "application/octet-stream"
+        file_name = path.name
 
+        max_retries = 3
+        retry_delay = 1
         for attempt in range(max_retries):
             try:
-                if not Path(file_path).exists():
-                    logger.warning(f"File not found: {file_path}")
-                    return None
-
-                # Determine file name and MIME type
-                file_name = Path(file_path).name
-
-                mime_type, _ = mimetypes.guess_type(file_path)
-                if not mime_type:
-                    mime_type = "application/octet-stream"
-
-                # Create file metadata
-                file_metadata = {"name": file_name, "parents": [folder_id]}
-
-                # Create media upload
-                media = MediaFileUpload(file_path, mimetype=mime_type, resumable=True)
-
-                # Upload file using the main service
                 file_obj = (
                     service.files()
-                    .create(body=file_metadata, media_body=media, fields="id")
+                    .create(
+                        body={"name": file_name, "parents": [folder_id]},
+                        media_body=MediaFileUpload(
+                            file_path, mimetype=mime_type, resumable=True
+                        ),
+                        fields="id",
+                    )
                     .execute()
                 )
-
-                file_id = file_obj.get("id")
                 logger.info(f"✅ Uploaded {file_name} to Google Drive")
-                return file_id
-
-            except (HttpError, Exception) as e:
+                return file_obj["id"]
+            except Exception as e:
                 if attempt < max_retries - 1:
                     logger.warning(
-                        f"Upload attempt {attempt + 1} failed for {file_name}, retrying in {retry_delay}s: {e}"
+                        f"Upload attempt {attempt + 1} failed for {file_name}, "
+                        f"retrying in {retry_delay}s: {e}"
                     )
                     time.sleep(retry_delay)
-                    retry_delay *= 2  # Exponential backoff
+                    retry_delay *= 2
                 else:
                     logger.exception(f"All upload attempts failed for {file_path}: {e}")
-                    return None
+        return None
 
     def create_session_folder_structure(
         self, session_folder_path: str, user_info: SubmissionUserInfo
     ) -> tuple[bool, str, str]:
-        """
-        Create the folder structure in Google Drive and return folder URL and ID
-
-        Args:
-            session_folder_path: Local path to the session folder
-            user_info: User information dictionary for naming
-
-        Returns:
-            tuple: (success: bool, folder_url: str, folder_id: str)
-        """
-        if not self.service and not self._authenticate():
+        """Create month/year + session subfolder in Drive. Returns (ok, url, id)."""
+        try:
+            self._service()
+        except RuntimeError:
             return False, "", ""
 
         try:
-            # Ensure parent folder exists (Test_automation)
-            parent_folder_id = self._ensure_parent_folder()
-
-            # Ensure month/year folder exists (e.g., "January 2025")
-            month_year_folder_id = self._ensure_month_year_folder(parent_folder_id)
-
-            # Create session folder name with user info and timestamp
-            session_name = Path(session_folder_path).name
-            user_name = user_info.name.replace(" ", "_")
-            timestamp = datetime.now().strftime("%d_%m_%Y_%H-%M-%S")
-            drive_folder_name = f"{session_name}_{user_name}_{timestamp}"
-
-            # Create session folder in the month/year folder
-            session_folder_id = self._create_session_folder(
-                drive_folder_name, month_year_folder_id
+            folder_id = self._build_session_folder(
+                user_info, Path(session_folder_path).name
             )
-
-            # Construct Google Drive folder URL
-            folder_url = f"https://drive.google.com/drive/folders/{session_folder_id}"
-
-            # Google Drive folder created
-
-            return True, folder_url, session_folder_id
-
+            return (
+                True,
+                f"https://drive.google.com/drive/folders/{folder_id}",
+                folder_id,
+            )
         except Exception as e:
             logger.exception(f"Error creating session folder structure: {e}")
             return False, "", ""
@@ -303,109 +187,54 @@ class GoogleDriveClient:
         user_info: SubmissionUserInfo,
         session_folder_id: str | None = None,
     ) -> bool:
-        """
-        Upload an entire session folder to Google Drive
+        """Upload all files in ``session_folder_path`` (excluding signature.png)."""
+        try:
+            self._service()
+        except RuntimeError:
+            return False
 
-        Args:
-            session_folder_path: Local path to the session folder
-            user_info: User information dictionary for naming
-            session_folder_id: Optional existing folder ID to upload to
-
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        if not self.service and not self._authenticate():
+        session_path = Path(session_folder_path)
+        if not session_path.exists():
+            logger.exception(f"Session folder not found: {session_folder_path}")
             return False
 
         try:
-            # Create session folder name with user info and timestamp (always needed for logging)
-            session_name = Path(session_folder_path).name
-            user_name = user_info.name.replace(" ", "_")
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            drive_folder_name = f"{session_name}_{user_name}_{timestamp}"
-
-            # Use provided folder ID or create new folder structure
             if not session_folder_id:
-                # Fallback: create folder structure if no ID provided
-                # Ensure parent folder exists (Test_automation)
-                parent_folder_id = self._ensure_parent_folder()
-
-                # Ensure month/year folder exists (e.g., "January 2025")
-                month_year_folder_id = self._ensure_month_year_folder(parent_folder_id)
-
-                # Create session folder in the month/year folder
-                session_folder_id = self._create_session_folder(
-                    drive_folder_name, month_year_folder_id
+                session_folder_id = self._build_session_folder(
+                    user_info, session_path.name
                 )
 
-            # Upload all files in the session folder sequentially
-            uploaded_files = []
-            session_path = Path(session_folder_path)
-
-            if not session_path.exists():
-                logger.exception(f"Session folder not found: {session_folder_path}")
-                return False
-
-            # Get all files to upload, excluding specified ones
             files_to_upload = [
-                file_path
-                for file_path in session_path.iterdir()
-                if file_path.is_file() and file_path.name != "signature.png"
+                p
+                for p in session_path.iterdir()
+                if p.is_file() and p.name != "signature.png"
             ]
-
             if not files_to_upload:
                 logger.warning(
                     f"No files found in session folder: {session_folder_path} (after exclusion)"
                 )
                 return True
 
-            # Upload files one by one (simple and reliable)
             for file_path in files_to_upload:
                 try:
-                    file_id = self._upload_file(str(file_path), session_folder_id)
-                    if file_id:
-                        uploaded_files.append({"name": file_path.name, "id": file_id})
-                    else:
+                    if not self._upload_file(str(file_path), session_folder_id):
                         logger.warning(f"Failed to upload {file_path.name}")
                 except Exception as e:
                     logger.exception(f"Error uploading {file_path.name}: {e}")
-
             return True
-
         except Exception as e:
             logger.exception(f"Error uploading session folder: {e}")
             return False
 
     def download_file(self, file_id: str, file_name: str) -> bytes:
-        """Download a file from Google Drive by file ID
-
-        Args:
-            file_id: Google Drive file ID
-            file_name: Name of the file (for logging)
-
-        Returns:
-            bytes: File content as bytes
-
-        Raises:
-            Exception: If download fails
-        """
-        if not self.service and not self._authenticate():
-            raise Exception("Failed to authenticate with Google Drive")
-
-        service = self.service
-        if service is None:
-            raise Exception("Failed to authenticate with Google Drive")
-
+        """Download a file by ID. Raises on failure."""
+        service = self._service()
         try:
-            # Download the file
-            request = service.files().get_media(fileId=file_id)
-            file_content = request.execute()
-
+            content = service.files().get_media(fileId=file_id).execute()
             logger.info(
-                f"✅ Downloaded {file_name} from Google Drive ({len(file_content)} bytes)"
+                f"✅ Downloaded {file_name} from Google Drive ({len(content)} bytes)"
             )
-            return file_content
-
+            return content
         except HttpError as e:
             logger.exception(
                 f"HTTP error downloading {file_name} from Google Drive: {e}"
@@ -416,47 +245,37 @@ class GoogleDriveClient:
             raise
 
     def find_file_in_folder(self, folder_id: str, file_name: str) -> str:
-        """Find a file by name in a specific Google Drive folder
-
-        Args:
-            folder_id: Google Drive folder ID to search in
-            file_name: Name of the file to find
-
-        Returns:
-            str: File ID if found, empty string if not found
-        """
-        if not self.service and not self._authenticate():
-            return ""
-
-        service = self.service
-        if service is None:
-            return ""
-
+        """Return the ID of ``file_name`` inside ``folder_id``, or "" if not found."""
         try:
-            # Search for the file in the specific folder
-            query = f"name='{file_name}' and '{folder_id}' in parents and trashed=false"
-            results = service.files().list(q=query, fields="files(id, name)").execute()
+            service = self._service()
+        except RuntimeError:
+            return ""
 
-            files = results.get("files", [])
+        query = f"name='{file_name}' and '{folder_id}' in parents and trashed=false"
+        try:
+            files = (
+                service.files()
+                .list(q=query, fields="files(id, name)")
+                .execute()
+                .get("files", [])
+            )
             if files:
-                file_id = files[0]["id"]
-                logger.info(f"Found {file_name} in Google Drive folder: {file_id}")
-                return file_id
-            else:
-                logger.warning(
-                    f"File {file_name} not found in Google Drive folder {folder_id}"
+                logger.info(
+                    f"Found {file_name} in Google Drive folder: {files[0]['id']}"
                 )
-                return ""
-
+                return files[0]["id"]
+            logger.warning(
+                f"File {file_name} not found in Google Drive folder {folder_id}"
+            )
+            return ""
         except HttpError as e:
             logger.exception(f"HTTP error searching for {file_name}: {e}")
-            return ""
         except Exception as e:
             logger.exception(f"Error searching for {file_name}: {e}")
-            return ""
+        return ""
 
-    def close(self):
-        """Close the Google Drive client"""
+    def close(self) -> None:
+        """Release Drive resources."""
         self.parent_folder_id = None
         if self.service is not None:
             self.service.close()
@@ -464,28 +283,15 @@ class GoogleDriveClient:
 
 
 def download_file_from_drive(folder_id: str, file_name: str) -> bytes:
-    """Download a file from Google Drive by folder ID and file name
-
-    Args:
-        folder_id: Google Drive folder ID where the file is located
-        file_name: Name of the file to download
-
-    Returns:
-        bytes: File content as bytes
-
-    Raises:
-        Exception: If file not found or download fails
-    """
+    """Download ``file_name`` from Drive folder ``folder_id``."""
     drive_client = GoogleDriveClient()
     try:
-        # First find the file in the folder
         file_id = drive_client.find_file_in_folder(folder_id, file_name)
         if not file_id:
             logger.exception(f"File '{file_name}' not found in Google Drive folder")
             raise FileNotFoundError(
                 f"File '{file_name}' not found in Google Drive folder"
             )
-
         return drive_client.download_file(file_id, file_name)
     except Exception as e:
         logger.exception(f"Error downloading {file_name} from Google Drive: {e}")

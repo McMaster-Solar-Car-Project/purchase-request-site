@@ -25,7 +25,7 @@ ENV PATH="/root/.local/bin:$PATH"
 
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen
+RUN uv sync --frozen --no-dev
 
 # Copy Node.js dependencies and install
 COPY package.json ./

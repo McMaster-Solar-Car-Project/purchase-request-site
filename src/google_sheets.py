@@ -61,6 +61,14 @@ class GoogleSheetsClient:
             logger.exception(f"Failed to authenticate with Google Sheets API: {e}")
             return False
 
+    def _is_retriable(self, exc: Exception) -> bool:
+        if isinstance(exc, HttpError):
+            status = getattr(exc.resp, "status", None)
+            return status is not None and 500 <= int(status) < 600
+        if isinstance(exc, (OSError, ssl.SSLError)):
+            return "EOF occurred in violation of protocol" in str(exc)
+        return False
+
     def _append_row_with_retries(self, range_name, body, max_attempts=5):
         service = self.service
         if service is None:
@@ -79,24 +87,10 @@ class GoogleSheetsClient:
                     )
                     .execute()
                 )
-            except HttpError as e:
-                status = getattr(e.resp, "status", None)
-                # Retry on server-side 5xx errors
-                if status and 500 <= int(status) < 600 and attempt < max_attempts:
-                    backoff = (2 ** (attempt - 1)) + random.random()
-                    time.sleep(backoff)
-                    continue
-                raise  # non-retriable or out of attempts
-            except (OSError, ssl.SSLError) as e:
-                msg = str(e)
-                if (
-                    "EOF occurred in violation of protocol" in msg
-                    and attempt < max_attempts
-                ):
-                    backoff = (2 ** (attempt - 1)) + random.random()
-                    time.sleep(backoff)
-                    continue
-                raise  # other SSL/socket error or exhausted
+            except (HttpError, OSError, ssl.SSLError) as e:
+                if attempt >= max_attempts or not self._is_retriable(e):
+                    raise
+                time.sleep((2 ** (attempt - 1)) + random.random())
 
     def log_purchase_request(
         self,

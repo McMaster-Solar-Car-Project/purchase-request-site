@@ -50,28 +50,23 @@ def _form_str(value: object, default: str = "") -> str:
     return str(value).strip()
 
 
-def _form_float(value: object, default: float = 0.0) -> float:
-    if value is None or isinstance(value, UploadFile):
-        return default
-    s = str(value).strip()
+def _form_number(value: object, converter, default):
+    """Coerce a form field via ``converter`` (int/float). Returns ``default`` on bad input."""
+    s = _form_str(value)
     if not s:
         return default
     try:
-        return float(s)
+        return converter(s)
     except ValueError:
         return default
+
+
+def _form_float(value: object, default: float = 0.0) -> float:
+    return _form_number(value, float, default)
 
 
 def _form_int(value: object, default: int = 0) -> int:
-    if value is None or isinstance(value, UploadFile):
-        return default
-    s = str(value).strip()
-    if not s:
-        return default
-    try:
-        return int(s)
-    except ValueError:
-        return default
+    return _form_number(value, int, default)
 
 
 def _file_extension(filename: str | None, default: str = "pdf") -> str:

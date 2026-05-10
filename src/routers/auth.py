@@ -57,19 +57,10 @@ def login(
         request.session["user_email"] = email
         logger.info(f"🔐 User login: {user.name} ({email})")
 
-        # Redirect to dashboard; include a prompt if profile is incomplete.
-        if is_user_profile_complete(user):
-            query = urlencode({"user_email": user.email})
-            return RedirectResponse(
-                url=f"/dashboard?{query}",
-                status_code=303,
-            )
-
-        query = urlencode({"user_email": user.email, "profile_incomplete": "true"})
-        return RedirectResponse(
-            url=f"/dashboard?{query}",
-            status_code=303,
-        )
+        params: dict[str, str] = {"user_email": user.email}
+        if not is_user_profile_complete(user):
+            params["profile_incomplete"] = "true"
+        return RedirectResponse(url=f"/dashboard?{urlencode(params)}", status_code=303)
     else:
         logger.warning(f"🚫 Failed login attempt: {email}")
         return templates.TemplateResponse(
