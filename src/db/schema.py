@@ -60,6 +60,7 @@ class User(Base):
     team: Mapped[str] = mapped_column(String(100), nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
     signature_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
+    void_cheque: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>"

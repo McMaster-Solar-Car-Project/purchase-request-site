@@ -12,7 +12,6 @@ DEFAULT_NAME = "default_name"
 DEFAULT_PERSONAL_EMAIL = "default_email@gmail.com"
 DEFAULT_ADDRESS = "Please update your address"
 DEFAULT_TEAM = "Please update your team"
-DEFAULT_SIGNATURE = b"DEFAULT_SIGNATURE"
 
 
 def get_user_by_email(db: Session, email: EmailStr) -> User | None:
@@ -22,13 +21,23 @@ def get_user_by_email(db: Session, email: EmailStr) -> User | None:
 
 def get_user_signature_as_data_url(user: User) -> str | None:
     """Get user's signature as a data URL for HTML display"""
-    if user.signature_data and user.signature_data != DEFAULT_SIGNATURE:
+    if user.signature_data:
         # Signature uploads are normalized to PNG before persisting.
         if not user.signature_data.startswith(b"\x89PNG\r\n\x1a\n"):
             return None
         base64_data = base64.b64encode(user.signature_data).decode("utf-8")
         return f"data:image/png;base64,{base64_data}"
     return None
+
+
+def get_user_void_cheque_as_data_url(user: User) -> str | None:
+    """Get user's void cheque as a data URL for HTML display."""
+    if not user.void_cheque:
+        return None
+    if not user.void_cheque.startswith(b"%PDF-"):
+        return None
+    base64_data = base64.b64encode(user.void_cheque).decode("utf-8")
+    return f"data:application/pdf;base64,{base64_data}"
 
 
 def save_signature_to_file(user: User, file_path: str) -> bool:
@@ -42,6 +51,23 @@ def save_signature_to_file(user: User, file_path: str) -> bool:
         return True
     except Exception as e:
         logger.exception(f"Error saving signature to file {file_path}: {e}")
+        return False
+
+
+def save_void_cheque_to_file(user: User, file_path: str) -> bool:
+    """Save user's void cheque PDF from database to a file."""
+    if not user or not user.void_cheque:
+        return False
+    if not user.void_cheque.startswith(b"%PDF-"):
+        logger.warning("Void cheque data is not a valid PDF header")
+        return False
+
+    try:
+        with open(file_path, "wb") as f:
+            f.write(user.void_cheque)
+        return True
+    except Exception as e:
+        logger.exception(f"Error saving void cheque to file {file_path}: {e}")
         return False
 
 
@@ -62,7 +88,8 @@ def create_user_with_defaults(
         address=DEFAULT_ADDRESS,
         team=DEFAULT_TEAM,
         password=password,
-        signature_data=DEFAULT_SIGNATURE,
+        signature_data=None,
+        void_cheque=None,
     )
     db.add(new_user)
     db.commit()
@@ -81,7 +108,8 @@ def is_user_profile_complete(user: User) -> bool:
         or user.personal_email.strip() == DEFAULT_PERSONAL_EMAIL
         or user.address.strip() == DEFAULT_ADDRESS
         or user.team.strip() == DEFAULT_TEAM
-        or user.signature_data == DEFAULT_SIGNATURE
+        or user.signature_data is None
+        or user.void_cheque is None
     ):
         return False
 
@@ -94,5 +122,6 @@ def is_user_profile_complete(user: User) -> bool:
     ]
     has_required_text = all(field and field.strip() for field in required_text_fields)
     has_signature = bool(user.signature_data)
+    has_void_cheque = bool(user.void_cheque) and user.void_cheque.startswith(b"%PDF-")
 
-    return has_required_text and has_signature
+    return has_required_text and has_signature and has_void_cheque

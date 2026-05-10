@@ -32,6 +32,7 @@ from src.models.user_service import (
     get_user_by_email,
     is_user_profile_complete,
     save_signature_to_file,
+    save_void_cheque_to_file,
 )
 from src.routers.utils import require_auth, templates
 
@@ -186,11 +187,22 @@ async def submit_all_requests(
     if not user:
         logger.exception(f"User not found in database: {email}")
         raise HTTPException(status_code=404, detail="User not found")
+    if not is_user_profile_complete(user):
+        logger.warning(f"Profile incomplete for user {email}; blocking submission")
+        return RedirectResponse(
+            url=f"/dashboard?user_email={email}&profile_incomplete=true",
+            status_code=303,
+        )
 
     signature_filename = "signature.png"
     signature_path = _build_session_file_path(session_folder, signature_filename)
     if not save_signature_to_file(user, str(signature_path)):
         logger.warning(f"Could not save signature for user {email}")
+
+    void_cheque_filename = "void_cheque.pdf"
+    void_cheque_path = _build_session_file_path(session_folder, void_cheque_filename)
+    if not save_void_cheque_to_file(user, str(void_cheque_path)):
+        logger.warning(f"Could not save void cheque for user {email}")
 
     submitted_forms: list[Invoice] = []
 
