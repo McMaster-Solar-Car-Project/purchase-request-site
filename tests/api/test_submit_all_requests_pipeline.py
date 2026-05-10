@@ -17,6 +17,8 @@ class FakeUser:
     personal_email: str
     address: str
     team: str
+    signature_data: bytes
+    void_cheque: bytes
 
 
 class DummyDb:
@@ -47,6 +49,8 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
         personal_email="transfer@example.com",
         address="123 Main St",
         team="Software",
+        signature_data=b"\x89PNG\r\n\x1a\nfake-signature",
+        void_cheque=b"%PDF-1.4 fake-void-cheque",
     )
     monkeypatch.setattr(dashboard_module, "get_user_by_email", lambda _db, _email: user)
 
@@ -56,6 +60,14 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
 
     monkeypatch.setattr(
         dashboard_module, "save_signature_to_file", fake_save_signature_to_file
+    )
+
+    def fake_save_void_cheque_to_file(_user: Any, file_path: str) -> bool:
+        Path(file_path).write_bytes(b"%PDF-1.4 fake-void-cheque")
+        return True
+
+    monkeypatch.setattr(
+        dashboard_module, "save_void_cheque_to_file", fake_save_void_cheque_to_file
     )
 
     calls: dict[str, Any] = {}
@@ -173,10 +185,15 @@ def test_submit_all_requests_no_forms_redirects_with_error(
             personal_email="transfer@example.com",
             address="123 Main St",
             team="Software",
+            signature_data=b"\x89PNG\r\n\x1a\nfake-signature",
+            void_cheque=b"%PDF-1.4 fake-void-cheque",
         ),
     )
     monkeypatch.setattr(
         dashboard_module, "save_signature_to_file", lambda _user, _file_path: True
+    )
+    monkeypatch.setattr(
+        dashboard_module, "save_void_cheque_to_file", lambda _user, _file_path: True
     )
 
     client = _make_test_client()
