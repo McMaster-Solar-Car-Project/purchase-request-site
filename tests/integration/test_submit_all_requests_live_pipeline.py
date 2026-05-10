@@ -24,6 +24,7 @@ class FakeUser:
     address: str
     team: str
     signature_data: bytes
+    void_cheque: bytes
 
 
 class DummyDb:
@@ -72,6 +73,7 @@ def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
             address="1280 Main St W, Hamilton",
             team="Software",
             signature_data=TINY_PNG_BYTES,
+            void_cheque=b"%PDF-1.4 integration test void cheque",
         ),
     )
 
