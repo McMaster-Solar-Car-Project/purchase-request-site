@@ -5,8 +5,6 @@ dashboard router, data processing (Excel generation), Google Drive/Sheets
 clients, and tests.
 """
 
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict
 
 
@@ -28,7 +26,7 @@ class Invoice(BaseModel):
 
     form_number: int
     vendor_name: str
-    currency: Literal["CAD", "USD"]
+    is_usd: bool
     invoice_filename: str
     invoice_file_location: str
     proof_of_payment_filename: str | None = None
@@ -46,14 +44,3 @@ class Invoice(BaseModel):
     def us_total(self) -> float:
         """Total USD paid (subtotal plus any additional fees/taxes/tariffs)."""
         return self.us_subtotal + self.us_additional_fees
-
-
-class SubmissionUserInfo(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    name: str
-    email: str
-    e_transfer_email: str
-    address: str
-    team: str
-    signature: str

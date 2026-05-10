@@ -12,7 +12,13 @@ from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
 from src.db.schema import get_db
 from src.image_processing import convert_signature_to_png
-from src.models.user_service import get_user_by_email, get_user_signature_as_data_url
+from src.models.user_info import ProfileUpdateInput
+from src.models.user_service import (
+    DEFAULT_NAME,
+    DEFAULT_PERSONAL_EMAIL,
+    get_user_by_email,
+    get_user_signature_as_data_url,
+)
 from src.routers.utils import require_auth, templates
 
 logger = setup_logger(__name__)
@@ -67,16 +73,27 @@ def edit_profile_post(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # Update user information (strip whitespace from all fields)
-        user.name = name.strip()
-        user.email = email.strip()
-        user.personal_email = personal_email.strip()
-        user.team = team.strip()
-        user.address = address.strip()
+        profile_input = ProfileUpdateInput(
+            name=name,
+            email=email,
+            personal_email=personal_email,
+            team=team,
+            address=address,
+            current_password=current_password,
+            new_password=new_password,
+            confirm_password=confirm_password,
+        )
 
-        if user.name == "default_name":
+        # Update user information with validated input
+        user.name = profile_input.name
+        user.email = str(profile_input.email)
+        user.personal_email = str(profile_input.personal_email)
+        user.team = profile_input.team
+        user.address = profile_input.address
+
+        if user.name == DEFAULT_NAME:
             logger.warning("User is still using default name.")
-        if user.personal_email == "default_email@gmail.com":
+        if user.personal_email == DEFAULT_PERSONAL_EMAIL:
             logger.warning("User is still using default personal email.")
 
         # Handle signature update if provided
@@ -106,11 +123,11 @@ def edit_profile_post(
                         # Save PNG content to database
                         user.signature_data = png_content
                         logger.info(
-                            f"Signature converted to PNG and saved for user {email}"
+                            f"Signature converted to PNG and saved for user {profile_input.email}"
                         )
                     else:
                         logger.warning(
-                            f"Failed to convert signature to PNG for user {email}"
+                            f"Failed to convert signature to PNG for user {profile_input.email}"
                         )
                         # Fallback: save original content
                         user.signature_data = signature_content
@@ -126,11 +143,11 @@ def edit_profile_post(
         db.commit()
 
         # Redirect back to dashboard with success message
-        redirect_url = f"/dashboard?user_email={email}&updated=true"
+        redirect_url = f"/dashboard?user_email={profile_input.email}&updated=true"
         return RedirectResponse(url=redirect_url, status_code=303)
 
     except Exception as e:
-        logger.exception(f"Error updating profile for {user_email}: {str(e)}")
+        logger.exception(f"Error updating profile for {user_email}: {e}")
         db.rollback()
 
         # Redirect back to edit form with error

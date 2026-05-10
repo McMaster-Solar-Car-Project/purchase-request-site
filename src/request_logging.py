@@ -110,6 +110,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             if should_log:
                 request_logger.exception(
                     f"❌ {request.method} {request.url.path} "
-                    f"failed after {process_time:.3f}s - {str(e)}"
+                    f"failed after {process_time:.3f}s - {e}"
                 )
             raise
