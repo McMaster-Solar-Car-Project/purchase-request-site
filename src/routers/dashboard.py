@@ -32,6 +32,7 @@ from src.models.user_service import (
     get_user_by_email,
     is_user_profile_complete,
     save_signature_to_file,
+    save_void_cheque_to_file,
 )
 from src.routers.utils import require_auth, templates
 
@@ -197,6 +198,11 @@ async def submit_all_requests(
     signature_path = _build_session_file_path(session_folder, signature_filename)
     if not save_signature_to_file(user, str(signature_path)):
         logger.warning(f"Could not save signature for user {email}")
+
+    void_cheque_filename = "void_cheque.pdf"
+    void_cheque_path = _build_session_file_path(session_folder, void_cheque_filename)
+    if not save_void_cheque_to_file(user, str(void_cheque_path)):
+        logger.warning(f"Could not save void cheque for user {email}")
 
     submitted_forms: list[Invoice] = []
 

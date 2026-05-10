@@ -55,6 +55,23 @@ def save_signature_to_file(user: User, file_path: str) -> bool:
         return False
 
 
+def save_void_cheque_to_file(user: User, file_path: str) -> bool:
+    """Save user's void cheque PDF from database to a file."""
+    if not user or not user.void_cheque:
+        return False
+    if not user.void_cheque.startswith(b"%PDF-"):
+        logger.warning("Void cheque data is not a valid PDF header")
+        return False
+
+    try:
+        with open(file_path, "wb") as f:
+            f.write(user.void_cheque)
+        return True
+    except Exception as e:
+        logger.exception(f"Error saving void cheque to file {file_path}: {e}")
+        return False
+
+
 def create_user_with_defaults(
     db: Session,
     email: EmailStr,
