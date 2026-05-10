@@ -79,9 +79,6 @@ def edit_profile_post(
             personal_email=personal_email,
             team=team,
             address=address,
-            current_password=current_password,
-            new_password=new_password,
-            confirm_password=confirm_password,
         )
 
         # Update user information with validated input
