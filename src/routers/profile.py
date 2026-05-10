@@ -92,19 +92,19 @@ def edit_profile_post(
 
         if signature and signature.filename:
             signature_content = signature.file.read()
-            if signature_content:
-                png_bytes = convert_signature_to_png_bytes(signature_content)
-                if png_bytes is not None:
-                    user.signature_data = png_bytes
-                    logger.info(
-                        f"Signature converted to PNG and saved for user {profile_input.email}"
-                    )
-                else:
-                    logger.warning(
-                        f"Failed to convert signature to PNG for user {profile_input.email}; "
-                        "saving original bytes"
-                    )
-                    user.signature_data = signature_content
+            if not signature_content:
+                raise ValueError("Uploaded signature file is empty")
+
+            png_bytes = convert_signature_to_png_bytes(signature_content)
+            if png_bytes is None:
+                raise ValueError(
+                    f"Failed to convert signature to PNG for user {profile_input.email}"
+                )
+
+            user.signature_data = png_bytes
+            logger.info(
+                f"Signature converted to PNG and saved for user {profile_input.email}"
+            )
 
         # Save changes to database
         db.commit()
