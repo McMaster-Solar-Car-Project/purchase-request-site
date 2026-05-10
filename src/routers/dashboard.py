@@ -111,7 +111,7 @@ async def dashboard(
     # Get user from database
     user = get_user_by_email(db, user_email)
     if not user:
-        logger.exception(f"User not found in database: {user_email}")
+        logger.warning(f"User not found in database: {user_email}")
         raise HTTPException(status_code=404, detail="User not found")
 
     error_message = None
@@ -185,7 +185,7 @@ async def submit_all_requests(
     # Get user from database to fetch signature
     user = get_user_by_email(db, email)
     if not user:
-        logger.exception(f"User not found in database: {email}")
+        logger.warning(f"User not found in database: {email}")
         raise HTTPException(status_code=404, detail="User not found")
     if not is_user_profile_complete(user):
         logger.warning(f"Profile incomplete for user {email}; blocking submission")
@@ -400,6 +400,6 @@ async def submit_all_requests(
         )
 
     return RedirectResponse(
-        url=f"/success?drive_folder_id={drive_folder_id}&excel_file=purchase_request.xlsx&user_email={email}",
+        url=f"/success?drive_folder_id={drive_folder_id}&excel_file=purchase_request.xlsx",
         status_code=303,
     )
