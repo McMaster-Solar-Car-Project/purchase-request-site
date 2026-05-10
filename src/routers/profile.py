@@ -60,9 +60,6 @@ def edit_profile_post(
     personal_email: str = Form(...),
     team: str = Form(...),
     address: str = Form(...),
-    current_password: str = Form(""),
-    new_password: str = Form(""),
-    confirm_password: str = Form(""),
     signature: UploadFile = File(None),
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
@@ -79,9 +76,6 @@ def edit_profile_post(
             personal_email=personal_email,
             team=team,
             address=address,
-            current_password=current_password,
-            new_password=new_password,
-            confirm_password=confirm_password,
         )
 
         # Update user information with validated input
