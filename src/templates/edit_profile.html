@@ -1,34 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="/static/css/output.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script
-      src="https://js.sentry-cdn.com/b1cf415940d1bc459daa1127317e541b.min.js"
-      crossorigin="anonymous"
-    ></script>
-    <script>
-      Sentry.onLoad(function () {
-        Sentry.init({
-          integrations: [Sentry.replayIntegration()],
-          tracesSampleRate: 1.0,
-          replaysSessionSampleRate: 0.1,
-          replaysOnErrorSampleRate: 1.0,
-        });
-      });
-    </script>
-</head>
+{% block title %}{{ title or 'Edit Profile - Purchase Request Site' }}{% endblock %}
 
-<body class="font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-12 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] leading-[1.6] min-h-screen text-[#e4e4e7] box-border overflow-y-auto">
-    <div class="max-w-3xl w-[92%] p-10 bg-[rgba(24,24,27,0.82)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-[10px] [-webkit-backdrop-filter:blur(10px)] border border-[rgba(255,255,255,0.08)] my-12 mx-auto">
+{% block content %}
+<div class="max-w-3xl w-[92%] p-10 bg-[rgba(24,24,27,0.82)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-[10px] [-webkit-backdrop-filter:blur(10px)] border border-[rgba(255,255,255,0.08)] my-12 mx-auto">
         <div class="mb-10 relative">
-            <a href="/dashboard?user_email={{ user.email }}&use_saved=true" id="back-link" class="inline-flex items-center gap-1 text-sm text-[#a5b4fc] hover:text-[#c7d2fe] transition-colors mb-4">← Back</a>
+            <a href="/dashboard?user_email={{ user.email }}" id="back-link" class="inline-flex items-center gap-1 text-sm text-[#a5b4fc] hover:text-[#c7d2fe] transition-colors mb-4">← Back</a>
             <h1 class="m-0 text-3xl font-semibold tracking-[-0.025em] text-white text-center">Edit Your Information</h1>
         </div>
 
@@ -125,12 +102,14 @@
             <button type="submit" class="w-full py-3.5 px-3.5 bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-white border-none rounded-lg text-[0.95rem] font-medium cursor-pointer transition-all duration-200 mt-8 hover:from-[#4f46e5] hover:to-[#7c3aed] hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)] hover:-translate-y-px">Update Information</button>
         </form>
     </div>
+{% endblock %}
 
-    <script src="/static/js/edit-profile.js"></script>
+{% block scripts %}
+<script src="/static/js/edit-profile.js"></script>
 
-    <!-- Google Places API for address autocomplete -->
-    {% if google_api_key %}
-    <script>
+<!-- Google Places API for address autocomplete -->
+{% if google_api_key %}
+<script>
         // Address Autocomplete using Google Places API
         let autocomplete;
 
@@ -200,11 +179,11 @@
             }
         }, 10000);
     </script>
-    <script
+<script
         src="https://maps.googleapis.com/maps/api/js?key={{ google_api_key }}&libraries=places&callback=initAutocomplete"
         async defer></script>
-    {% else %}
-    <script>
+{% else %}
+<script>
         // No Google API key available - show fallback message
         document.addEventListener('DOMContentLoaded', function () {
             const helpText = document.querySelector('.address-help');
@@ -214,19 +193,15 @@
             }
         });
     </script>
-    {% endif %}
+{% endif %}
 
-    <script>
-    // Check if the URL contains an error message
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get('error');
+<script>
+// Check if the URL contains an error message
+const params = new URLSearchParams(window.location.search);
+const error = params.get('error');
 
-    if (error === 'default_values') {
-        alert('⚠️ Default values must be changed before saving your profile.');
-    } else if (error === 'update_failed') {
-        alert('⚠️ Could not update profile. Ensure signature is a valid image and void cheque is a valid PDF.');
-    }
-    </script>
-</body>
-
-</html>
+if (error === 'update_failed') {
+    alert('⚠️ Could not update profile. Ensure signature is a valid image and void cheque is a valid PDF.');
+}
+</script>
+{% endblock %}

@@ -1,28 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Purchase Request Submitted - Success</title>
-  <link rel="stylesheet" href="/static/css/output.css">
-  <script
-    src="https://js.sentry-cdn.com/b1cf415940d1bc459daa1127317e541b.min.js"
-    crossorigin="anonymous"
-  ></script>
-  <script>
-    Sentry.onLoad(function () {
-      Sentry.init({
-        integrations: [Sentry.replayIntegration()],
-        tracesSampleRate: 1.0,
-        replaysSessionSampleRate: 0.1,
-        replaysOnErrorSampleRate: 1.0,
-      });
-    });
-  </script>
-</head>
+{% block title %}Purchase Request Submitted - Success{% endblock %}
 
-<body class="m-0 min-h-screen bg-zinc-950 text-zinc-100 px-6 py-10 font-sans">
+{% block body_class %}m-0 min-h-screen bg-zinc-950 text-zinc-100 px-6 py-10 font-sans{% endblock %}
+
+{% block content %}
   <div class="mx-auto w-full max-w-3xl rounded-2xl border border-zinc-800 bg-zinc-900/80 p-8 shadow-xl md:p-10">
     <div class="text-center">
       <div class="text-4xl" aria-hidden="true">🎉</div>
@@ -62,6 +44,4 @@
       <p class="mb-0 mt-2"><strong class="text-zinc-200">Keep Your Receipt:</strong> Keep the purchase request for your own records.</p>
     </div>
   </div>
-</body>
-
-</html>
+{% endblock %}

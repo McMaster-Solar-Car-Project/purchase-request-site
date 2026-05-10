@@ -1,32 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Purchase Request Site</title>
-    <link rel="stylesheet" href="/static/css/output.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script
-      src="https://js.sentry-cdn.com/b1cf415940d1bc459daa1127317e541b.min.js"
-      crossorigin="anonymous"
-    ></script>
-    <script>
-      Sentry.onLoad(function () {
-        Sentry.init({
-          integrations: [Sentry.replayIntegration()],
-          tracesSampleRate: 1.0,
-          replaysSessionSampleRate: 0.1,
-          replaysOnErrorSampleRate: 1.0,
-        });
-      });
-    </script>
-</head>
+{% block title %}Login - Purchase Request Site{% endblock %}
 
-<body class="font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-12 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] leading-[1.6] min-h-screen flex items-center justify-center text-[#e4e4e7] box-border overflow-y-auto">
-    <div class="max-w-[420px] w-[90%] p-10 bg-[rgba(24,24,27,0.8)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-[10px] [-webkit-backdrop-filter:blur(10px)] border border-[rgba(255,255,255,0.08)] my-12 mx-auto">
+{% block body_class %}font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-12 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] leading-[1.6] min-h-screen flex items-center justify-center text-[#e4e4e7] box-border overflow-y-auto{% endblock %}
+
+{% block content %}
+<div class="max-w-[420px] w-[90%] p-10 bg-[rgba(24,24,27,0.8)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-[10px] [-webkit-backdrop-filter:blur(10px)] border border-[rgba(255,255,255,0.08)] my-12 mx-auto">
         <div class="text-center mb-10 relative">
             <h1 class="text-white font-semibold text-[1.75rem] mb-3 tracking-[-0.025em]">
                 Sign In
@@ -66,6 +45,4 @@
             <p>Need access? Contact Raj on Teams</p>
         </div>
     </div>
-</body>
-
-</html>
+{% endblock %}

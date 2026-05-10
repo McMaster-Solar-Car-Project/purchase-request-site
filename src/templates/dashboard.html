@@ -1,26 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Request Dashboard</title>
-    <link rel="stylesheet" href="/static/css/output.css">
-  <script
-    src="https://js.sentry-cdn.com/b1cf415940d1bc459daa1127317e541b.min.js"
-    crossorigin="anonymous"
-  ></script>
-  <script>
-    Sentry.onLoad(function () {
-      Sentry.init({
-        integrations: [Sentry.replayIntegration()],
-        tracesSampleRate: 1.0,
-        replaysSessionSampleRate: 0.1,
-        replaysOnErrorSampleRate: 1.0,
-      });
-    });
-  </script>
-  <style>
+{% block title %}Purchase Request Dashboard{% endblock %}
+
+{% block head_extra %}
+<style>
     /* Remove number input spinner/step buttons */
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button {
@@ -32,11 +15,13 @@
       -moz-appearance: textfield;
       appearance: textfield;
     }
-  </style>
-</head>
+</style>
+{% endblock %}
 
-<body class="font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-10 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] min-h-screen text-zinc-200">
-    <div class="dashboard-container max-w-7xl w-[95%] mx-auto bg-[rgba(24,24,27,0.84)] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.28)] p-8 md:p-10">
+{% block body_class %}font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-10 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] min-h-screen text-zinc-200{% endblock %}
+
+{% block content %}
+<div class="dashboard-container max-w-7xl w-[95%] mx-auto bg-[rgba(24,24,27,0.84)] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.28)] p-8 md:p-10">
         <div class="dashboard-header flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
             <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight text-white">Purchase Request Dashboard</h1>
             <div class="dashboard-user-info flex items-center gap-3">
@@ -335,8 +320,10 @@
             </div>
         </form>
     </div>
+{% endblock %}
 
-    <script>
+{% block scripts %}
+<script>
         const profileCompleteField = document.getElementById("profile-is-complete");
         const profileIsComplete = profileCompleteField?.value === "true";
 
@@ -944,6 +931,4 @@
             });
         });
     </script>
-</body>
-
-</html>
+{% endblock %}
