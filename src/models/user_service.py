@@ -22,7 +22,10 @@ def get_user_by_email(db: Session, email: EmailStr) -> User | None:
 
 def get_user_signature_as_data_url(user: User) -> str | None:
     """Get user's signature as a data URL for HTML display"""
-    if user.signature_data:
+    if user.signature_data and user.signature_data != DEFAULT_SIGNATURE:
+        # Signature uploads are normalized to PNG before persisting.
+        if not user.signature_data.startswith(b"\x89PNG\r\n\x1a\n"):
+            return None
         base64_data = base64.b64encode(user.signature_data).decode("utf-8")
         return f"data:image/png;base64,{base64_data}"
     return None
