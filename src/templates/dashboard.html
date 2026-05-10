@@ -25,7 +25,7 @@
         <div class="dashboard-header flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
             <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight text-white">Purchase Request Dashboard</h1>
             <div class="dashboard-user-info flex items-center gap-3">
-                <a href="/edit-profile?user_email={{ user_email }}" class="edit-profile-btn inline-flex items-center rounded-lg border border-[rgba(99,102,241,0.45)] px-3 py-2 text-sm text-[#c4b5fd] hover:bg-[rgba(99,102,241,0.15)] transition-colors">✏️ Edit Information</a>
+                <a href="/edit-profile" class="edit-profile-btn inline-flex items-center rounded-lg border border-[rgba(99,102,241,0.45)] px-3 py-2 text-sm text-[#c4b5fd] hover:bg-[rgba(99,102,241,0.15)] transition-colors">✏️ Edit Information</a>
                 <a href="/logout" class="logout-btn inline-flex items-center rounded-lg border border-[rgba(239,68,68,0.45)] px-3 py-2 text-sm text-red-300 hover:bg-[rgba(239,68,68,0.18)] transition-colors">Logout</a>
             </div>
         </div>
@@ -45,7 +45,7 @@
         {% if profile_warning_message %}
         <div class="profile-warning-message rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 mb-4 text-amber-200">
             {{ profile_warning_message }}
-            <a href="/edit-profile?user_email={{ user_email }}" class="ml-1 underline hover:text-amber-100">Update profile</a>
+            <a href="/edit-profile" class="ml-1 underline hover:text-amber-100">Update profile</a>
         </div>
         {% endif %}
 
@@ -65,7 +65,6 @@
             <!-- Hidden fields for user data -->
             <input type="hidden" id="profile-is-complete" value="{{ 'true' if profile_is_complete else 'false' }}">
             <input type="hidden" name="name" value="{{ name }}">
-            <input type="hidden" name="email" value="{{ email }}">
             <input type="hidden" name="e_transfer_email" value="{{ e_transfer_email }}">
             <input type="hidden" name="address" value="{{ address }}">
             <input type="hidden" name="team" value="{{ team }}">

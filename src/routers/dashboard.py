@@ -34,7 +34,7 @@ from src.models.user_service import (
     save_signature_to_file,
     save_void_cheque_to_file,
 )
-from src.routers.utils import require_auth, templates
+from src.routers.utils import get_authenticated_user_email, templates
 
 logger = setup_logger(__name__)
 
@@ -101,12 +101,11 @@ async def _save_uploaded_file(file: UploadFile, destination: Path) -> None:
 @router.get("/dashboard")
 async def dashboard(
     request: Request,
-    user_email: str,
     updated: bool = False,
     profile_incomplete: bool = False,
     error: str | None = None,
     db: Session = Depends(get_db),
-    _: None = Depends(require_auth),
+    user_email: str = Depends(get_authenticated_user_email),
 ):
     # Get user from database
     user = get_user_by_email(db, user_email)
@@ -137,7 +136,6 @@ async def dashboard(
             "request": request,
             "title": "Purchase Request Site",
             "user_name": user.name,
-            "user_email": user.email,
             "name": user.name,
             "email": user.email,
             "e_transfer_email": user.personal_email,
@@ -164,12 +162,14 @@ def create_session_folder(name: str) -> str:
 
 @router.post("/submit-all-requests")
 async def submit_all_requests(
-    request: Request, db: Session = Depends(get_db), _: None = Depends(require_auth)
+    request: Request,
+    db: Session = Depends(get_db),
+    session_user_email: str = Depends(get_authenticated_user_email),
 ):
     form_data = await request.form()
 
     name = _form_str(form_data.get("name"))
-    email = _form_str(form_data.get("email"))
+    form_email = _form_str(form_data.get("email"))
     e_transfer_email = _form_str(form_data.get("e_transfer_email"))
     address = _form_str(form_data.get("address"))
     team = _form_str(form_data.get("team"))
@@ -183,16 +183,19 @@ async def submit_all_requests(
     session_folder = create_session_folder(name)
 
     # Get user from database to fetch signature
-    user = get_user_by_email(db, email)
+    user = get_user_by_email(db, session_user_email)
     if not user:
-        logger.warning(f"User not found in database: {email}")
+        logger.warning(f"User not found in database: {session_user_email}")
         raise HTTPException(status_code=404, detail="User not found")
+    email = user.email
     if not is_user_profile_complete(user):
         logger.warning(f"Profile incomplete for user {email}; blocking submission")
         return RedirectResponse(
-            url=f"/dashboard?user_email={email}&profile_incomplete=true",
+            url="/dashboard?profile_incomplete=true",
             status_code=303,
         )
+    if form_email and form_email != email:
+        logger.warning("Ignoring mismatched form email for authenticated user")
 
     signature_filename = "signature.png"
     signature_path = _build_session_file_path(session_folder, signature_filename)
@@ -395,7 +398,7 @@ async def submit_all_requests(
     else:
         logger.warning("No forms were submitted (all forms were empty)")
         return RedirectResponse(
-            url=f"/dashboard?user_email={email}&error=no_forms",
+            url="/dashboard?error=no_forms",
             status_code=303,
         )
 
