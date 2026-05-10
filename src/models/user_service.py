@@ -12,7 +12,6 @@ DEFAULT_NAME = "default_name"
 DEFAULT_PERSONAL_EMAIL = "default_email@gmail.com"
 DEFAULT_ADDRESS = "Please update your address"
 DEFAULT_TEAM = "Please update your team"
-DEFAULT_SIGNATURE = b"DEFAULT_SIGNATURE"
 
 
 def get_user_by_email(db: Session, email: EmailStr) -> User | None:
@@ -22,7 +21,7 @@ def get_user_by_email(db: Session, email: EmailStr) -> User | None:
 
 def get_user_signature_as_data_url(user: User) -> str | None:
     """Get user's signature as a data URL for HTML display"""
-    if user.signature_data and user.signature_data != DEFAULT_SIGNATURE:
+    if user.signature_data:
         # Signature uploads are normalized to PNG before persisting.
         if not user.signature_data.startswith(b"\x89PNG\r\n\x1a\n"):
             return None
@@ -89,7 +88,8 @@ def create_user_with_defaults(
         address=DEFAULT_ADDRESS,
         team=DEFAULT_TEAM,
         password=password,
-        signature_data=DEFAULT_SIGNATURE,
+        signature_data=None,
+        void_cheque=None,
     )
     db.add(new_user)
     db.commit()
@@ -108,7 +108,8 @@ def is_user_profile_complete(user: User) -> bool:
         or user.personal_email.strip() == DEFAULT_PERSONAL_EMAIL
         or user.address.strip() == DEFAULT_ADDRESS
         or user.team.strip() == DEFAULT_TEAM
-        or user.signature_data == DEFAULT_SIGNATURE
+        or user.signature_data is None
+        or user.void_cheque is None
     ):
         return False
 
