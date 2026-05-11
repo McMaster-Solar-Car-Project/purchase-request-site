@@ -21,7 +21,7 @@ from starlette.datastructures import UploadFile
 
 from src.core.logging_utils import setup_logger
 from src.data_processing import create_expense_report, create_purchase_request
-from src.db.schema import get_db
+from src.db.schema import SessionLocal, get_db
 from src.google_drive import GoogleDriveClient
 from src.google_sheets import GoogleSheetsClient
 from src.models.submissions import (
@@ -163,6 +163,16 @@ def create_session_folder(name: str) -> str:
     return str(session_folder)
 
 
+def _load_user_in_new_session(email: str):
+    # Used from a threadpool worker. The request-scoped Session from Depends(get_db)
+    # is not safe to share across threads, so we open and close our own session here.
+    db = SessionLocal()
+    try:
+        return get_user_by_email(db, email)
+    finally:
+        db.close()
+
+
 @router.post("/submit-all-requests")
 async def submit_all_requests(
     request: Request, db: Session = Depends(get_db), _: None = Depends(require_auth)
@@ -184,7 +194,7 @@ async def submit_all_requests(
     session_folder = await run_in_threadpool(create_session_folder, name)
 
     # Get user from database to fetch signature
-    user = await run_in_threadpool(get_user_by_email, db, email)
+    user = await run_in_threadpool(_load_user_in_new_session, email)
     if not user:
         logger.exception(f"User not found in database: {email}")
         raise HTTPException(status_code=404, detail="User not found")
