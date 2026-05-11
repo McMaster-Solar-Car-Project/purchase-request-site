@@ -116,7 +116,7 @@ def is_user_profile_complete(user: User) -> bool:
         user.team,
     ]
     has_required_text = all(field and field.strip() for field in required_text_fields)
-    has_signature = bool(user.signature_data)
+    has_signature = user.has_valid_signature
     has_void_cheque = user.has_valid_void_cheque
 
     return has_required_text and has_signature and has_void_cheque
