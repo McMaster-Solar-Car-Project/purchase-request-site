@@ -5,7 +5,21 @@ dashboard router, data processing (Excel generation), Google Drive/Sheets
 clients, and tests.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Annotated
+
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
+
+
+def _blank_to_zero(value: object) -> object:
+    if value is None:
+        return 0
+    if isinstance(value, str) and not value.strip():
+        return 0
+    return value
+
+
+NonNegFloat = Annotated[float, BeforeValidator(_blank_to_zero), Field(ge=0)]
+PositiveInt = Annotated[int, BeforeValidator(_blank_to_zero), Field(gt=0)]
 
 
 class SubmissionLineItem(BaseModel):
@@ -13,8 +27,8 @@ class SubmissionLineItem(BaseModel):
 
     name: str = Field(min_length=1)
     usage: str = Field(min_length=1)
-    quantity: int = Field(gt=0)
-    unit_price: float = Field(ge=0)
+    quantity: PositiveInt
+    unit_price: NonNegFloat
 
     @property
     def total(self) -> float:
@@ -31,13 +45,13 @@ class Invoice(BaseModel):
     invoice_file_location: str = Field(min_length=1)
     proof_of_payment_filename: str | None = None
     proof_of_payment_location: str | None = None
-    subtotal_amount: float = Field(ge=0)
-    discount_amount: float = Field(ge=0)
-    hst_gst_amount: float = Field(ge=0)
-    shipping_amount: float = Field(ge=0)
-    total_cad_amount: float = Field(ge=0)
-    us_subtotal: float = Field(ge=0)
-    us_additional_fees: float = Field(ge=0)
+    subtotal_amount: NonNegFloat
+    discount_amount: NonNegFloat
+    hst_gst_amount: NonNegFloat
+    shipping_amount: NonNegFloat
+    total_cad_amount: NonNegFloat
+    us_subtotal: NonNegFloat
+    us_additional_fees: NonNegFloat
     items: list[SubmissionLineItem] = Field(min_length=1)
 
     @property
