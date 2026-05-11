@@ -256,16 +256,18 @@ async def submit_all_requests(
                 continue
 
             if item_name and item_usage and item_quantity and item_price:
-                # Pydantic parses ``quantity``/``unit_price``: a numeric string
-                # is coerced, ``"abc"`` raises ``ValidationError`` and the item
-                # is skipped.
+                # ``model_validate`` is the typed entry point for raw/external
+                # input: it accepts ``Any`` and lets Pydantic parse the numeric
+                # strings (or raise ``ValidationError`` on ``"abc"``).
                 try:
                     items.append(
-                        SubmissionLineItem(
-                            name=item_name,
-                            usage=item_usage,
-                            quantity=item_quantity,
-                            unit_price=item_price,
+                        SubmissionLineItem.model_validate(
+                            {
+                                "name": item_name,
+                                "usage": item_usage,
+                                "quantity": item_quantity,
+                                "unit_price": item_price,
+                            }
                         )
                     )
                 except ValidationError as e:
@@ -296,22 +298,24 @@ async def submit_all_requests(
             proof_of_payment_location = str(proof_of_payment_path)
 
         try:
-            form_submission = Invoice(
-                form_number=form_num,
-                vendor_name=vendor_name,
-                is_usd=currency == "USD",
-                invoice_filename=invoice_filename,
-                invoice_file_location=invoice_file_location,
-                proof_of_payment_filename=proof_of_payment_filename,
-                proof_of_payment_location=proof_of_payment_location,
-                subtotal_amount=subtotal_amount,
-                discount_amount=discount_amount,
-                hst_gst_amount=hst_gst_amount,
-                shipping_amount=shipping_amount,
-                total_cad_amount=total_cad_amount,
-                us_subtotal=us_subtotal,
-                us_additional_fees=us_additional_fees,
-                items=items,
+            form_submission = Invoice.model_validate(
+                {
+                    "form_number": form_num,
+                    "vendor_name": vendor_name,
+                    "is_usd": currency == "USD",
+                    "invoice_filename": invoice_filename,
+                    "invoice_file_location": invoice_file_location,
+                    "proof_of_payment_filename": proof_of_payment_filename,
+                    "proof_of_payment_location": proof_of_payment_location,
+                    "subtotal_amount": subtotal_amount,
+                    "discount_amount": discount_amount,
+                    "hst_gst_amount": hst_gst_amount,
+                    "shipping_amount": shipping_amount,
+                    "total_cad_amount": total_cad_amount,
+                    "us_subtotal": us_subtotal,
+                    "us_additional_fees": us_additional_fees,
+                    "items": items,
+                }
             )
         except ValidationError as e:
             logger.warning(f"Skipping invalid form {form_num}: {e.errors()}")
