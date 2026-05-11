@@ -16,6 +16,7 @@ from fastapi import (
 )
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
 
 from src.core.logging_utils import setup_logger
@@ -94,12 +95,12 @@ def _build_session_file_path(session_folder: str, filename: str) -> Path:
 async def _save_uploaded_file(file: UploadFile, destination: Path) -> None:
     if not destination.resolve().is_relative_to(SESSIONS_ROOT):
         raise ValueError("Invalid destination path outside sessions root")
-    with open(destination, "wb") as file_object:
-        file_object.write(await file.read())
+    data = await file.read()
+    await run_in_threadpool(destination.write_bytes, data)
 
 
 @router.get("/dashboard")
-async def dashboard(
+def dashboard(
     request: Request,
     user_email: str,
     updated: bool = False,
@@ -180,10 +181,10 @@ async def submit_all_requests(
         level="info",
     )
 
-    session_folder = create_session_folder(name)
+    session_folder = await run_in_threadpool(create_session_folder, name)
 
     # Get user from database to fetch signature
-    user = get_user_by_email(db, email)
+    user = await run_in_threadpool(get_user_by_email, db, email)
     if not user:
         logger.exception(f"User not found in database: {email}")
         raise HTTPException(status_code=404, detail="User not found")
@@ -196,12 +197,14 @@ async def submit_all_requests(
 
     signature_filename = "signature.png"
     signature_path = _build_session_file_path(session_folder, signature_filename)
-    if not save_signature_to_file(user, str(signature_path)):
+    if not await run_in_threadpool(save_signature_to_file, user, str(signature_path)):
         logger.warning(f"Could not save signature for user {email}")
 
     void_cheque_filename = "void_cheque.pdf"
     void_cheque_path = _build_session_file_path(session_folder, void_cheque_filename)
-    if not save_void_cheque_to_file(user, str(void_cheque_path)):
+    if not await run_in_threadpool(
+        save_void_cheque_to_file, user, str(void_cheque_path)
+    ):
         logger.warning(f"Could not save void cheque for user {email}")
 
     submitted_forms: list[Invoice] = []
@@ -323,12 +326,16 @@ async def submit_all_requests(
             signature=signature_filename,
         )
         try:
-            create_purchase_request(user_info, submitted_forms, session_folder)
+            await run_in_threadpool(
+                create_purchase_request, user_info, submitted_forms, session_folder
+            )
         except Exception:
             logger.exception("Failed to create purchase request (continuing anyway)")
 
         try:
-            create_expense_report(session_folder, user_info, submitted_forms)
+            await run_in_threadpool(
+                create_expense_report, session_folder, user_info, submitted_forms
+            )
         except Exception:
             logger.exception(
                 "Failed to copy and populate expense report template (continuing anyway)"
@@ -338,13 +345,13 @@ async def submit_all_requests(
         drive_folder_url = ""
         drive_folder_id = ""
         drive_upload_success = False
-        drive_client = GoogleDriveClient()
+        drive_client = await run_in_threadpool(GoogleDriveClient)
         try:
             try:
-                success, drive_folder_url, drive_folder_id = (
-                    drive_client.create_session_folder_structure(
-                        session_folder, user_info
-                    )
+                success, drive_folder_url, drive_folder_id = await run_in_threadpool(
+                    drive_client.create_session_folder_structure,
+                    session_folder,
+                    user_info,
                 )
                 if not success:
                     logger.warning("Failed to create Google Drive folder")
@@ -355,8 +362,9 @@ async def submit_all_requests(
             # Log to Google Sheets (with Drive folder URL)
             sheets_client: GoogleSheetsClient | None = None
             try:
-                sheets_client = GoogleSheetsClient()
-                sheets_client.log_purchase_request(
+                sheets_client = await run_in_threadpool(GoogleSheetsClient)
+                await run_in_threadpool(
+                    sheets_client.log_purchase_request,
                     user_info,
                     submitted_forms,
                     session_folder,
@@ -366,7 +374,7 @@ async def submit_all_requests(
                 logger.exception("Failed to log to Google Sheets (continuing anyway)")
             finally:
                 if sheets_client is not None:
-                    sheets_client.close()
+                    await run_in_threadpool(sheets_client.close)
 
             sentry_sdk.add_breadcrumb(
                 category="external_api",
@@ -374,8 +382,11 @@ async def submit_all_requests(
                 level="info",
             )
             try:
-                drive_upload_success = drive_client.upload_session_folder(
-                    session_folder, user_info, drive_folder_id or None
+                drive_upload_success = await run_in_threadpool(
+                    drive_client.upload_session_folder,
+                    session_folder,
+                    user_info,
+                    drive_folder_id or None,
                 )
                 logger.info(
                     f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"
@@ -383,11 +394,11 @@ async def submit_all_requests(
             except Exception as e:
                 logger.exception(f"Unexpected error in upload task: {e}")
         finally:
-            drive_client.close()
+            await run_in_threadpool(drive_client.close)
 
         if drive_upload_success:
             try:
-                shutil.rmtree(session_folder)
+                await run_in_threadpool(shutil.rmtree, session_folder)
                 logger.info(f"🗑️ Cleaned up session folder: {session_folder}")
             except Exception:
                 logger.exception(f"Failed to delete session folder {session_folder}")
