@@ -15,6 +15,7 @@ from fastapi import (
     Request,
 )
 from fastapi.responses import RedirectResponse
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
@@ -275,14 +276,19 @@ async def submit_all_requests(
                 continue
 
             if item_name and item_usage and item_quantity and item_price:
-                items.append(
-                    SubmissionLineItem(
-                        name=item_name,
-                        usage=item_usage,
-                        quantity=_form_int(item_quantity),
-                        unit_price=_form_float(item_price),
+                try:
+                    items.append(
+                        SubmissionLineItem(
+                            name=item_name,
+                            usage=item_usage,
+                            quantity=_form_int(item_quantity),
+                            unit_price=_form_float(item_price),
+                        )
                     )
-                )
+                except ValidationError as e:
+                    logger.warning(
+                        f"Skipping invalid item {form_num}.{item_num}: {e.errors()}"
+                    )
 
         if not items:
             continue
@@ -306,23 +312,27 @@ async def submit_all_requests(
             await _save_uploaded_file(proof_of_payment_file, proof_of_payment_path)
             proof_of_payment_location = str(proof_of_payment_path)
 
-        form_submission = Invoice(
-            form_number=form_num,
-            vendor_name=vendor_name,
-            is_usd=currency == "USD",
-            invoice_filename=invoice_filename,
-            invoice_file_location=invoice_file_location,
-            proof_of_payment_filename=proof_of_payment_filename,
-            proof_of_payment_location=proof_of_payment_location,
-            subtotal_amount=subtotal_amount,
-            discount_amount=discount_amount,
-            hst_gst_amount=hst_gst_amount,
-            shipping_amount=shipping_amount,
-            total_cad_amount=total_cad_amount,
-            us_subtotal=us_subtotal,
-            us_additional_fees=us_additional_fees,
-            items=items,
-        )
+        try:
+            form_submission = Invoice(
+                form_number=form_num,
+                vendor_name=vendor_name,
+                is_usd=currency == "USD",
+                invoice_filename=invoice_filename,
+                invoice_file_location=invoice_file_location,
+                proof_of_payment_filename=proof_of_payment_filename,
+                proof_of_payment_location=proof_of_payment_location,
+                subtotal_amount=subtotal_amount,
+                discount_amount=discount_amount,
+                hst_gst_amount=hst_gst_amount,
+                shipping_amount=shipping_amount,
+                total_cad_amount=total_cad_amount,
+                us_subtotal=us_subtotal,
+                us_additional_fees=us_additional_fees,
+                items=items,
+            )
+        except ValidationError as e:
+            logger.warning(f"Skipping invalid form {form_num}: {e.errors()}")
+            continue
 
         submitted_forms.append(form_submission)
 
