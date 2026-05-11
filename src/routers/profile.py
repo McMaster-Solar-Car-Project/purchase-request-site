@@ -26,7 +26,7 @@ router = APIRouter(tags=["profile"])
 
 
 @router.get("/edit-profile")
-async def edit_profile_get(
+def edit_profile_get(
     request: Request,
     user_email: str,
     db: Session = Depends(get_db),
