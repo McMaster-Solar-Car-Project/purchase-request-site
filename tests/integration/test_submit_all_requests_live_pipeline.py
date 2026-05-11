@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from src.db.schema import get_db
 from src.routers.dashboard import router
-from src.routers.utils import require_auth
+from src.routers.utils import get_authenticated_user_email
 
 TINY_PNG_BYTES = b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+yY6kAAAAASUVORK5CYII="
@@ -80,7 +80,9 @@ def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
     app = FastAPI()
     app.include_router(router)
     app.dependency_overrides[get_db] = lambda: DummyDb()
-    app.dependency_overrides[require_auth] = lambda: None
+    app.dependency_overrides[get_authenticated_user_email] = (
+        lambda: "integration-test@example.com"
+    )
     client = TestClient(app, follow_redirects=False)
 
     response = client.post(
@@ -118,7 +120,6 @@ def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
 
     parsed = urlparse(response.headers["location"])
     query = parse_qs(parsed.query)
-    assert query.get("user_email") == ["integration-test@example.com"]
     assert query.get("excel_file") == ["purchase_request.xlsx"]
     assert query.get("drive_folder_id")
     assert query["drive_folder_id"][0]

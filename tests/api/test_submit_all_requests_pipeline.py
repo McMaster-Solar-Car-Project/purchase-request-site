@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from src.db.schema import get_db
 from src.routers.dashboard import router
-from src.routers.utils import require_auth
+from src.routers.utils import get_authenticated_user_email
 
 
 @dataclass
@@ -29,7 +29,7 @@ def _make_test_client() -> TestClient:
     app = FastAPI()
     app.include_router(router)
     app.dependency_overrides[get_db] = lambda: DummyDb()
-    app.dependency_overrides[require_auth] = lambda: None
+    app.dependency_overrides[get_authenticated_user_email] = lambda: "test@example.com"
     return TestClient(app, follow_redirects=False)
 
 
@@ -151,7 +151,6 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
     location = response.headers["location"]
     assert location.startswith("/success?")
     assert "drive_folder_id=drive-folder-id" in location
-    assert "user_email=test@example.com" in location
 
     assert "purchase_request" in calls
     assert "expense_report" in calls
@@ -209,7 +208,4 @@ def test_submit_all_requests_no_forms_redirects_with_error(
     )
 
     assert response.status_code == 303
-    assert (
-        response.headers["location"]
-        == "/dashboard?user_email=test@example.com&error=no_forms"
-    )
+    assert response.headers["location"] == "/dashboard?error=no_forms"

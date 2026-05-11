@@ -2,7 +2,7 @@
 Shared helper utility functions for routers.
 """
 
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.templating import Jinja2Templates
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -19,9 +19,10 @@ def require_auth(request: Request):
         )
 
 
-def get_authenticated_user_email(request: Request) -> str:
+def get_authenticated_user_email(
+    request: Request, _auth: None = Depends(require_auth)
+) -> str:
     """Return authenticated user's email from session."""
-    require_auth(request)
     user_email = request.session.get("user_email")
     if not isinstance(user_email, str) or not user_email:
         raise HTTPException(
