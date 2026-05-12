@@ -52,13 +52,6 @@ class Settings(BaseSettings):
         default="", alias="GOOGLE_SETTINGS__CLIENT_X509_CERT_URL"
     )
 
-    smtp_server: str = Field(default="", alias="SMTP_SERVER")
-    smtp_port: int = Field(default=587, alias="SMTP_PORT")
-    smtp_username: str = Field(default="", alias="SMTP_USERNAME")
-    smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
-    error_email_from: str = Field(default="", alias="ERROR_EMAIL_FROM")
-    error_email_to: str = Field(default="", alias="ERROR_EMAIL_TO")
-
     @model_validator(mode="after")
     def _require_expected_env_fields(self) -> "Settings":
         always_required_str_fields = (
@@ -75,11 +68,6 @@ class Settings(BaseSettings):
         production_only_required_str_fields = (
             "environment",
             "google_places_api_key",
-            "smtp_server",
-            "smtp_username",
-            "smtp_password",
-            "error_email_from",
-            "error_email_to",
         )
         required_str_fields = always_required_str_fields
         if self.is_production:

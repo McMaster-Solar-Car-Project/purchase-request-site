@@ -3,8 +3,8 @@
 Provides a `setup_logger` function that configures a logger with:
 - Console output (stdout) for local debugging
 - File output for persistent logs
-- Sentry structured logs for centralized monitoring
-- Email notifications for errors
+- Sentry structured logs for centralized monitoring (Sentry alerts handle
+  error notifications, so we no longer ship a separate email handler).
 """
 
 import logging
@@ -13,9 +13,6 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-
-from src.core.settings import get_settings
-from src.emailer import Emailer
 
 
 class SentryLoggerWrapper:
@@ -146,11 +143,6 @@ def setup_logger(name: str) -> SentryLoggerWrapper:
         if file_handler:
             std_logger.addHandler(file_handler)
 
-        # Email handler for errors (if configured)
-        email_handler = _setup_email_handler()
-        if email_handler:
-            std_logger.addHandler(email_handler)
-
     return SentryLoggerWrapper(name, std_logger)
 
 
@@ -187,87 +179,4 @@ def _setup_file_handler() -> logging.Handler | None:
 
     except Exception as e:
         print(f"CRITICAL: Could not set up file handler: {e}")
-        return None
-
-
-def _setup_email_handler() -> logging.Handler | None:
-    """Set up email handler for error notifications.
-
-    Returns:
-        logging.Handler or None: Email handler if properly configured, None otherwise.
-    """
-    try:
-        # Get email configuration from Emailer class
-        emailer = Emailer()
-
-        smtp_server = emailer.smtp_server
-        smtp_port = emailer.smtp_port
-        smtp_username = emailer.smtp_username
-        smtp_password = emailer.smtp_password
-        from_email = emailer.from_email
-        to_emails = get_settings().error_email_to
-
-        # Check if all required email settings are provided
-        if not all(
-            [
-                smtp_server,
-                smtp_port,
-                smtp_username,
-                smtp_password,
-                from_email,
-                to_emails,
-            ]
-        ):
-            return None
-
-        assert smtp_server is not None
-        assert smtp_port is not None
-        assert smtp_username is not None
-        assert smtp_password is not None
-        assert from_email is not None
-        assert to_emails is not None
-
-        # Parse multiple email addresses (comma-separated)
-        to_email_list = [email.strip() for email in to_emails.split(",")]
-
-        # Create SMTP handler
-        email_handler = logging.handlers.SMTPHandler(
-            mailhost=(smtp_server, int(smtp_port)),
-            fromaddr=from_email,
-            toaddrs=to_email_list,
-            subject="🚨 Purchase Request Site - Application Error",
-            credentials=(smtp_username, smtp_password),
-            secure=(),  # Use TLS
-        )
-
-        # Set level to ERROR (will catch ERROR and CRITICAL)
-        email_handler.setLevel(logging.ERROR)
-
-        # Create detailed formatter for emails
-        email_formatter = logging.Formatter(
-            """
-Application Error Alert
-
-Time: %(asctime)s
-Level: %(levelname)s
-Logger: %(name)s
-File: %(pathname)s:%(lineno)d
-Function: %(funcName)s
-
-Error Message:
-%(message)s
-
----
-Purchase Request Site Error Notification System
-        """.strip(),
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-
-        email_handler.setFormatter(email_formatter)
-
-        return email_handler
-
-    except Exception as e:
-        # Don't let email setup failure break the application
-        print(f"CRITICAL: Could not set up email handler: {e}")
         return None
