@@ -6,21 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purchase Request Dashboard</title>
     <link rel="stylesheet" href="/static/css/output.css">
-  <script
-    src="https://js.sentry-cdn.com/b1cf415940d1bc459daa1127317e541b.min.js"
-    crossorigin="anonymous"
-  ></script>
-  <script>
-    Sentry.onLoad(function () {
-      Sentry.init({
-        integrations: [Sentry.replayIntegration()],
-        tracesSampleRate: 1.0,
-        replaysSessionSampleRate: 0.1,
-        replaysOnErrorSampleRate: 1.0,
-      });
-    });
-  </script>
-  <style>
+    {% include "_sentry.html" %}
+    <style>
     /* Remove number input spinner/step buttons */
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button {
