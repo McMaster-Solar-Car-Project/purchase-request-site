@@ -15,6 +15,7 @@ from fastapi import (
     Request,
 )
 from fastapi.responses import RedirectResponse
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
@@ -50,25 +51,6 @@ def _form_str(value: object, default: str = "") -> str:
     if value is None or isinstance(value, UploadFile):
         return default
     return str(value).strip()
-
-
-def _form_number(value: object, converter, default):
-    """Coerce a form field via ``converter`` (int/float). Returns ``default`` on bad input."""
-    s = _form_str(value)
-    if not s:
-        return default
-    try:
-        return converter(s)
-    except ValueError:
-        return default
-
-
-def _form_float(value: object, default: float = 0.0) -> float:
-    return _form_number(value, float, default)
-
-
-def _form_int(value: object, default: int = 0) -> int:
-    return _form_number(value, int, default)
 
 
 def _file_extension(filename: str | None, default: str = "pdf") -> str:
@@ -241,48 +223,57 @@ async def submit_all_requests(
             )
             continue
 
-        total_cad_amount = _form_float(form_data.get(f"total_cad_amount_{form_num}"))
+        # Numeric coercion (and rejection of malformed values) is delegated to the
+        # Pydantic models: we forward raw form strings so "abc" raises
+        # ``ValidationError`` instead of being silently coerced to 0.
+        total_cad_amount = _form_str(form_data.get(f"total_cad_amount_{form_num}"))
 
         if currency == "USD":
-            us_subtotal = _form_float(form_data.get(f"us_subtotal_{form_num}"))
-            us_additional_fees = _form_float(
+            us_subtotal = _form_str(form_data.get(f"us_subtotal_{form_num}"))
+            us_additional_fees = _form_str(
                 form_data.get(f"us_additional_fees_{form_num}")
             )
             subtotal_amount = discount_amount = hst_gst_amount = shipping_amount = 0
         else:
-            subtotal_amount = _form_float(form_data.get(f"subtotal_amount_{form_num}"))
-            discount_amount = _form_float(form_data.get(f"discount_amount_{form_num}"))
-            hst_gst_amount = _form_float(form_data.get(f"hst_gst_amount_{form_num}"))
-            shipping_amount = _form_float(form_data.get(f"shipping_amount_{form_num}"))
+            subtotal_amount = _form_str(form_data.get(f"subtotal_amount_{form_num}"))
+            discount_amount = _form_str(form_data.get(f"discount_amount_{form_num}"))
+            hst_gst_amount = _form_str(form_data.get(f"hst_gst_amount_{form_num}"))
+            shipping_amount = _form_str(form_data.get(f"shipping_amount_{form_num}"))
             us_subtotal = us_additional_fees = 0
 
         items = []
         for item_num in range(1, MAX_ITEMS_PER_FORM + 1):
             item_name = _form_str(form_data.get(f"item_name_{form_num}_{item_num}"))
             item_usage = _form_str(form_data.get(f"item_usage_{form_num}_{item_num}"))
-            item_quantity = form_data.get(f"item_quantity_{form_num}_{item_num}")
-            item_price = form_data.get(f"item_price_{form_num}_{item_num}")
+            item_quantity = _form_str(
+                form_data.get(f"item_quantity_{form_num}_{item_num}")
+            )
+            item_price = _form_str(form_data.get(f"item_price_{form_num}_{item_num}"))
 
             # Keep scanning all possible rows so sparse indices (e.g., missing item 1)
             # don't cause later valid rows to be ignored.
-            has_any_item_value = bool(
-                item_name
-                or item_usage
-                or _form_str(item_quantity)
-                or _form_str(item_price)
-            )
-            if not has_any_item_value:
+            if not (item_name or item_usage or item_quantity or item_price):
                 continue
 
             if item_name and item_usage and item_quantity and item_price:
-                items.append(
-                    SubmissionLineItem(
-                        name=item_name,
-                        usage=item_usage,
-                        quantity=_form_int(item_quantity),
-                        unit_price=_form_float(item_price),
+                # ``model_validate`` is the typed entry point for raw/external
+                # input: it accepts ``Any`` and lets Pydantic parse the numeric
+                # strings (or raise ``ValidationError`` on ``"abc"``).
+                try:
+                    items.append(
+                        SubmissionLineItem.model_validate(
+                            {
+                                "name": item_name,
+                                "usage": item_usage,
+                                "quantity": item_quantity,
+                                "unit_price": item_price,
+                            }
+                        )
                     )
-                )
+                except ValidationError as e:
+                    logger.warning(
+                        f"Skipping invalid item {form_num}.{item_num}: {e.errors()}"
+                    )
 
         if not items:
             continue
@@ -306,23 +297,29 @@ async def submit_all_requests(
             await _save_uploaded_file(proof_of_payment_file, proof_of_payment_path)
             proof_of_payment_location = str(proof_of_payment_path)
 
-        form_submission = Invoice(
-            form_number=form_num,
-            vendor_name=vendor_name,
-            is_usd=currency == "USD",
-            invoice_filename=invoice_filename,
-            invoice_file_location=invoice_file_location,
-            proof_of_payment_filename=proof_of_payment_filename,
-            proof_of_payment_location=proof_of_payment_location,
-            subtotal_amount=subtotal_amount,
-            discount_amount=discount_amount,
-            hst_gst_amount=hst_gst_amount,
-            shipping_amount=shipping_amount,
-            total_cad_amount=total_cad_amount,
-            us_subtotal=us_subtotal,
-            us_additional_fees=us_additional_fees,
-            items=items,
-        )
+        try:
+            form_submission = Invoice.model_validate(
+                {
+                    "form_number": form_num,
+                    "vendor_name": vendor_name,
+                    "is_usd": currency == "USD",
+                    "invoice_filename": invoice_filename,
+                    "invoice_file_location": invoice_file_location,
+                    "proof_of_payment_filename": proof_of_payment_filename,
+                    "proof_of_payment_location": proof_of_payment_location,
+                    "subtotal_amount": subtotal_amount,
+                    "discount_amount": discount_amount,
+                    "hst_gst_amount": hst_gst_amount,
+                    "shipping_amount": shipping_amount,
+                    "total_cad_amount": total_cad_amount,
+                    "us_subtotal": us_subtotal,
+                    "us_additional_fees": us_additional_fees,
+                    "items": items,
+                }
+            )
+        except ValidationError as e:
+            logger.warning(f"Skipping invalid form {form_num}: {e.errors()}")
+            continue
 
         submitted_forms.append(form_submission)
 

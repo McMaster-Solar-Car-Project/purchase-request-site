@@ -62,6 +62,16 @@ class User(Base):
     signature_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
     void_cheque: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
 
+    @property
+    def has_valid_signature(self) -> bool:
+        return bool(self.signature_data) and self.signature_data.startswith(
+            b"\x89PNG\r\n\x1a\n"
+        )
+
+    @property
+    def has_valid_void_cheque(self) -> bool:
+        return bool(self.void_cheque) and self.void_cheque.startswith(b"%PDF-")
+
     def __repr__(self) -> str:
         return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>"
 

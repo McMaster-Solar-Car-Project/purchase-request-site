@@ -21,20 +21,15 @@ def get_user_by_email(db: Session, email: EmailStr) -> User | None:
 
 def get_user_signature_as_data_url(user: User) -> str | None:
     """Get user's signature as a data URL for HTML display"""
-    if user.signature_data:
-        # Signature uploads are normalized to PNG before persisting.
-        if not user.signature_data.startswith(b"\x89PNG\r\n\x1a\n"):
-            return None
-        base64_data = base64.b64encode(user.signature_data).decode("utf-8")
-        return f"data:image/png;base64,{base64_data}"
-    return None
+    if not user.has_valid_signature:
+        return None
+    base64_data = base64.b64encode(user.signature_data).decode("utf-8")
+    return f"data:image/png;base64,{base64_data}"
 
 
 def get_user_void_cheque_as_data_url(user: User) -> str | None:
     """Get user's void cheque as a data URL for HTML display."""
-    if not user.void_cheque:
-        return None
-    if not user.void_cheque.startswith(b"%PDF-"):
+    if not user.has_valid_void_cheque:
         return None
     base64_data = base64.b64encode(user.void_cheque).decode("utf-8")
     return f"data:application/pdf;base64,{base64_data}"
@@ -58,7 +53,7 @@ def save_void_cheque_to_file(user: User, file_path: str) -> bool:
     """Save user's void cheque PDF from database to a file."""
     if not user or not user.void_cheque:
         return False
-    if not user.void_cheque.startswith(b"%PDF-"):
+    if not user.has_valid_void_cheque:
         logger.warning("Void cheque data is not a valid PDF header")
         return False
 
@@ -121,7 +116,5 @@ def is_user_profile_complete(user: User) -> bool:
         user.team,
     ]
     has_required_text = all(field and field.strip() for field in required_text_fields)
-    has_signature = bool(user.signature_data)
-    has_void_cheque = bool(user.void_cheque) and user.void_cheque.startswith(b"%PDF-")
 
-    return has_required_text and has_signature and has_void_cheque
+    return has_required_text and user.has_valid_signature and user.has_valid_void_cheque

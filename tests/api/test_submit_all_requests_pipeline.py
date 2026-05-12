@@ -20,6 +20,16 @@ class FakeUser:
     signature_data: bytes
     void_cheque: bytes
 
+    @property
+    def has_valid_signature(self) -> bool:
+        return bool(self.signature_data) and self.signature_data.startswith(
+            b"\x89PNG\r\n\x1a\n"
+        )
+
+    @property
+    def has_valid_void_cheque(self) -> bool:
+        return bool(self.void_cheque) and self.void_cheque.startswith(b"%PDF-")
+
 
 class DummyDb:
     pass

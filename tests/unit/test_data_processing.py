@@ -1,7 +1,7 @@
 from openpyxl import Workbook
 
 from src.data_processing import populate_expense_rows_from_submitted_forms
-from src.models.submissions import Invoice
+from src.models.submissions import Invoice, SubmissionLineItem
 
 
 def _make_form(**overrides) -> Invoice:
@@ -21,7 +21,9 @@ def _make_form(**overrides) -> Invoice:
         "total_cad_amount": 0.0,
         "us_subtotal": 0.0,
         "us_additional_fees": 0.0,
-        "items": [],
+        "items": [
+            SubmissionLineItem(name="Item", usage="Test", quantity=1, unit_price=1.0)
+        ],
     }
     defaults.update(overrides)
     return Invoice(**defaults)
@@ -45,6 +47,8 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
             form_number=2,
             vendor_name="USD Vendor",
             is_usd=True,
+            proof_of_payment_filename="proof.pdf",
+            proof_of_payment_location="/tmp/proof.pdf",
             us_subtotal=80.0,
             us_additional_fees=20.0,
             total_cad_amount=135.0,
