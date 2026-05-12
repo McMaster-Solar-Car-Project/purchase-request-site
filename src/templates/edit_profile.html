@@ -12,7 +12,7 @@
     {% include "_sentry.html" %}
 </head>
 
-<body class="font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-12 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] leading-[1.6] min-h-screen text-[#e4e4e7] box-border overflow-y-auto">
+<body data-google-maps-enabled="{{ 'true' if google_api_key else 'false' }}" class="font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-12 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] leading-[1.6] min-h-screen text-[#e4e4e7] box-border overflow-y-auto">
     <div class="max-w-3xl w-[92%] p-10 bg-[rgba(24,24,27,0.82)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-[10px] [-webkit-backdrop-filter:blur(10px)] border border-[rgba(255,255,255,0.08)] my-12 mx-auto">
         <div class="mb-10 relative">
             <a href="/dashboard?user_email={{ user.email }}&use_saved=true" id="back-link" class="inline-flex items-center gap-1 text-sm text-[#a5b4fc] hover:text-[#c7d2fe] transition-colors mb-4">← Back</a>
@@ -65,7 +65,7 @@
                 <div>
                     <div class="relative flex flex-col items-center justify-center text-center gap-2 border border-dashed border-[rgba(99,102,241,0.45)] bg-[rgba(39,39,42,0.45)] rounded-lg py-5 px-4">
                         <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg"
-                            onchange="updateFileName(this, 'signature-name')" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                            data-filename-id="signature-name" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                         <span class="text-sm text-[#c4b5fd]">Click to upload signature image (PNG, JPG, JPEG)</span>
                     </div>
                     <div id="signature-name" class="mt-2 text-sm text-[#a1a1aa]"></div>
@@ -86,7 +86,7 @@
                 <div>
                     <div class="relative flex flex-col items-center justify-center text-center gap-2 border border-dashed border-[rgba(99,102,241,0.45)] bg-[rgba(39,39,42,0.45)] rounded-lg py-5 px-4">
                         <input type="file" id="void_cheque" name="void_cheque" accept=".pdf,application/pdf" {% if not void_cheque_data_url %}required{% endif %}
-                            onchange="updateFileName(this, 'void-cheque-name')" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                            data-filename-id="void-cheque-name" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                         <span class="text-sm text-[#c4b5fd]">Click to upload your void cheque (PDF only)</span>
                     </div>
                     <div id="void-cheque-name" class="mt-2 text-sm text-[#a1a1aa]"></div>
@@ -114,106 +114,11 @@
     </div>
 
     <script src="/static/js/edit-profile.js"></script>
-
-    <!-- Google Places API for address autocomplete -->
     {% if google_api_key %}
-    <script>
-        // Address Autocomplete using Google Places API
-        let autocomplete;
-
-        function initAutocomplete() {
-            console.log('Initializing Google Places Autocomplete...');
-
-            // Check if Google Maps API is loaded
-            if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
-                console.error('Google Maps API not loaded');
-                showFallback();
-                return;
-            }
-
-            // Check if the address input exists
-            const addressInput = document.getElementById('address');
-            if (!addressInput) {
-                console.error('Address input field not found');
-                return;
-            }
-
-            try {
-                // Create the autocomplete object
-                autocomplete = new google.maps.places.Autocomplete(
-                    addressInput,
-                    {
-                        types: ['address'],
-                        componentRestrictions: { 'country': ['ca', 'us'] }, // Restrict to Canada and US
-                        fields: ['formatted_address', 'geometry', 'address_components']
-                    }
-                );
-
-                // When the user selects an address from the dropdown, populate the address field
-                autocomplete.addListener('place_changed', function () {
-                    const place = autocomplete.getPlace();
-
-                    if (!place.geometry) {
-                        console.log("No details available for input: '" + place.name + "'");
-                        return;
-                    }
-
-                    // Get the formatted address
-                    addressInput.value = place.formatted_address;
-                    console.log('Address selected:', place.formatted_address);
-                });
-
-                console.log('Google Places Autocomplete initialized successfully');
-
-            } catch (error) {
-                console.error('Error initializing autocomplete:', error);
-                showFallback();
-            }
-        }
-
-        function showFallback() {
-            const helpText = document.querySelector('.address-help');
-            if (helpText) {
-                helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
-                helpText.style.color = '#ef4444';
-            }
-        }
-
-        // Fallback if Google Maps API fails to load within 10 seconds
-        window.setTimeout(function () {
-            if (typeof google === 'undefined') {
-                console.log('Google Maps API failed to load within 10 seconds. Address autocomplete disabled.');
-                showFallback();
-            }
-        }, 10000);
-    </script>
     <script
         src="https://maps.googleapis.com/maps/api/js?key={{ google_api_key }}&libraries=places&callback=initAutocomplete"
         async defer></script>
-    {% else %}
-    <script>
-        // No Google API key available - show fallback message
-        document.addEventListener('DOMContentLoaded', function () {
-            const helpText = document.querySelector('.address-help');
-            if (helpText) {
-                helpText.textContent = 'Please enter your full address manually. (Address autocomplete unavailable)';
-                helpText.style.color = '#ef4444';
-            }
-        });
-    </script>
     {% endif %}
-
-    <script>
-    // Check if the URL contains an error message
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get('error');
-
-    if (error === 'default_values') {
-        alert('⚠️ Default values must be changed before saving your profile.');
-    } else if (error === 'update_failed') {
-        alert('⚠️ Could not update profile. Ensure signature is a valid image and void cheque is a valid PDF.');
-    }
-    </script>
 </body>
 
 </html>
