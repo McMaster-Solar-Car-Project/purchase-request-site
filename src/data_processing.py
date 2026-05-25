@@ -72,7 +72,7 @@ def create_expense_report(
 
 def populate_expense_rows_from_submitted_forms(
     ws: Worksheet, submitted_forms: list[Invoice]
-) -> bool:
+) -> None:
     """Populate expense report rows from submitted form data."""
     current_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -91,8 +91,6 @@ def populate_expense_rows_from_submitted_forms(
             ws[f"F{row}"] = form.total_cad_amount
             ws[f"G{row}"] = form.total_cad_amount
             ws[f"H{row}"] = 0
-
-    return True
 
 
 def create_purchase_request(

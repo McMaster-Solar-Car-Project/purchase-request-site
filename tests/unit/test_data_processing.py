@@ -55,8 +55,7 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
         ),
     ]
 
-    ok = populate_expense_rows_from_submitted_forms(ws, submitted_forms)
-    assert ok is True
+    populate_expense_rows_from_submitted_forms(ws, submitted_forms)
 
     # First row (CAD) starts at row 6.
     assert ws["C6"].value == "CAD Vendor"
