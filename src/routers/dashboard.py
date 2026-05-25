@@ -352,7 +352,7 @@ async def submit_all_requests(
         drive_folder_url = ""
         drive_folder_id = ""
         drive_upload_success = False
-        drive_client = await run_in_threadpool(GoogleDriveClient)
+        drive_client = GoogleDriveClient()
         try:
             try:
                 success, drive_folder_url, drive_folder_id = await run_in_threadpool(
@@ -369,7 +369,7 @@ async def submit_all_requests(
             # Log to Google Sheets (with Drive folder URL)
             sheets_client: GoogleSheetsClient | None = None
             try:
-                sheets_client = await run_in_threadpool(GoogleSheetsClient)
+                sheets_client = GoogleSheetsClient()
                 await run_in_threadpool(
                     sheets_client.log_purchase_request,
                     user_info,
