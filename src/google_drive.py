@@ -195,7 +195,7 @@ class GoogleDriveClient:
 
         session_path = Path(session_folder_path)
         if not session_path.exists():
-            logger.exception(f"Session folder not found: {session_folder_path}")
+            logger.error(f"Session folder not found: {session_folder_path}")
             return False
 
         try:
@@ -288,7 +288,7 @@ def download_file_from_drive(folder_id: str, file_name: str) -> bytes:
     try:
         file_id = drive_client.find_file_in_folder(folder_id, file_name)
         if not file_id:
-            logger.exception(f"File '{file_name}' not found in Google Drive folder")
+            logger.error(f"File '{file_name}' not found in Google Drive folder")
             raise FileNotFoundError(
                 f"File '{file_name}' not found in Google Drive folder"
             )

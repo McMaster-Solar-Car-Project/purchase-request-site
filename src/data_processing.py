@@ -29,7 +29,7 @@ def create_expense_report(
     """Copy the expense report template to the session folder and populate with user data."""
     template_path = "src/excel_templates/expense_report_template.xlsx"
     if not Path(template_path).exists():
-        logger.exception(f"Expense report template not found: {template_path}")
+        logger.error(f"Expense report template not found: {template_path}")
         return False
 
     now = datetime.now()

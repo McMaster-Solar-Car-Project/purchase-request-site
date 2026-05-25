@@ -94,7 +94,7 @@ def dashboard(
     # Get user from database
     user = get_user_by_email(db, user_email)
     if not user:
-        logger.exception(f"User not found in database: {user_email}")
+        logger.error(f"User not found in database: {user_email}")
         raise HTTPException(status_code=404, detail="User not found")
 
     error_message = None
@@ -178,7 +178,7 @@ async def submit_all_requests(
     # Get user from database to fetch signature
     user = await run_in_threadpool(_load_user_in_new_session, email)
     if not user:
-        logger.exception(f"User not found in database: {email}")
+        logger.error(f"User not found in database: {email}")
         raise HTTPException(status_code=404, detail="User not found")
     if not is_user_profile_complete(user):
         logger.warning(f"Profile incomplete for user {email}; blocking submission")
