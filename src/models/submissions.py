@@ -58,3 +58,9 @@ class Invoice(BaseModel):
     def us_total(self) -> float:
         """Total USD paid (subtotal plus any additional fees/taxes/tariffs)."""
         return self.us_subtotal + self.us_additional_fees
+
+    @property
+    def exchange_rate(self) -> float:
+        if self.us_total <= 0 or self.total_cad_amount <= 0:
+            return 0
+        return self.total_cad_amount / self.us_total
