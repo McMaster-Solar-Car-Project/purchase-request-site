@@ -29,8 +29,8 @@ def convert_signature_to_png_bytes(source: bytes) -> bytes | None:
         out = BytesIO()
         img.save(out, "PNG", optimize=True)
         return out.getvalue()
-    except Exception as e:
-        logger.exception(f"Error converting signature: {e}")
+    except Exception:
+        logger.exception("Error converting signature")
         return None
 
 
@@ -50,6 +50,6 @@ def insert_signature_at_cell(
         ws.add_image(img)
         logger.info(f"Signature inserted at {cell_location}")
         return True
-    except Exception as e:
-        logger.exception(f"Error inserting signature at {cell_location}: {e}")
+    except Exception:
+        logger.exception(f"Error inserting signature at {cell_location}")
         return False

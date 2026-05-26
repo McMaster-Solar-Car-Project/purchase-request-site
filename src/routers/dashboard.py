@@ -398,8 +398,8 @@ async def submit_all_requests(
                 logger.info(
                     f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"
                 )
-            except Exception as e:
-                logger.exception(f"Unexpected error in upload task: {e}")
+            except Exception:
+                logger.exception("Unexpected error in upload task")
         finally:
             await run_in_threadpool(drive_client.close)
 

@@ -129,8 +129,8 @@ def edit_profile_post(
         redirect_url = f"/dashboard?user_email={profile_input.email}&updated=true"
         return RedirectResponse(url=redirect_url, status_code=303)
 
-    except Exception as e:
-        logger.exception(f"Error updating profile for {user_email}: {e}")
+    except Exception:
+        logger.exception(f"Error updating profile for {user_email}")
         db.rollback()
 
         # Redirect back to edit form with error

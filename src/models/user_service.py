@@ -44,8 +44,8 @@ def save_signature_to_file(user: User, file_path: str) -> bool:
         with open(file_path, "wb") as f:
             f.write(user.signature_data)
         return True
-    except Exception as e:
-        logger.exception(f"Error saving signature to file {file_path}: {e}")
+    except Exception:
+        logger.exception(f"Error saving signature to file {file_path}")
         return False
 
 
@@ -61,8 +61,8 @@ def save_void_cheque_to_file(user: User, file_path: str) -> bool:
         with open(file_path, "wb") as f:
             f.write(user.void_cheque)
         return True
-    except Exception as e:
-        logger.exception(f"Error saving void cheque to file {file_path}: {e}")
+    except Exception:
+        logger.exception(f"Error saving void cheque to file {file_path}")
         return False
 
 

@@ -41,8 +41,8 @@ def create_expense_report(
     try:
         shutil.copy2(template_path, output_path)
         wb = load_workbook(output_path)
-    except Exception as e:
-        logger.exception(f"Failed to open expense report template: {e}")
+    except Exception:
+        logger.exception("Failed to open expense report template")
         _discard_partial_output(output_path)
         return False
 
@@ -62,8 +62,8 @@ def create_expense_report(
 
         wb.save(output_path)
         return True
-    except Exception as e:
-        logger.exception(f"Failed to populate expense report: {e}")
+    except Exception:
+        logger.exception("Failed to populate expense report")
         _discard_partial_output(output_path)
         return False
     finally:
