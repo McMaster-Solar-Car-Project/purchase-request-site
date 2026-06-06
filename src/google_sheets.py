@@ -54,11 +54,11 @@ class GoogleSheetsClient:
                 "Successfully authenticated with Google Sheets API using environment variables"
             )
             return True
-        except (ValueError, ValidationError) as e:
-            logger.exception(f"Environment variable error: {e}")
+        except (ValueError, ValidationError):
+            logger.exception("Environment variable error")
             return False
-        except Exception as e:
-            logger.exception(f"Failed to authenticate with Google Sheets API: {e}")
+        except Exception:
+            logger.exception("Failed to authenticate with Google Sheets API")
             return False
 
     def _is_retriable(self, exc: Exception) -> bool:
@@ -146,11 +146,11 @@ class GoogleSheetsClient:
             )
             return True
 
-        except HttpError as e:
-            logger.exception(f"HTTP error logging session data: {e}")
+        except HttpError:
+            logger.exception("HTTP error logging session data")
             return False
-        except Exception as e:
-            logger.exception(f"Error logging session data: {e}")
+        except Exception:
+            logger.exception("Error logging session data")
             return False
 
     def close(self):

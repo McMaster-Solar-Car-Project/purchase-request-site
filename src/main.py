@@ -27,7 +27,7 @@ from src.routers.dashboard import router as dashboard_router
 from src.routers.download import router as download_router
 from src.routers.profile import router as profile_router
 from src.routers.success import router as success_router
-from src.routers.utils import limiter, templates
+from src.routers.utils import AuthRedirect, limiter, templates
 
 # Set up logger
 logger = setup_logger(__name__)
@@ -196,6 +196,12 @@ async def home():
 async def health_check():
     """Health check endpoint for Docker health monitoring"""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+
+@app.exception_handler(AuthRedirect)
+async def auth_redirect_handler(request: Request, exc: AuthRedirect):
+    """Redirect unauthenticated requests to the login page (or other target)."""
+    return RedirectResponse(url=exc.location, status_code=303)
 
 
 @app.exception_handler(StarletteHTTPException)

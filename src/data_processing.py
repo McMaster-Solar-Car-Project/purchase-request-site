@@ -29,7 +29,7 @@ def create_expense_report(
     """Copy the expense report template to the session folder and populate with user data."""
     template_path = "src/excel_templates/expense_report_template.xlsx"
     if not Path(template_path).exists():
-        logger.exception(f"Expense report template not found: {template_path}")
+        logger.error(f"Expense report template not found: {template_path}")
         return False
 
     now = datetime.now()
@@ -41,8 +41,8 @@ def create_expense_report(
     try:
         shutil.copy2(template_path, output_path)
         wb = load_workbook(output_path)
-    except Exception as e:
-        logger.exception(f"Failed to open expense report template: {e}")
+    except Exception:
+        logger.exception("Failed to open expense report template")
         _discard_partial_output(output_path)
         return False
 
@@ -62,8 +62,8 @@ def create_expense_report(
 
         wb.save(output_path)
         return True
-    except Exception as e:
-        logger.exception(f"Failed to populate expense report: {e}")
+    except Exception:
+        logger.exception("Failed to populate expense report")
         _discard_partial_output(output_path)
         return False
     finally:
@@ -72,7 +72,7 @@ def create_expense_report(
 
 def populate_expense_rows_from_submitted_forms(
     ws: Worksheet, submitted_forms: list[Invoice]
-) -> bool:
+) -> None:
     """Populate expense report rows from submitted form data."""
     current_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -86,18 +86,11 @@ def populate_expense_rows_from_submitted_forms(
             ws[f"G{row}"] = form.total_cad_amount
             ws[f"H{row}"] = form.hst_gst_amount
         else:
-            exchange_rate = (
-                form.total_cad_amount / form.us_total
-                if form.us_total > 0 and form.total_cad_amount > 0
-                else 0
-            )
             ws[f"D{row}"] = form.us_total
-            ws[f"E{row}"] = exchange_rate
+            ws[f"E{row}"] = form.exchange_rate
             ws[f"F{row}"] = form.total_cad_amount
             ws[f"G{row}"] = form.total_cad_amount
             ws[f"H{row}"] = 0
-
-    return True
 
 
 def create_purchase_request(
@@ -148,11 +141,7 @@ def create_purchase_request(
             ws["F27"] = form.total_cad_amount
 
             if form.is_usd:
-                ws["D7"] = (
-                    round(form.total_cad_amount / form.us_total, 4)
-                    if form.us_total > 0 and form.total_cad_amount > 0
-                    else 0
-                )
+                ws["D7"] = round(form.exchange_rate, 4)
 
             insert_signature_at_cell(ws, session_folder, "B33", 280, 70)
 

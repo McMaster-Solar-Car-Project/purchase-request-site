@@ -94,7 +94,7 @@ def dashboard(
     # Get user from database
     user = get_user_by_email(db, user_email)
     if not user:
-        logger.exception(f"User not found in database: {user_email}")
+        logger.error(f"User not found in database: {user_email}")
         raise HTTPException(status_code=404, detail="User not found")
 
     error_message = None
@@ -178,7 +178,7 @@ async def submit_all_requests(
     # Get user from database to fetch signature
     user = await run_in_threadpool(_load_user_in_new_session, email)
     if not user:
-        logger.exception(f"User not found in database: {email}")
+        logger.error(f"User not found in database: {email}")
         raise HTTPException(status_code=404, detail="User not found")
     if not is_user_profile_complete(user):
         logger.warning(f"Profile incomplete for user {email}; blocking submission")
@@ -352,7 +352,7 @@ async def submit_all_requests(
         drive_folder_url = ""
         drive_folder_id = ""
         drive_upload_success = False
-        drive_client = await run_in_threadpool(GoogleDriveClient)
+        drive_client = GoogleDriveClient()
         try:
             try:
                 success, drive_folder_url, drive_folder_id = await run_in_threadpool(
@@ -369,7 +369,7 @@ async def submit_all_requests(
             # Log to Google Sheets (with Drive folder URL)
             sheets_client: GoogleSheetsClient | None = None
             try:
-                sheets_client = await run_in_threadpool(GoogleSheetsClient)
+                sheets_client = GoogleSheetsClient()
                 await run_in_threadpool(
                     sheets_client.log_purchase_request,
                     user_info,
@@ -398,8 +398,8 @@ async def submit_all_requests(
                 logger.info(
                     f"Google Drive upload completed: {'✅ Success' if drive_upload_success else '❌ Failed'}"
                 )
-            except Exception as e:
-                logger.exception(f"Unexpected error in upload task: {e}")
+            except Exception:
+                logger.exception("Unexpected error in upload task")
         finally:
             await run_in_threadpool(drive_client.close)
 
