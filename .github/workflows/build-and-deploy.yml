@@ -19,8 +19,40 @@ env:
   PORT: ${{ vars.PORT }}
   RUN_LIVE_PIPELINE_TEST: ${{ vars.RUN_LIVE_PIPELINE_TEST }}
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_DRIVE_FOLDER_ID: ${{ vars.PARENT_FOLDER_ID }}
+      GOOGLE_SETTINGS__PROJECT_ID: ${{ secrets.GOOGLE_SETTINGS__PROJECT_ID }}
+      GOOGLE_SETTINGS__PRIVATE_KEY: ${{ secrets.GOOGLE_SETTINGS__PRIVATE_KEY }}
+      GOOGLE_SETTINGS__CLIENT_EMAIL: ${{ secrets.GOOGLE_SETTINGS__CLIENT_EMAIL }}
+      GOOGLE_SETTINGS__PRIVATE_KEY_ID: ${{ secrets.GOOGLE_SETTINGS__PRIVATE_KEY_ID }}
+      GOOGLE_SETTINGS__CLIENT_ID: ${{ secrets.GOOGLE_SETTINGS__CLIENT_ID }}
+      GOOGLE_SETTINGS__CLIENT_X509_CERT_URL: ${{ secrets.GOOGLE_SETTINGS__CLIENT_X509_CERT_URL }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --frozen --all-groups
+      - name: Check Ruff formatting
+        run: uv run ruff format --check .
+      - name: Run Ruff lint
+        run: uv run ruff check --output-format=github .
+      - name: Run ty
+        run: uv run ty check src tests
+      - name: Run tests
+        run: uv run pytest -vv
   build:
     runs-on: ubuntu-latest
+    needs: validate
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -50,6 +82,8 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Output image info
         run: |
           echo "Single deployment tag: ${{ secrets.DOCKERHUB_USERNAME }}/purchase-request-site:main-${{ github.sha }}"
@@ -58,7 +92,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    if: github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.deploy == true))
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.deploy == true)
     steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
@@ -67,7 +101,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           command_timeout: 20m
-          debug: true
+          debug: false
           script: |
             cd /home/raj/purchase-request-site
             echo "Starting deployment for commit: ${{ github.sha }}"

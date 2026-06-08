@@ -28,9 +28,8 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
 # Copy Node.js dependencies and install
-COPY package.json ./
-COPY package-lock.json* ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # Copy Files for Tailwind CSS Scan + Build
 COPY src/templates/ ./src/templates/
