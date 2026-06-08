@@ -4,11 +4,9 @@ on:
     branches: [main, master]
 jobs:
   docker-build-check:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo in .venv
         uses: actions/checkout@v4
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
       - name: Build Docker image
         run: docker build -t purchase-request-site:${{ github.sha }} .
