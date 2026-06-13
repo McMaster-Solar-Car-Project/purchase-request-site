@@ -1,0 +1,166 @@
+{% macro item_row(form_num, item_num) -%}
+<div class="item-row">
+    <div class="item-input-group">
+        <label class="field-label">Item Name</label>
+        <input type="text" name="item_name_{{ form_num }}_{{ item_num }}" placeholder="Enter item name" class="field-control">
+    </div>
+    <div class="item-input-group">
+        <label class="field-label">Usage/Purpose</label>
+        <input type="text" name="item_usage_{{ form_num }}_{{ item_num }}" placeholder="What is this item for?" class="field-control">
+    </div>
+    <div class="item-input-group">
+        <label class="field-label">Quantity</label>
+        <input type="number" name="item_quantity_{{ form_num }}_{{ item_num }}" min="1" value="1" data-action="calc-item" data-form="{{ form_num }}" data-item="{{ item_num }}" class="field-control">
+    </div>
+    <div class="item-input-group">
+        <label class="field-label">Item Cost (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
+        <input type="number" name="item_price_{{ form_num }}_{{ item_num }}" min="0" step="0.00000001" placeholder="0.00" data-action="calc-item" data-form="{{ form_num }}" data-item="{{ item_num }}" class="field-control">
+    </div>
+    <div class="item-input-group">
+        <label class="field-label">Total</label>
+        <input type="number" name="item_total_{{ form_num }}_{{ item_num }}" readonly placeholder="0.00" class="field-control total-field">
+    </div>
+    <div class="item-actions">
+        <button type="button" class="button button--remove btn-remove" data-action="remove-item" data-form="{{ form_num }}" style="display: none;">Remove</button>
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro upload_field(form_num, field_name, label, filename_id, help_text, required_text="") -%}
+<div class="form-group field">
+    <label for="{{ field_name }}_{{ form_num }}" class="field-label">{{ label }}{{ required_text }}</label>
+    <div class="custom-file-upload">
+        <div class="file-drop-area upload-zone" data-role="file-drop-area" data-input-id="{{ field_name }}_{{ form_num }}" data-filename-id="{{ filename_id }}-{{ form_num }}">
+            <input type="file" id="{{ field_name }}_{{ form_num }}" name="{{ field_name }}_{{ form_num }}" accept=".pdf,.jpg,.jpeg,.png,.gif" data-filename-id="{{ filename_id }}-{{ form_num }}" class="file-input">
+            <p class="drop-text">
+                <span class="file-upload" data-role="file-upload-text" data-input-id="{{ field_name }}_{{ form_num }}">
+                    <b>Choose a file</b> or drag it here
+                </span>
+            </p>
+        </div>
+        <span class="file-name" id="{{ filename_id }}-{{ form_num }}">No file chosen</span>
+    </div>
+    <small class="field-help file-help">{{ help_text }}</small>
+</div>
+{%- endmacro %}
+
+{% macro invoice_form(form_num) -%}
+    <div class="invoice-card form-accordion" data-form="{{ form_num }}">
+    <div class="invoice-header form-accordion-header" data-action="toggle-form" data-form="{{ form_num }}">
+        <div>
+            <h3>Invoice {{ form_num }}</h3>
+        </div>
+        <div class="form-header-actions invoice-actions">
+            <button type="button" class="button button--clear btn-clear" data-action="clear-form" data-form="{{ form_num }}" title="Clear this form">Clear</button>
+            <span class="form-toggle toggle-glyph" data-role="accordion-toggle">+</span>
+        </div>
+    </div>
+    <div class="invoice-content form-accordion-content" id="form-{{ form_num }}">
+        <div class="reimbursement-form">
+            <div class="invoice-grid">
+                <div class="form-group field">
+                    <label for="vendor_name_{{ form_num }}" class="field-label">Vendor/Store Name</label>
+                    <input type="text" id="vendor_name_{{ form_num }}" name="vendor_name_{{ form_num }}" placeholder="Enter the vendor or store" class="field-control">
+                </div>
+
+                <div class="form-group field">
+                    <label for="currency_{{ form_num }}" class="field-label">Currency</label>
+                    <select id="currency_{{ form_num }}" name="currency_{{ form_num }}" data-action="currency-select" data-form="{{ form_num }}" class="field-control">
+                        <option value="CAD">CAD - Canadian Dollar</option>
+                        <option value="USD">USD - US Dollar</option>
+                    </select>
+                    <small class="field-help file-help">Select the currency used for this purchase</small>
+                </div>
+            </div>
+
+            <div class="upload-grid">
+                {{ upload_field(form_num, "invoice_file", "Upload Invoice/Receipt", "invoice-filename", "Please upload your invoice or receipt as PDF, JPG, PNG, or GIF.") }}
+
+                <div class="proof-of-payment-section proof-of-payment-section-{{ form_num }}" style="display: none;">
+                    {{ upload_field(form_num, "proof_of_payment", "Proof of Payment", "payment-filename", "Required for USD purchases. Upload a bank transaction or payment confirmation.") }}
+                </div>
+            </div>
+
+            <div class="request-panel items-section">
+                <div class="panel-heading">
+                    <div>
+                        <h4>Item Details</h4>
+                        <small class="items-help">Add the items you purchased, up to 15 items.</small>
+                    </div>
+                    <button type="button" class="button button--secondary btn-secondary" data-action="add-item" data-form="{{ form_num }}">Add Item</button>
+                </div>
+
+                <div id="items-container-{{ form_num }}" class="items-container">
+                    {{ item_row(form_num, 1) }}
+                </div>
+            </div>
+
+            <div class="request-panel total-section">
+                <div class="panel-heading">
+                    <h4>Financial Summary</h4>
+                </div>
+
+                <div class="financial-breakdown cad-breakdown-{{ form_num }} financial-grid">
+                    <div class="form-row">
+                        <div class="form-group field">
+                            <label for="subtotal_amount_{{ form_num }}" class="field-label">Subtotal (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
+                            <input type="number" id="subtotal_amount_{{ form_num }}" name="subtotal_amount_{{ form_num }}" readonly min="0" step="0.00000001" placeholder="0.00" class="field-control total-field">
+                            <small class="field-help financial-help">Calculated from item totals</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group field">
+                            <label for="discount_amount_{{ form_num }}" class="field-label">Discount (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
+                            <input type="number" id="discount_amount_{{ form_num }}" name="discount_amount_{{ form_num }}" min="0" step="0.00000001" placeholder="0.00" data-action="recalc-total" data-form="{{ form_num }}" class="field-control">
+                            <small class="field-help financial-help">Coupons, discounts, or rebates</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group field">
+                            <label for="hst_gst_amount_{{ form_num }}" class="field-label"><span class="tax-label-{{ form_num }}">HST/GST</span> (<span class="currency-label-{{ form_num }}">CAD</span>) <span class="required-indicator-{{ form_num }}"></span></label>
+                            <input type="number" id="hst_gst_amount_{{ form_num }}" name="hst_gst_amount_{{ form_num }}" min="0" step="0.00000001" placeholder="0.00" data-action="recalc-total" data-form="{{ form_num }}" class="field-control">
+                            <small class="field-help financial-help tax-help-{{ form_num }}">Harmonized Sales Tax / Goods and Services Tax</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group field">
+                            <label for="shipping_amount_{{ form_num }}" class="field-label">Shipping and Handling (<span class="currency-label-{{ form_num }}">CAD</span>)</label>
+                            <input type="number" id="shipping_amount_{{ form_num }}" name="shipping_amount_{{ form_num }}" min="0" step="0.00000001" placeholder="0.00" data-action="recalc-total" data-form="{{ form_num }}" class="field-control">
+                            <small class="field-help financial-help">Shipping, delivery, and handling fees</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="financial-breakdown usd-breakdown-{{ form_num }} financial-grid" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group field">
+                            <label for="us_subtotal_{{ form_num }}" class="field-label">US Subtotal (USD)</label>
+                            <input type="number" id="us_subtotal_{{ form_num }}" name="us_subtotal_{{ form_num }}" readonly min="0" step="0.00000001" placeholder="0.00" class="field-control total-field">
+                            <small class="field-help financial-help">Calculated from item costs</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group field">
+                            <label for="us_additional_fees_{{ form_num }}" class="field-label">Additional Fees (USD)</label>
+                            <input type="number" id="us_additional_fees_{{ form_num }}" name="us_additional_fees_{{ form_num }}" min="0" step="0.00000001" placeholder="0.00" class="field-control">
+                            <small class="field-help financial-help">Taxes, tariffs, shipping, or other fees</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row total-row">
+                    <div class="form-group field">
+                        <label for="total_cad_amount_{{ form_num }}" class="field-label"><span class="total-label-{{ form_num }}">Total Reimbursement Amount</span> (CAD)</label>
+                        <input type="number" id="total_cad_amount_{{ form_num }}" name="total_cad_amount_{{ form_num }}" readonly min="0" step="0.00000001" placeholder="0.00" class="field-control total-field total-output">
+                        <small class="field-help financial-help total-help-{{ form_num }}">Calculated as subtotal minus discount plus tax and shipping</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{%- endmacro %}
