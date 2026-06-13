@@ -117,10 +117,10 @@ function toggleForm(formNumber) {
 
     if (content.style.display === 'none' || content.style.display === '') {
         content.style.display = 'block';
-        toggle.textContent = '▲';
+        toggle.textContent = '-';
     } else {
         content.style.display = 'none';
-        toggle.textContent = '▼';
+        toggle.textContent = '+';
     }
 }
 
@@ -303,7 +303,7 @@ function updateCurrencyLabels(formNumber) {
         }
 
         if (cadBreakdown) cadBreakdown.style.display = 'none';
-        if (usdBreakdown) usdBreakdown.style.display = 'block';
+        if (usdBreakdown) usdBreakdown.style.display = 'grid';
 
         if (totalInput) {
             totalInput.removeAttribute('readonly');
@@ -323,7 +323,7 @@ function updateCurrencyLabels(formNumber) {
         const currentSubtotal = parseMoneyCents(subtotalInput ? subtotalInput.value : '');
         updateHstRequirement(formNumber, currentSubtotal);
 
-        if (cadBreakdown) cadBreakdown.style.display = 'block';
+        if (cadBreakdown) cadBreakdown.style.display = 'grid';
         if (usdBreakdown) usdBreakdown.style.display = 'none';
 
         if (totalInput) totalInput.setAttribute('readonly', '');
@@ -343,11 +343,7 @@ function updateCurrencyLabels(formNumber) {
         const proofOfPaymentInput = document.getElementById(`proof_of_payment_${formNumber}`);
         if (proofOfPaymentInput) {
             proofOfPaymentInput.required = false;
-            proofOfPaymentInput.value = '';
-            const filenameSpan = document.getElementById(`payment-filename-${formNumber}`);
-            if (filenameSpan) {
-                filenameSpan.textContent = 'No file chosen';
-            }
+            resetFileInput(proofOfPaymentInput, `payment-filename-${formNumber}`);
         }
     }
 }
@@ -357,6 +353,8 @@ function updateFileName(input, spanId) {
     const dropArea = input.closest('[data-role="file-drop-area"]');
     const dropTextSpan = dropArea ? dropArea.querySelector('[data-role="file-upload-text"]') : null;
 
+    if (!filenameSpan) return;
+
     if (input.files && input.files[0]) {
         const name = input.files[0].name;
         filenameSpan.textContent = name;
@@ -365,6 +363,12 @@ function updateFileName(input, spanId) {
         filenameSpan.textContent = 'No file chosen';
         if (dropTextSpan) dropTextSpan.innerHTML = '<b>Choose a file</b> or drag it here';
     }
+}
+
+function resetFileInput(input, spanId) {
+    if (!input) return;
+    input.value = '';
+    updateFileName(input, spanId);
 }
 
 function validateSubmission() {
@@ -502,19 +506,9 @@ function clearForm(formNumber) {
 
     const invoiceFileInput = document.getElementById(`invoice_file_${formNumber}`);
     const proofOfPaymentInput = document.getElementById(`proof_of_payment_${formNumber}`);
-    const invoiceFilenameSpan = document.getElementById(`invoice-filename-${formNumber}`);
-    const paymentFilenameSpan = document.getElementById(`payment-filename-${formNumber}`);
 
-    if (invoiceFileInput) {
-        invoiceFileInput.value = '';
-        invoiceFileInput.files = null;
-    }
-    if (proofOfPaymentInput) {
-        proofOfPaymentInput.value = '';
-        proofOfPaymentInput.files = null;
-    }
-    if (invoiceFilenameSpan) invoiceFilenameSpan.textContent = 'No file chosen';
-    if (paymentFilenameSpan) paymentFilenameSpan.textContent = 'No file chosen';
+    resetFileInput(invoiceFileInput, `invoice-filename-${formNumber}`);
+    resetFileInput(proofOfPaymentInput, `payment-filename-${formNumber}`);
 
     const itemsContainer = document.getElementById(`items-container-${formNumber}`);
     if (itemsContainer) {
@@ -564,16 +558,16 @@ function clearForm(formNumber) {
 
 function handleDragOver(event) {
     event.preventDefault();
-    event.currentTarget.classList.add('border-indigo-400', 'bg-indigo-500/10');
+    event.currentTarget.classList.add('is-dragging');
 }
 
 function handleDragLeave(event) {
-    event.currentTarget.classList.remove('border-indigo-400', 'bg-indigo-500/10');
+    event.currentTarget.classList.remove('is-dragging');
 }
 
 function handleFileDrop(event, inputId, spanId) {
     event.preventDefault();
-    event.currentTarget.classList.remove('border-indigo-400', 'bg-indigo-500/10');
+    event.currentTarget.classList.remove('is-dragging');
 
     const fileInput = document.getElementById(inputId);
     const files = event.dataTransfer.files;
@@ -667,6 +661,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const form = document.querySelector('form[action="/submit-all-requests"]');
     const submitBtn = document.getElementById("submit-all-btn");
+
+    if (!form || !submitBtn) {
+        return;
+    }
 
     form.addEventListener("submit", (e) => {
         if (!profileIsComplete) {
