@@ -104,7 +104,7 @@ def dashboard(
     if error == "no_forms":
         error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, upload an invoice file, and add at least one item."
     elif updated:
-        success_message = "✅ Your profile has been updated successfully!"
+        success_message = "Your profile has been updated successfully."
 
     profile_is_complete = is_user_profile_complete(user)
     if profile_incomplete or not profile_is_complete:
