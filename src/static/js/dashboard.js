@@ -4,9 +4,111 @@ const profileIsComplete = profileCompleteField?.value === "true";
 const itemCounts = {};
 const maxItems = 15;
 let isSubmitting = false;
+const preciseDecimalPlaces = 8;
+const moneyDecimalPlaces = 2;
 
 for (let i = 1; i <= 10; i++) {
     itemCounts[i] = 1;
+}
+
+function decimalScale(decimalPlaces) {
+    return 10n ** BigInt(decimalPlaces);
+}
+
+function parseScaledAmount(value, decimalPlaces) {
+    const rawValue = String(value ?? '').trim();
+    if (!rawValue) return 0n;
+
+    const match = rawValue.match(/^(\d*)(?:\.(\d*))?$/);
+    if (!match || (!match[1] && !match[2])) return 0n;
+
+    const wholePart = match[1] || '0';
+    const fractionPart = match[2] || '';
+    const scale = decimalScale(decimalPlaces);
+    const normalizedFraction = fractionPart.padEnd(decimalPlaces + 1, '0');
+    const keptFraction = normalizedFraction.slice(0, decimalPlaces) || '0';
+    const nextDigit = Number(normalizedFraction[decimalPlaces] || '0');
+
+    let scaledValue = BigInt(wholePart) * scale + BigInt(keptFraction);
+    if (nextDigit >= 5) {
+        scaledValue += 1n;
+    }
+
+    return scaledValue;
+}
+
+function parseQuantity(value) {
+    const rawValue = String(value ?? '').trim();
+    if (!/^\d+$/.test(rawValue)) return 0n;
+    return BigInt(rawValue);
+}
+
+function formatScaledAmount(scaledValue, decimalPlaces) {
+    const scale = decimalScale(decimalPlaces);
+    const isNegative = scaledValue < 0n;
+    const absoluteValue = isNegative ? -scaledValue : scaledValue;
+    const wholePart = absoluteValue / scale;
+    const fractionPart = String(absoluteValue % scale).padStart(decimalPlaces, '0');
+    const sign = isNegative ? '-' : '';
+
+    return `${sign}${wholePart}.${fractionPart}`;
+}
+
+function roundScaledAmount(scaledValue, fromDecimalPlaces, toDecimalPlaces) {
+    if (fromDecimalPlaces === toDecimalPlaces) {
+        return scaledValue;
+    }
+
+    if (fromDecimalPlaces < toDecimalPlaces) {
+        return scaledValue * decimalScale(toDecimalPlaces - fromDecimalPlaces);
+    }
+
+    const divisor = decimalScale(fromDecimalPlaces - toDecimalPlaces);
+    const halfDivisor = divisor / 2n;
+
+    if (scaledValue < 0n) {
+        return (scaledValue - halfDivisor) / divisor;
+    }
+    return (scaledValue + halfDivisor) / divisor;
+}
+
+function formatPreciseAmount(scaledValue) {
+    return formatScaledAmount(scaledValue, preciseDecimalPlaces);
+}
+
+function formatMoneyFromPreciseAmount(scaledValue) {
+    const cents = roundScaledAmount(
+        scaledValue,
+        preciseDecimalPlaces,
+        moneyDecimalPlaces
+    );
+    return formatScaledAmount(cents, moneyDecimalPlaces);
+}
+
+function parseMoneyCents(value) {
+    return parseScaledAmount(value, moneyDecimalPlaces);
+}
+
+function formatMoneyCents(cents) {
+    return formatScaledAmount(cents, moneyDecimalPlaces);
+}
+
+function formatMoneyInput(input) {
+    if (!input.value.trim()) return;
+    input.value = formatMoneyCents(parseMoneyCents(input.value));
+}
+
+function formatMoneyFields() {
+    const formsToRecalculate = new Set();
+
+    document.querySelectorAll('input[data-format="money"]').forEach(input => {
+        formatMoneyInput(input);
+        if (input.dataset.action === 'recalc-total') {
+            formsToRecalculate.add(Number(input.dataset.form));
+        }
+    });
+
+    formsToRecalculate.forEach(formNumber => calculateFinalTotal(formNumber));
 }
 
 function toggleForm(formNumber) {
@@ -103,11 +205,11 @@ function calculateItemTotal(formNumber, itemNumber) {
     const totalInput = document.querySelector(`input[name="item_total_${formNumber}_${itemNumber}"]`);
 
     if (quantityInput && priceInput && totalInput) {
-        const quantity = parseFloat(quantityInput.value) || 0;
-        const price = parseFloat(priceInput.value) || 0;
+        const quantity = parseQuantity(quantityInput.value);
+        const price = parseScaledAmount(priceInput.value, preciseDecimalPlaces);
         const total = quantity * price;
 
-        totalInput.value = total.toFixed(8);
+        totalInput.value = formatPreciseAmount(total);
         calculateSubtotal(formNumber);
     }
 }
@@ -115,14 +217,13 @@ function calculateItemTotal(formNumber, itemNumber) {
 function calculateSubtotal(formNumber) {
     const container = document.getElementById(`items-container-${formNumber}`);
     const totalInputs = container.querySelectorAll('input[name^="item_total_"]');
-    let subtotal = 0;
+    let subtotal = 0n;
 
     totalInputs.forEach(input => {
-        const value = parseFloat(input.value) || 0;
-        subtotal += value;
+        subtotal += parseScaledAmount(input.value, preciseDecimalPlaces);
     });
 
-    const formattedSubtotal = subtotal.toFixed(8);
+    const formattedSubtotal = formatMoneyFromPreciseAmount(subtotal);
     const subtotalField = document.getElementById(`subtotal_amount_${formNumber}`);
     if (subtotalField) subtotalField.value = formattedSubtotal;
     const usSubtotalField = document.getElementById(`us_subtotal_${formNumber}`);
@@ -144,7 +245,7 @@ function updateHstRequirement(formNumber, subtotal) {
     if (!currencySelect || !hstGstInput) return;
 
     const isCAD = currencySelect.value === 'CAD';
-    const hasSubtotal = subtotal > 0;
+    const hasSubtotal = typeof subtotal === 'bigint' ? subtotal > 0n : subtotal > 0;
     const shouldBeRequired = isCAD && hasSubtotal;
 
     if (shouldBeRequired) {
@@ -159,13 +260,13 @@ function updateHstRequirement(formNumber, subtotal) {
 }
 
 function calculateFinalTotal(formNumber) {
-    const subtotal = parseFloat(document.getElementById(`subtotal_amount_${formNumber}`).value) || 0;
-    const discount = parseFloat(document.getElementById(`discount_amount_${formNumber}`).value) || 0;
-    const hstGst = parseFloat(document.getElementById(`hst_gst_amount_${formNumber}`).value) || 0;
-    const shipping = parseFloat(document.getElementById(`shipping_amount_${formNumber}`).value) || 0;
+    const subtotal = parseMoneyCents(document.getElementById(`subtotal_amount_${formNumber}`).value);
+    const discount = parseMoneyCents(document.getElementById(`discount_amount_${formNumber}`).value);
+    const hstGst = parseMoneyCents(document.getElementById(`hst_gst_amount_${formNumber}`).value);
+    const shipping = parseMoneyCents(document.getElementById(`shipping_amount_${formNumber}`).value);
 
     const total = subtotal - discount + hstGst + shipping;
-    document.getElementById(`total_cad_amount_${formNumber}`).value = Math.max(0, total).toFixed(8);
+    document.getElementById(`total_cad_amount_${formNumber}`).value = formatMoneyCents(total > 0n ? total : 0n);
 }
 
 function updateCurrencyLabels(formNumber) {
@@ -219,7 +320,7 @@ function updateCurrencyLabels(formNumber) {
         }
 
         const subtotalInput = document.getElementById(`subtotal_amount_${formNumber}`);
-        const currentSubtotal = parseFloat(subtotalInput ? subtotalInput.value : 0) || 0;
+        const currentSubtotal = parseMoneyCents(subtotalInput ? subtotalInput.value : '');
         updateHstRequirement(formNumber, currentSubtotal);
 
         if (cadBreakdown) cadBreakdown.style.display = 'block';
@@ -366,7 +467,7 @@ function validateSubmission() {
         return false;
     }
 
-    let totalCanadianAmount = 0;
+    let totalCanadianCents = 0n;
     for (let formNumber = 1; formNumber <= 10; formNumber++) {
         const vendorName = document.getElementById(`vendor_name_${formNumber}`);
         if (!vendorName || !vendorName.value.trim()) {
@@ -374,11 +475,11 @@ function validateSubmission() {
         }
         const totalField = document.getElementById(`total_cad_amount_${formNumber}`);
         if (totalField && totalField.value) {
-            totalCanadianAmount += parseFloat(totalField.value) || 0;
+            totalCanadianCents += parseMoneyCents(totalField.value);
         }
     }
-    if (totalCanadianAmount < 100) {
-        alert(`Total Canadian amount must be greater than $100.00 CAD.\nCurrent total: $${totalCanadianAmount.toFixed(8)} CAD`);
+    if (totalCanadianCents < 10000n) {
+        alert(`Total Canadian amount must be greater than $100.00 CAD.\nCurrent total: $${formatMoneyCents(totalCanadianCents)} CAD`);
         return false;
     }
 
@@ -516,6 +617,15 @@ function initializeStaticHandlers() {
         input.addEventListener('input', () => calculateFinalTotal(Number(input.dataset.form)));
     });
 
+    document.querySelectorAll('input[data-format="money"]').forEach(input => {
+        input.addEventListener('blur', () => {
+            formatMoneyInput(input);
+            if (input.dataset.action === 'recalc-total') {
+                calculateFinalTotal(Number(input.dataset.form));
+            }
+        });
+    });
+
     document.querySelectorAll('[data-role="file-upload-text"]').forEach(trigger => {
         trigger.addEventListener('click', () => {
             const input = document.getElementById(trigger.dataset.inputId);
@@ -568,6 +678,8 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             return;
         }
+
+        formatMoneyFields();
 
         if (!validateSubmission()) {
             e.preventDefault();
