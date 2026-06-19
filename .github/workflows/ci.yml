@@ -48,8 +48,9 @@ jobs:
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
             ghcr.io/google/yamlfmt:latest \
-            /workspace
+            .github/workflows/*.yml docker-compose.yml lefthook.yml
       - name: Commit formatting changes (push only)
         if: github.event_name == 'push'
         uses: stefanzweifel/git-auto-commit-action@v5
@@ -70,8 +71,9 @@ jobs:
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
             ghcr.io/google/yamlfmt:latest \
-            -lint /workspace
+            -lint .github/workflows/*.yml docker-compose.yml lefthook.yml
         # Run Gitleaks to scan for secrets
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2

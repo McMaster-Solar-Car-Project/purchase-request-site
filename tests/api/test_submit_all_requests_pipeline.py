@@ -269,8 +269,8 @@ def test_edit_profile_uses_session_email_not_query_email(monkeypatch) -> None:
     app.add_middleware(SessionMiddleware, secret_key="test-secret")
     app.include_router(profile_module.router)
     app.dependency_overrides[get_db] = lambda: DummyDb()
-    app.dependency_overrides[get_authenticated_user_email] = (
-        lambda: "session@example.com"
+    app.dependency_overrides[get_authenticated_user_email] = lambda: (
+        "session@example.com"
     )
     client = TestClient(app, follow_redirects=False)
 
