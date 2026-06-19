@@ -2,8 +2,6 @@
 Authentication router for the /login and /logout endpoints.
 """
 
-from urllib.parse import urlencode
-
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -57,10 +55,10 @@ def login(
         request.session["user_email"] = email
         logger.info(f"🔐 User login: {user.name} ({email})")
 
-        params: dict[str, str] = {"user_email": user.email}
+        redirect_url = "/dashboard"
         if not is_user_profile_complete(user):
-            params["profile_incomplete"] = "true"
-        return RedirectResponse(url=f"/dashboard?{urlencode(params)}", status_code=303)
+            redirect_url = "/dashboard?profile_incomplete=true"
+        return RedirectResponse(url=redirect_url, status_code=303)
     else:
         logger.warning(f"🚫 Failed login attempt: {email}")
         return templates.TemplateResponse(

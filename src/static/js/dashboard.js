@@ -479,7 +479,7 @@ function validateSubmission() {
         }
     }
     if (totalCanadianCents < 10000n) {
-        alert(`Total Canadian amount must be greater than $100.00 CAD.\nCurrent total: $${formatMoneyCents(totalCanadianCents)} CAD`);
+        alert(`Total Canadian amount must be at least $100.00 CAD.\nCurrent total: $${formatMoneyCents(totalCanadianCents)} CAD`);
         return false;
     }
 
