@@ -17,10 +17,9 @@ from src.models.user_service import (
     get_user_signature_as_data_url,
     get_user_void_cheque_as_data_url,
 )
-from src.routers.utils import require_auth, templates
+from src.routers.utils import get_authenticated_user_email, templates
 
 logger = setup_logger(__name__)
-settings = get_settings()
 
 router = APIRouter(tags=["profile"])
 
@@ -28,11 +27,12 @@ router = APIRouter(tags=["profile"])
 @router.get("/edit-profile")
 def edit_profile_get(
     request: Request,
-    user_email: str,
+    user_email: str | None = None,
     db: Session = Depends(get_db),
-    _: None = Depends(require_auth),
+    authenticated_email: str = Depends(get_authenticated_user_email),
 ):
-    user = get_user_by_email(db, user_email)
+    # Legacy user_email query params are accepted but ignored for authorization.
+    user = get_user_by_email(db, authenticated_email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -49,7 +49,7 @@ def edit_profile_get(
             "user": user,
             "signature_data_url": signature_data_url,
             "void_cheque_data_url": void_cheque_data_url,
-            "google_api_key": settings.google_places_api_key,
+            "google_api_key": get_settings().google_places_api_key,
         },
     )
 
@@ -57,7 +57,7 @@ def edit_profile_get(
 @router.post("/edit-profile")
 def edit_profile_post(
     request: Request,
-    user_email: str,
+    user_email: str | None = None,
     name: str = Form(...),
     email: str = Form(...),
     personal_email: str = Form(...),
@@ -66,11 +66,11 @@ def edit_profile_post(
     signature: UploadFile = File(None),
     void_cheque: UploadFile = File(None),
     db: Session = Depends(get_db),
-    _: None = Depends(require_auth),
+    authenticated_email: str = Depends(get_authenticated_user_email),
 ):
     try:
         # Get existing user
-        user = get_user_by_email(db, user_email)
+        user = get_user_by_email(db, authenticated_email)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
@@ -124,17 +124,18 @@ def edit_profile_post(
 
         # Save changes to database
         db.commit()
+        request.session["user_email"] = str(profile_input.email)
 
         # Redirect back to dashboard with success message
-        redirect_url = f"/dashboard?user_email={profile_input.email}&updated=true"
+        redirect_url = "/dashboard?updated=true"
         return RedirectResponse(url=redirect_url, status_code=303)
 
     except Exception:
-        logger.exception(f"Error updating profile for {user_email}")
+        logger.exception(f"Error updating profile for {authenticated_email}")
         db.rollback()
 
         # Redirect back to edit form with error
         return RedirectResponse(
-            url=f"/edit-profile?user_email={user_email}&error=update_failed",
+            url="/edit-profile?error=update_failed",
             status_code=303,
         )

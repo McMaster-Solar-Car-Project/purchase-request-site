@@ -1,15 +1,15 @@
 import os
 from base64 import b64decode
 from dataclasses import dataclass
-from urllib.parse import parse_qs, urlparse
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from starlette.middleware.sessions import SessionMiddleware
 
 from src.db.schema import get_db
 from src.routers.dashboard import router
-from src.routers.utils import require_auth
+from src.routers.utils import get_authenticated_user_email
 
 TINY_PNG_BYTES = b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+yY6kAAAAASUVORK5CYII="
@@ -88,31 +88,29 @@ def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
     )
 
     app = FastAPI()
+    app.add_middleware(SessionMiddleware, secret_key="test-secret")
     app.include_router(router)
     app.dependency_overrides[get_db] = lambda: DummyDb()
-    app.dependency_overrides[require_auth] = lambda: None
+    app.dependency_overrides[get_authenticated_user_email] = (
+        lambda: "integration-test@example.com"
+    )
     client = TestClient(app, follow_redirects=False)
 
     response = client.post(
         "/submit-all-requests",
         data={
-            "name": "Integration Test User",
-            "email": "integration-test@example.com",
-            "e_transfer_email": "integration-transfer@example.com",
-            "address": "1280 Main St W, Hamilton",
-            "team": "Software",
             "vendor_name_1": "Live Integration Vendor",
             "currency_1": "CAD",
-            "subtotal_amount_1": "25.00",
+            "subtotal_amount_1": "100.00",
             "discount_amount_1": "0",
-            "hst_gst_amount_1": "3.25",
+            "hst_gst_amount_1": "0",
             "shipping_amount_1": "0",
-            "total_cad_amount_1": "28.25",
+            "total_cad_amount_1": "100.00",
             "item_name_1_1": "USB Adapter",
             "item_usage_1_1": "Testing",
             "item_quantity_1_1": "1",
-            "item_price_1_1": "25.00",
-            "item_total_1_1": "25.00",
+            "item_price_1_1": "100.00",
+            "item_total_1_1": "100.00",
         },
         files={
             "invoice_file_1": (
@@ -124,14 +122,7 @@ def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
     )
 
     assert response.status_code == 303
-    assert response.headers["location"].startswith("/success?")
-
-    parsed = urlparse(response.headers["location"])
-    query = parse_qs(parsed.query)
-    assert query.get("user_email") == ["integration-test@example.com"]
-    assert query.get("excel_file") == ["purchase_request.xlsx"]
-    assert query.get("drive_folder_id")
-    assert query["drive_folder_id"][0]
+    assert response.headers["location"] == "/success"
 
     # Session folder should be cleaned up if upload to Drive succeeded.
     assert not session_folder.exists()

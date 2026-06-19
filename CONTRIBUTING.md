@@ -147,13 +147,13 @@ This project uses **Ruff** for linting and formatting. The configuration is defi
 **Running Linting:**
 ```bash
 # Check for issues
-ruff check
+uv run ruff check
 
 # Auto-fix issues
-ruff check --fix
+uv run ruff check --fix
 
 # Format code
-ruff format
+uv run ruff format
 ```
 
 ### Git Hooks
@@ -241,4 +241,3 @@ For new features or suggestions:
 This project is part of the McMaster Solar Car Project. Please ensure you have the appropriate permissions before contributing or just yolo the code and submit a pull request.
 
 ---
-

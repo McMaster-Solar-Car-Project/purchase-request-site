@@ -19,8 +19,19 @@ class AuthRedirect(Exception):  # noqa: N818  # flow-control, not an error
 
 def require_auth(request: Request) -> None:
     """Need to be authenticated to access this endpoint."""
+    get_authenticated_user_email(request)
+
+
+def get_authenticated_user_email(request: Request) -> str:
+    """Return the authenticated session email or redirect to login."""
     if not request.session.get("authenticated", False):
         raise AuthRedirect()
+
+    user_email = request.session.get("user_email")
+    if not isinstance(user_email, str) or not user_email.strip():
+        request.session.clear()
+        raise AuthRedirect()
+    return user_email
 
 
 # Initialize rate limiter based on client IP address
