@@ -91,18 +91,6 @@ document.addEventListener('DOMContentLoaded', function () {
     showUrlErrorAlerts();
 
     const form = document.querySelector('form');
-    const backLink = document.getElementById('back-link');
-
-    if (backLink) {
-        backLink.addEventListener('click', function (e) {
-            if (!validateDefault()) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-            return true;
-        });
-    }
 
     if (form) {
         form.addEventListener('submit', function (e) {

@@ -5,119 +5,118 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    <link rel="stylesheet" href="/static/css/output.css">
+    <link rel="stylesheet" href="/static/css/output.css?v=amber-ui">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     {% include "_sentry.html" %}
 </head>
 
-<body data-google-maps-enabled="{{ 'true' if google_api_key else 'false' }}" class="font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif] m-0 py-12 bg-[#0a0a0c] bg-[radial-gradient(circle_at_50%_0%,#1a1a22_0%,#0a0a0c_70%)] leading-[1.6] min-h-screen text-[#e4e4e7] box-border overflow-y-auto">
-    <div class="max-w-3xl w-[92%] p-10 bg-[rgba(24,24,27,0.82)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-[10px] [-webkit-backdrop-filter:blur(10px)] border border-[rgba(255,255,255,0.08)] my-12 mx-auto">
-        <div class="mb-10 relative">
-            <a href="/dashboard?user_email={{ user.email }}&use_saved=true" id="back-link" class="inline-flex items-center gap-1 text-sm text-[#a5b4fc] hover:text-[#c7d2fe] transition-colors mb-4">← Back</a>
-            <h1 class="m-0 text-3xl font-semibold tracking-[-0.025em] text-white text-center">Edit Your Information</h1>
-        </div>
-
-        <form method="post" novalidate enctype="multipart/form-data">
-            <div class="mb-6">
-                <label for="name" class="block mb-2 font-medium text-sm text-[#e4e4e7]">Full Name <span class="text-red-400">*</span></label>
-                <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required class="w-full py-3.5 px-3.5 bg-[rgba(39,39,42,0.7)] border border-[rgba(63,63,70,0.5)] rounded-lg text-[0.95rem] transition-all duration-200 box-border text-[#e4e4e7] block caret-[#6366f1] focus:outline-none focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)] placeholder:text-[#71717a]">
+<body data-google-maps-enabled="{{ 'true' if google_api_key else 'false' }}" class="app-page form-page">
+    <main class="app-shell narrow-shell">
+        <header class="page-header">
+            <a href="/dashboard?user_email={{ user.email }}&use_saved=true" id="back-link" class="button button--secondary">Back</a>
+            <div>
+                <p class="eyebrow">Requester Profile</p>
+                <h1>Edit Your Information</h1>
+                <p class="subtitle">Keep reimbursement, address, signature, and banking details ready before submitting.</p>
             </div>
+        </header>
 
-            <div class="mb-6">
-                <label for="email" class="block mb-2 font-medium text-sm text-[#e4e4e7]">McMaster Email <span class="text-red-400">*</span></label>
-                <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required class="w-full py-3.5 px-3.5 bg-[rgba(39,39,42,0.7)] border border-[rgba(63,63,70,0.5)] rounded-lg text-[0.95rem] transition-all duration-200 box-border text-[#e4e4e7] block caret-[#6366f1] focus:outline-none focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)] placeholder:text-[#71717a]">
-            </div>
-
-            <div class="mb-6">
-                <label for="personal_email" class="block mb-2 font-medium text-sm text-[#e4e4e7]">Personal/E-Transfer Email <span class="text-red-400">*</span></label>
-                <input type="email" id="personal_email" name="personal_email"
-                    value="{{ user.personal_email if user else '' }}" required class="w-full py-3.5 px-3.5 bg-[rgba(39,39,42,0.7)] border border-[rgba(63,63,70,0.5)] rounded-lg text-[0.95rem] transition-all duration-200 box-border text-[#e4e4e7] block caret-[#6366f1] focus:outline-none focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)] placeholder:text-[#71717a]">
-            </div>
-
-            <div class="mb-6">
-                <label for="team" class="block mb-2 font-medium text-sm text-[#e4e4e7]">Team <span class="text-red-400">*</span></label>
-                <select id="team" name="team" required class="w-full py-3.5 px-3.5 bg-[rgba(39,39,42,0.7)] border border-[rgba(63,63,70,0.5)] rounded-lg text-[0.95rem] transition-all duration-200 box-border text-[#e4e4e7] block caret-[#6366f1] focus:outline-none focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)]">
-                    <option value="">Select your team</option>
-                    <option value="Aeroshell" {% if user and user.team=='Aeroshell' %}selected{% endif %}>Aeroshell</option>
-                    <option value="Battery" {% if user and user.team=='Battery' %}selected{% endif %}>Battery</option>
-                    <option value="Chassis" {% if user and user.team=='Chassis' %}selected{% endif %}>Chassis</option>
-                    <option value="Data Acquisition" {% if user and user.team=='Data Acquisition' %}selected{% endif %}>Data Acquisition</option>
-                    <option value="Firmware" {% if user and user.team=='Firmware' %}selected{% endif %}>Firmware</option>
-                    <option value="Management" {% if user and user.team=='Management' %}selected{% endif %}>Management</option>
-                    <option value="Media" {% if user and user.team=='Media' %}selected{% endif %}>Media</option>
-                    <option value="Power Management Systems" {% if user and user.team=='Power Management Systems' %}selected{% endif %}>Power Management Systems</option>
-                    <option value="Solar Cells" {% if user and user.team=='Solar Cells' %}selected{% endif %}>Solar Cells</option>
-                    <option value="Strategies" {% if user and user.team=='Strategies' %}selected{% endif %}>Strategies</option>
-                    <option value="Suspension" {% if user and user.team=='Suspension' %}selected{% endif %}>Suspension</option>
-                </select>
-            </div>
-
-            <div class="mb-6">
-                <label for="address" class="block mb-2 font-medium text-sm text-[#e4e4e7]">Address <span class="text-red-400">*</span></label>
-                <textarea id="address" name="address" placeholder="Start typing your address..." required class="w-full py-3.5 px-3.5 bg-[rgba(39,39,42,0.7)] border border-[rgba(63,63,70,0.5)] rounded-lg text-[0.95rem] transition-all duration-200 box-border text-[#e4e4e7] block caret-[#6366f1] focus:outline-none focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)] placeholder:text-[#71717a] min-h-24 resize-y">{{ user.address if user else '' }}</textarea>
-                <small class="address-help block mt-2 text-xs text-[#a1a1aa]">Start typing and select from suggestions for accurate address</small>
-            </div>
-
-            <div class="mb-8">
-                <label for="signature" class="block mb-2 font-medium text-sm text-[#e4e4e7]">Digital Signature <span class="text-red-400">*</span></label>
-                <div>
-                    <div class="relative flex flex-col items-center justify-center text-center gap-2 border border-dashed border-[rgba(99,102,241,0.45)] bg-[rgba(39,39,42,0.45)] rounded-lg py-5 px-4">
-                        <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg"
-                            data-filename-id="signature-name" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                        <span class="text-sm text-[#c4b5fd]">Click to upload signature image (PNG, JPG, JPEG)</span>
-                    </div>
-                    <div id="signature-name" class="mt-2 text-sm text-[#a1a1aa]"></div>
+        <form method="post" novalidate enctype="multipart/form-data" class="app-card form-card">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="name" class="field-label">Full Name <span class="required-mark">*</span></label>
+                    <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required class="field-control">
                 </div>
-                {% if signature_data_url %}
-                <div class="mt-3">
-                    <div class="mt-2 rounded-lg border border-[rgba(99,102,241,0.25)] bg-[rgba(39,39,42,0.45)] p-3 inline-block">
-                        <img src="{{ signature_data_url }}" alt="Current signature" class="block max-w-full h-auto max-h-32 rounded">
-                    </div>
+
+                <div class="field">
+                    <label for="email" class="field-label">McMaster Email <span class="required-mark">*</span></label>
+                    <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required class="field-control">
                 </div>
-                {% else %}
-                <p class="mt-3 text-sm text-[#a1a1aa]">No signature uploaded yet.</p>
-                {% endif %}
+
+                <div class="field">
+                    <label for="personal_email" class="field-label">Personal/E-Transfer Email <span class="required-mark">*</span></label>
+                    <input type="email" id="personal_email" name="personal_email" value="{{ user.personal_email if user else '' }}" required class="field-control">
+                </div>
+
+                <div class="field">
+                    <label for="team" class="field-label">Team <span class="required-mark">*</span></label>
+                    <select id="team" name="team" required class="field-control">
+                        <option value="">Select your team</option>
+                        <option value="Aeroshell" {% if user and user.team=='Aeroshell' %}selected{% endif %}>Aeroshell</option>
+                        <option value="Battery" {% if user and user.team=='Battery' %}selected{% endif %}>Battery</option>
+                        <option value="Chassis" {% if user and user.team=='Chassis' %}selected{% endif %}>Chassis</option>
+                        <option value="Data Acquisition" {% if user and user.team=='Data Acquisition' %}selected{% endif %}>Data Acquisition</option>
+                        <option value="Firmware" {% if user and user.team=='Firmware' %}selected{% endif %}>Firmware</option>
+                        <option value="Management" {% if user and user.team=='Management' %}selected{% endif %}>Management</option>
+                        <option value="Media" {% if user and user.team=='Media' %}selected{% endif %}>Media</option>
+                        <option value="Power Management Systems" {% if user and user.team=='Power Management Systems' %}selected{% endif %}>Power Management Systems</option>
+                        <option value="Solar Cells" {% if user and user.team=='Solar Cells' %}selected{% endif %}>Solar Cells</option>
+                        <option value="Strategies" {% if user and user.team=='Strategies' %}selected{% endif %}>Strategies</option>
+                        <option value="Suspension" {% if user and user.team=='Suspension' %}selected{% endif %}>Suspension</option>
+                    </select>
+                </div>
+
+                <div class="field field--full">
+                    <label for="address" class="field-label">Address <span class="required-mark">*</span></label>
+                    <textarea id="address" name="address" placeholder="Start typing your address..." required class="field-control text-area">{{ user.address if user else '' }}</textarea>
+                    <small class="field-help address-help">Start typing and select from suggestions for accurate address.</small>
+                </div>
             </div>
 
-            <div class="mb-8">
-                <label for="void_cheque" class="block mb-2 font-medium text-sm text-[#e4e4e7]">Void Cheque (PDF only) <span class="text-red-400">*</span></label>
-                <div>
-                    <div class="relative flex flex-col items-center justify-center text-center gap-2 border border-dashed border-[rgba(99,102,241,0.45)] bg-[rgba(39,39,42,0.45)] rounded-lg py-5 px-4">
-                        <input type="file" id="void_cheque" name="void_cheque" accept=".pdf,application/pdf" {% if not void_cheque_data_url %}required{% endif %}
-                            data-filename-id="void-cheque-name" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                        <span class="text-sm text-[#c4b5fd]">Click to upload your void cheque (PDF only)</span>
+            <section class="document-grid" aria-label="Profile documents">
+                <div class="document-panel">
+                    <label for="signature" class="field-label">Digital Signature <span class="required-mark">*</span></label>
+                    <div class="profile-upload-zone">
+                        <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg" data-filename-id="signature-name" class="file-input-overlay">
+                        <span>Upload signature image</span>
+                        <small>PNG, JPG, or JPEG</small>
                     </div>
-                    <div id="void-cheque-name" class="mt-2 text-sm text-[#a1a1aa]"></div>
-                    <small class="block mt-2 text-xs text-[#a1a1aa]">This is required before reimbursement requests can be submitted.</small>
+                    <div id="signature-name" class="file-name"></div>
+                    {% if signature_data_url %}
+                    <div class="document-preview document-preview--image">
+                        <img src="{{ signature_data_url }}" alt="Current signature">
+                    </div>
+                    {% else %}
+                    <p class="muted-copy">No signature uploaded yet.</p>
+                    {% endif %}
                 </div>
-                {% if void_cheque_data_url %}
-                <div class="mt-3">
-                    <small class="text-xs text-[#a1a1aa]">Leave blank to keep your current void cheque</small>
-                    <div class="rounded-lg border border-[rgba(99,102,241,0.25)] bg-[rgba(39,39,42,0.45)] p-2">
-                        <object data="{{ void_cheque_data_url }}" type="application/pdf" class="w-full h-64 rounded">
-                            <p class="text-sm text-[#c4b5fd]">
+
+                <div class="document-panel">
+                    <label for="void_cheque" class="field-label">Void Cheque <span class="required-mark">*</span></label>
+                    <div class="profile-upload-zone">
+                        <input type="file" id="void_cheque" name="void_cheque" accept=".pdf,application/pdf" {% if not void_cheque_data_url %}required{% endif %} data-filename-id="void-cheque-name" class="file-input-overlay">
+                        <span>Upload void cheque</span>
+                        <small>PDF only</small>
+                    </div>
+                    <div id="void-cheque-name" class="file-name"></div>
+                    <small class="field-help">This is required before reimbursements can be submitted.</small>
+                    {% if void_cheque_data_url %}
+                    <div class="document-preview">
+                        <small class="field-help">Leave blank to keep your current void cheque.</small>
+                        <object data="{{ void_cheque_data_url }}" type="application/pdf">
+                            <p>
                                 PDF preview is unavailable in this browser.
-                                <a href="{{ void_cheque_data_url }}" target="_blank" rel="noopener noreferrer" class="underline hover:text-[#ddd6fe]">Open current void cheque</a>
+                                <a href="{{ void_cheque_data_url }}" target="_blank" rel="noopener noreferrer">Open current void cheque</a>
                             </p>
                         </object>
                     </div>
+                    {% else %}
+                    <p class="muted-copy">No void cheque uploaded yet.</p>
+                    {% endif %}
                 </div>
-                {% else %}
-                <p class="mt-3 text-sm text-[#a1a1aa]">No void cheque uploaded yet.</p>
-                {% endif %}
-            </div>
+            </section>
 
-            <button type="submit" class="w-full py-3.5 px-3.5 bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-white border-none rounded-lg text-[0.95rem] font-medium cursor-pointer transition-all duration-200 mt-8 hover:from-[#4f46e5] hover:to-[#7c3aed] hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)] hover:-translate-y-px">Update Information</button>
+            <div class="form-actions">
+                <button type="submit" class="button button--primary button--full">Update Information</button>
+            </div>
         </form>
-    </div>
+    </main>
 
     <script src="/static/js/edit-profile.js"></script>
     {% if google_api_key %}
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key={{ google_api_key }}&libraries=places&callback=initAutocomplete"
-        async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_api_key }}&libraries=places&callback=initAutocomplete" async defer></script>
     {% endif %}
 </body>
 
