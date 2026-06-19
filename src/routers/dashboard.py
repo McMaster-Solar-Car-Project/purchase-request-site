@@ -224,7 +224,7 @@ def dashboard(
             "Please check the highlighted purchase request details and try again."
         )
     elif updated:
-        success_message = "Your profile has been updated successfully!"
+        success_message = "Your profile has been updated successfully."
 
     profile_is_complete = is_user_profile_complete(user)
     if profile_incomplete or not profile_is_complete:
