@@ -91,8 +91,8 @@ def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
     app.add_middleware(SessionMiddleware, secret_key="test-secret")
     app.include_router(router)
     app.dependency_overrides[get_db] = lambda: DummyDb()
-    app.dependency_overrides[get_authenticated_user_email] = (
-        lambda: "integration-test@example.com"
+    app.dependency_overrides[get_authenticated_user_email] = lambda: (
+        "integration-test@example.com"
     )
     client = TestClient(app, follow_redirects=False)
 
