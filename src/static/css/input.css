@@ -353,12 +353,19 @@ h4,
   font-size: 1.75rem;
 }
 
-.profile-panel__top > p:not(.panel-kicker) {
-  margin: 0.35rem 0 0;
+.requester-details {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.85rem;
+}
+
+.requester-details .meta-row {
+  margin: 0;
 }
 
 .meta-row span {
   display: block;
+  margin-bottom: 0.18rem;
   color: var(--subtle);
   font-family: var(--font-mono);
   font-size: 0.68rem;
@@ -366,7 +373,8 @@ h4,
   text-transform: uppercase;
 }
 
-.requester-email {
+.requester-email,
+.requester-address {
   overflow-wrap: anywhere;
 }
 
@@ -378,6 +386,10 @@ h4,
 .profile-note p {
   margin: 0;
   font-size: 0.92rem;
+}
+
+.profile-note p + p {
+  margin-top: 0.7rem;
 }
 
 .workflow-panel {
