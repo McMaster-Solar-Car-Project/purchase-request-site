@@ -48,10 +48,12 @@ function formatScaledAmount(scaledValue, decimalPlaces) {
     const isNegative = scaledValue < 0n;
     const absoluteValue = isNegative ? -scaledValue : scaledValue;
     const wholePart = absoluteValue / scale;
-    const fractionPart = String(absoluteValue % scale).padStart(decimalPlaces, '0');
+    const fractionPart = String(absoluteValue % scale)
+        .padStart(decimalPlaces, '0')
+        .replace(/0+$/, '');
     const sign = isNegative ? '-' : '';
 
-    return `${sign}${wholePart}.${fractionPart}`;
+    return fractionPart ? `${sign}${wholePart}.${fractionPart}` : `${sign}${wholePart}`;
 }
 
 function roundScaledAmount(scaledValue, fromDecimalPlaces, toDecimalPlaces) {

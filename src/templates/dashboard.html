@@ -51,12 +51,29 @@
                 <div class="profile-panel__top">
                     <p class="panel-kicker">Requester</p>
                     <h2>{{ name }}</h2>
-                    <p>{{ team }}</p>
-                    <p class="requester-email">{{ email }}</p>
+                    <div class="requester-details">
+                        <p class="meta-row">
+                            <span>Team</span>
+                            {{ team }}
+                        </p>
+                        <p class="meta-row requester-email">
+                            <span>McMaster Email</span>
+                            {{ email }}
+                        </p>
+                        <p class="meta-row requester-email">
+                            <span>Personal Email</span>
+                            {{ e_transfer_email }}
+                        </p>
+                        <p class="meta-row requester-address">
+                            <span>Address</span>
+                            {{ address }}
+                        </p>
+                    </div>
                 </div>
 
                 <div class="profile-note">
                     <p>Submit one complete batch when your CAD reimbursement total is at least $100.</p>
+                    <p>Make sure your information on file is up to date before submitting.</p>
                 </div>
             </aside>
 
