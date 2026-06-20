@@ -259,11 +259,7 @@ def test_edit_profile_uses_session_email_not_query_email(monkeypatch) -> None:
         queried_emails.append(email)
         return user
 
-    class FakeSettings:
-        google_places_api_key = ""
-
     monkeypatch.setattr(profile_module, "get_user_by_email", fake_get_user_by_email)
-    monkeypatch.setattr(profile_module, "get_settings", lambda: FakeSettings())
 
     app = FastAPI()
     app.add_middleware(SessionMiddleware, secret_key="test-secret")

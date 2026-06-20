@@ -12,7 +12,7 @@
     {% include "_sentry.html" %}
 </head>
 
-<body data-google-maps-enabled="{{ 'true' if google_api_key else 'false' }}" class="app-page form-page">
+<body class="app-page form-page">
     <main class="app-shell narrow-shell">
         <header class="page-header">
             <a href="/dashboard" id="back-link" class="button button--secondary">Back</a>
@@ -60,8 +60,8 @@
 
                 <div class="field field--full">
                     <label for="address" class="field-label">Address <span class="required-mark">*</span></label>
-                    <textarea id="address" name="address" placeholder="Start typing your address..." required class="field-control text-area">{{ user.address if user else '' }}</textarea>
-                    <small class="field-help address-help">Start typing and select from suggestions for accurate address.</small>
+                    <textarea id="address" name="address" placeholder="123 Main St, Hamilton, ON A1A 1A1, Canada" required class="field-control text-area">{{ user.address if user else '' }}</textarea>
+                    <small class="field-help address-help">Include street #, street name, city, province, postal code, and country.</small>
                 </div>
             </div>
 
@@ -115,9 +115,6 @@
     </main>
 
     <script src="/static/js/edit-profile.js"></script>
-    {% if google_api_key %}
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_api_key }}&libraries=places&callback=initAutocomplete" async defer></script>
-    {% endif %}
 </body>
 
 </html>
