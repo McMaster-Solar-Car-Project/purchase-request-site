@@ -456,6 +456,17 @@ async def submit_all_requests(
     authenticated_email: str = Depends(get_authenticated_user_email),
 ):
     form_data = await request.form()
+    try:
+        return await _submit_all_requests(form_data, request, authenticated_email)
+    finally:
+        await form_data.close()
+
+
+async def _submit_all_requests(
+    form_data: FormData,
+    request: Request,
+    authenticated_email: str,
+) -> RedirectResponse:
     request.session.pop("download_info", None)
 
     sentry_sdk.add_breadcrumb(
