@@ -31,7 +31,6 @@ class Settings(BaseSettings):
         default="",
         validation_alias=AliasChoices("GOOGLE_DRIVE_FOLDER_ID", "PARENT_FOLDER_ID"),
     )  # gitleaks: allowlist
-    google_places_api_key: str = Field(default="", alias="GOOGLE_PLACES_API_KEY")
 
     google_settings_project_id: str = Field(
         default="", alias="GOOGLE_SETTINGS__PROJECT_ID"
@@ -65,13 +64,7 @@ class Settings(BaseSettings):
             "google_settings_client_id",
             "google_settings_client_x509_cert_url",
         )
-        production_only_required_str_fields = (
-            "environment",
-            "google_places_api_key",
-        )
         required_str_fields = always_required_str_fields
-        if self.is_production:
-            required_str_fields += production_only_required_str_fields
         missing = [
             field_name
             for field_name in required_str_fields

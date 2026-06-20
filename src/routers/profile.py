@@ -6,7 +6,6 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from src.core.logging_utils import setup_logger
-from src.core.settings import get_settings
 from src.db.schema import get_db
 from src.image_processing import convert_signature_to_png_bytes
 from src.models.user_info import ProfileUpdateInput
@@ -49,7 +48,6 @@ def edit_profile_get(
             "user": user,
             "signature_data_url": signature_data_url,
             "void_cheque_data_url": void_cheque_data_url,
-            "google_api_key": get_settings().google_places_api_key,
         },
     )
 
