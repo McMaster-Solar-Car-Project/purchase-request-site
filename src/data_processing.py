@@ -117,6 +117,14 @@ def _hide_unused_item_rows(ws: Worksheet, item_count: int) -> None:
         ws.row_dimensions[row].hidden = row >= first_hidden_row
 
 
+def _delete_unused_receipt_sheets(wb, submitted_forms: list[Invoice]) -> None:
+    submitted_sheet_names = {f"Receipt{form.form_number}" for form in submitted_forms}
+
+    for ws in list(wb.worksheets):
+        if ws.title not in submitted_sheet_names:
+            wb.remove(ws)
+
+
 def create_purchase_request(
     user_info: SubmissionUserInfo,
     submitted_forms: list[Invoice],
@@ -136,6 +144,8 @@ def create_purchase_request(
     wb = load_workbook(output_path)
 
     try:
+        _delete_unused_receipt_sheets(wb, submitted_forms)
+
         for ws in wb.worksheets:
             _hide_unused_item_rows(ws, 0)
 

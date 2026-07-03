@@ -147,6 +147,7 @@ def test_create_purchase_request_supports_fifty_item_template_rows(
 
     wb = load_workbook(tmp_path / output_filename)
     try:
+        assert wb.sheetnames == ["Receipt1"]
         ws = wb["Receipt1"]
         assert ws["B67"].value == "123 Main St"
         assert ws["F59"].value == 125.0
@@ -167,11 +168,42 @@ def test_create_purchase_request_supports_fifty_item_template_rows(
             )
             assert ws.row_dimensions[row].hidden is expected_hidden
 
-        unsubmitted_ws = wb["Receipt2"]
-        assert unsubmitted_ws.row_dimensions[23].hidden is False
-        assert unsubmitted_ws.row_dimensions[24].hidden is True
-        assert unsubmitted_ws.row_dimensions[EXCEL_ITEM_END_ROW].hidden is True
     finally:
         wb.close()
 
     assert signature_calls == [("Receipt1", "B68", 280, 70)]
+
+
+def test_create_purchase_request_deletes_unsubmitted_receipt_sheets(
+    monkeypatch, tmp_path
+) -> None:
+    monkeypatch.setattr(
+        data_processing,
+        "insert_signature_at_cell",
+        lambda *_args, **_kwargs: True,
+    )
+
+    output_filename = data_processing.create_purchase_request(
+        _make_user_info(),
+        [
+            _make_form(
+                form_number=1,
+                vendor_name="First Vendor",
+                items=_make_items(1),
+            ),
+            _make_form(
+                form_number=3,
+                vendor_name="Third Vendor",
+                items=_make_items(2),
+            ),
+        ],
+        str(tmp_path),
+    )
+
+    wb = load_workbook(tmp_path / output_filename)
+    try:
+        assert wb.sheetnames == ["Receipt1", "Receipt3"]
+        assert wb["Receipt1"]["B7"].value == "First Vendor"
+        assert wb["Receipt3"]["B7"].value == "Third Vendor"
+    finally:
+        wb.close()
