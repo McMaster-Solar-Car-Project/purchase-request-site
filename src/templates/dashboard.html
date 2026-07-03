@@ -80,6 +80,7 @@
             <main class="workflow-panel dashboard-section">
                 <form method="POST" action="/submit-all-requests" enctype="multipart/form-data">
                     <input type="hidden" id="profile-is-complete" value="{{ 'true' if profile_is_complete else 'false' }}">
+                    <input type="hidden" id="max-items-per-form" value="{{ max_items_per_form }}">
 
                     <div class="section-heading">
                         <div>
@@ -91,7 +92,7 @@
 
                     <div class="forms-container forms-stack">
                         {% for form_num in range(1, 11) %}
-                        {{ invoice_form(form_num) }}
+                        {{ invoice_form(form_num, max_items_per_form) }}
                         {% endfor %}
                     </div>
 

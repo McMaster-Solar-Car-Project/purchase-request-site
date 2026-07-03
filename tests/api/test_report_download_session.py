@@ -6,6 +6,8 @@ from src.routers.download import router as download_router
 from src.routers.success import router as success_router
 from src.routers.utils import get_authenticated_user_email
 
+UNIQUE_PURCHASE_REQUEST_FILENAME = "July3-2026-PurchaseRequest-TestUser.xlsx"
+
 
 def _make_report_client() -> TestClient:
     app = FastAPI()
@@ -18,7 +20,7 @@ def _make_report_client() -> TestClient:
     def set_download_info(request: Request) -> dict[str, bool]:
         request.session["download_info"] = {
             "drive_folder_id": "session-folder-id",
-            "excel_file": "purchase_request.xlsx",
+            "excel_file": UNIQUE_PURCHASE_REQUEST_FILENAME,
         }
         return {"ok": True}
 
@@ -60,10 +62,10 @@ def test_download_uses_session_download_info_not_query_params(monkeypatch) -> No
 
     assert response.status_code == 200
     assert response.content == b"fake-xlsx"
-    assert calls == [("session-folder-id", "purchase_request.xlsx")]
+    assert calls == [("session-folder-id", UNIQUE_PURCHASE_REQUEST_FILENAME)]
     assert (
         response.headers["content-disposition"]
-        == "attachment; filename=purchase_request.xlsx"
+        == f"attachment; filename={UNIQUE_PURCHASE_REQUEST_FILENAME}"
     )
 
 

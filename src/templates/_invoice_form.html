@@ -1,5 +1,5 @@
 {% macro item_row(form_num, item_num) -%}
-<div class="item-row">
+<div class="item-row" data-form="{{ form_num }}" data-item="{{ item_num }}">
     <div class="item-input-group">
         <label class="field-label">Item Name</label>
         <input type="text" name="item_name_{{ form_num }}_{{ item_num }}" placeholder="Enter item name" class="field-control">
@@ -44,7 +44,7 @@
 </div>
 {%- endmacro %}
 
-{% macro invoice_form(form_num) -%}
+{% macro invoice_form(form_num, max_items_per_form=50) -%}
     <div class="invoice-card form-accordion" data-form="{{ form_num }}">
     <div class="invoice-header form-accordion-header" data-action="toggle-form" data-form="{{ form_num }}">
         <div>
@@ -85,7 +85,7 @@
                 <div class="panel-heading">
                     <div>
                         <h4>Item Details</h4>
-                        <small class="items-help">Add the items you purchased, up to 15 items.</small>
+                        <small class="items-help">Add the items you purchased, up to {{ max_items_per_form }} items.</small>
                     </div>
                     <button type="button" class="button button--secondary btn-secondary" data-action="add-item" data-form="{{ form_num }}">Add Item</button>
                 </div>

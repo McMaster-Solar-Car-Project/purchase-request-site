@@ -1,7 +1,12 @@
-from openpyxl import Workbook
+import re
 
-from src.data_processing import populate_expense_rows_from_submitted_forms
+import pytest
+from openpyxl import Workbook, load_workbook
+
+import src.data_processing as data_processing
+from src.core.settings import EXCEL_ITEM_END_ROW, EXCEL_ITEM_START_ROW
 from src.models.submissions import Invoice, SubmissionLineItem
+from src.models.user_info import SubmissionUserInfo
 
 
 def _make_form(**overrides) -> Invoice:
@@ -27,6 +32,29 @@ def _make_form(**overrides) -> Invoice:
     }
     defaults.update(overrides)
     return Invoice(**defaults)
+
+
+def _make_user_info() -> SubmissionUserInfo:
+    return SubmissionUserInfo(
+        name="Test User",
+        email="test@example.com",
+        e_transfer_email="transfer@example.com",
+        address="123 Main St",
+        team="Software",
+        signature="signature.png",
+    )
+
+
+def _make_items(count: int) -> list[SubmissionLineItem]:
+    return [
+        SubmissionLineItem(
+            name=f"Item {item_number}",
+            usage=f"Usage {item_number}",
+            quantity=item_number,
+            unit_price=1.25,
+        )
+        for item_number in range(1, count + 1)
+    ]
 
 
 def test_populate_expense_rows_supports_cad_and_usd() -> None:
@@ -55,7 +83,7 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
         ),
     ]
 
-    populate_expense_rows_from_submitted_forms(ws, submitted_forms)
+    data_processing.populate_expense_rows_from_submitted_forms(ws, submitted_forms)
 
     # First row (CAD) starts at row 6.
     assert ws["C6"].value == "CAD Vendor"
@@ -70,3 +98,80 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
     assert ws["F7"].value == 135.0  # Total amount in CAD
     assert ws["G7"].value == 135.0  # Total amount in CAD
     assert ws["H7"].value == 0  # No HST for US
+
+
+@pytest.mark.parametrize(
+    ("item_count", "expected_hidden_start"),
+    [
+        (1, 24),
+        (15, 24),
+        (30, 39),
+        (50, None),
+    ],
+)
+def test_create_purchase_request_supports_fifty_item_template_rows(
+    monkeypatch, tmp_path, item_count: int, expected_hidden_start: int | None
+) -> None:
+    signature_calls: list[tuple[str, str, int, int]] = []
+
+    def fake_insert_signature_at_cell(
+        ws, _session_folder: str, cell_location: str, width: int, height: int
+    ) -> bool:
+        signature_calls.append((ws.title, cell_location, width, height))
+        return True
+
+    monkeypatch.setattr(
+        data_processing, "insert_signature_at_cell", fake_insert_signature_at_cell
+    )
+
+    items = _make_items(item_count)
+    output_filename = data_processing.create_purchase_request(
+        _make_user_info(),
+        [
+            _make_form(
+                items=items,
+                subtotal_amount=125.0,
+                hst_gst_amount=16.25,
+                shipping_amount=10.0,
+                total_cad_amount=151.25,
+            )
+        ],
+        str(tmp_path),
+    )
+
+    assert re.fullmatch(
+        r"[A-Z][a-z]+[1-9][0-9]?-\d{4}-PurchaseRequest-TestUser\.xlsx",
+        output_filename,
+    )
+    assert not (tmp_path / "purchase_request.xlsx").exists()
+
+    wb = load_workbook(tmp_path / output_filename)
+    try:
+        ws = wb["Receipt1"]
+        assert ws["B67"].value == "123 Main St"
+        assert ws["F59"].value == 125.0
+        assert ws["F60"].value == 16.25
+        assert ws["F61"].value == 10.0
+        assert ws["F62"].value == 151.25
+
+        for index, item in enumerate(items, start=EXCEL_ITEM_START_ROW):
+            assert ws[f"B{index}"].value == item.name
+            assert ws[f"C{index}"].value == item.usage
+            assert ws[f"D{index}"].value == item.quantity
+            assert ws[f"E{index}"].value == item.unit_price
+            assert ws[f"F{index}"].value == item.total
+
+        for row in range(EXCEL_ITEM_START_ROW, EXCEL_ITEM_END_ROW + 1):
+            expected_hidden = (
+                expected_hidden_start is not None and row >= expected_hidden_start
+            )
+            assert ws.row_dimensions[row].hidden is expected_hidden
+
+        unsubmitted_ws = wb["Receipt2"]
+        assert unsubmitted_ws.row_dimensions[23].hidden is False
+        assert unsubmitted_ws.row_dimensions[24].hidden is True
+        assert unsubmitted_ws.row_dimensions[EXCEL_ITEM_END_ROW].hidden is True
+    finally:
+        wb.close()
+
+    assert signature_calls == [("Receipt1", "B68", 280, 70)]

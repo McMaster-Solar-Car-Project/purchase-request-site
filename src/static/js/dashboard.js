@@ -1,15 +1,11 @@
 const profileCompleteField = document.getElementById("profile-is-complete");
 const profileIsComplete = profileCompleteField?.value === "true";
+const maxItemsField = document.getElementById("max-items-per-form");
+const maxItems = Number.parseInt(maxItemsField?.value ?? "50", 10) || 50;
 
-const itemCounts = {};
-const maxItems = 15;
 let isSubmitting = false;
 const preciseDecimalPlaces = 8;
 const moneyDecimalPlaces = 2;
-
-for (let i = 1; i <= 10; i++) {
-    itemCounts[i] = 1;
-}
 
 function decimalScale(decimalPlaces) {
     return 10n ** BigInt(decimalPlaces);
@@ -126,6 +122,43 @@ function toggleForm(formNumber) {
     }
 }
 
+function getItemsContainer(formNumber) {
+    return document.getElementById(`items-container-${formNumber}`);
+}
+
+function getItemRows(formNumber) {
+    const container = getItemsContainer(formNumber);
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('.item-row'));
+}
+
+function getItemCount(formNumber) {
+    return getItemRows(formNumber).length;
+}
+
+function renumberItemRows(formNumber) {
+    getItemRows(formNumber).forEach((row, index) => {
+        const itemNumber = index + 1;
+        const itemSuffixPattern = new RegExp(`_${formNumber}_\\d+$`);
+        const itemSuffix = `_${formNumber}_${itemNumber}`;
+
+        row.dataset.form = String(formNumber);
+        row.dataset.item = String(itemNumber);
+
+        row.querySelectorAll('[name]').forEach(field => {
+            field.name = field.name.replace(itemSuffixPattern, itemSuffix);
+        });
+
+        row.querySelectorAll('[data-form]').forEach(element => {
+            element.dataset.form = String(formNumber);
+        });
+
+        row.querySelectorAll('[data-item]').forEach(element => {
+            element.dataset.item = String(itemNumber);
+        });
+    });
+}
+
 // Instantiate a new item row from the <template id="item-row-template">.
 // The template uses __FORM__ and __ITEM__ as placeholders in attribute values
 // so a single source of truth (the template element) can be parameterised at
@@ -169,35 +202,43 @@ function wireItemRow(row) {
 }
 
 function addItem(formNumber) {
-    if (itemCounts[formNumber] >= maxItems) {
+    const itemCount = getItemCount(formNumber);
+    if (itemCount >= maxItems) {
         alert(`Maximum of ${maxItems} items allowed per form.`);
         return;
     }
 
-    itemCounts[formNumber]++;
-    const container = document.getElementById(`items-container-${formNumber}`);
+    const container = getItemsContainer(formNumber);
+    if (!container) return;
+
     const currencySelect = document.getElementById(`currency_${formNumber}`);
     const currentCurrency = currencySelect ? currencySelect.value : 'CAD';
 
-    const newRow = instantiateItemRow(formNumber, itemCounts[formNumber], currentCurrency);
+    const newRow = instantiateItemRow(formNumber, itemCount + 1, currentCurrency);
     container.appendChild(newRow);
     wireItemRow(newRow);
+    renumberItemRows(formNumber);
     updateRemoveButtons(formNumber);
 }
 
 function removeItem(button, formNumber) {
     const row = button.closest('.item-row');
+    if (!row) return;
+
     row.remove();
-    itemCounts[formNumber]--;
+    renumberItemRows(formNumber);
     updateRemoveButtons(formNumber);
     calculateSubtotal(formNumber);
 }
 
 function updateRemoveButtons(formNumber) {
-    const container = document.getElementById(`items-container-${formNumber}`);
+    const container = getItemsContainer(formNumber);
+    if (!container) return;
+
+    const itemCount = getItemCount(formNumber);
     const removeButtons = container.querySelectorAll('.btn-remove');
     removeButtons.forEach(btn => {
-        btn.style.display = itemCounts[formNumber] > 1 ? 'block' : 'none';
+        btn.style.display = itemCount > 1 ? 'block' : 'none';
     });
 }
 
@@ -531,7 +572,7 @@ function clearForm(formNumber) {
             });
         }
 
-        itemCounts[formNumber] = 1;
+        renumberItemRows(formNumber);
         updateRemoveButtons(formNumber);
     }
 
