@@ -7,10 +7,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from src.models.google_auth import GoogleServiceAccountEnv
 
 MAX_ITEMS_PER_FORM = 50
+MAX_FORMS = 25
 MIN_EXCEL_ITEM_ROWS = 15
 EXCEL_ITEM_START_ROW = 9
 EXCEL_ITEM_END_ROW = 58
 EXCEL_ITEM_ROW_COUNT = EXCEL_ITEM_END_ROW - EXCEL_ITEM_START_ROW + 1
+EXPENSE_REPORT_START_ROW = 6
+EXPENSE_REPORT_MIN_ROWS = 10
+EXPENSE_REPORT_END_ROW = EXPENSE_REPORT_START_ROW + MAX_FORMS - 1
 
 
 class Settings(BaseSettings):

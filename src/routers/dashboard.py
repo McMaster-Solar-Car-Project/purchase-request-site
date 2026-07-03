@@ -23,7 +23,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import FormData, UploadFile
 
 from src.core.logging_utils import setup_logger
-from src.core.settings import MAX_ITEMS_PER_FORM
+from src.core.settings import MAX_FORMS, MAX_ITEMS_PER_FORM
 from src.data_processing import create_expense_report, create_purchase_request
 from src.db.schema import SessionLocal, User, get_db
 from src.google_drive import GoogleDriveClient
@@ -44,7 +44,6 @@ from src.routers.utils import get_authenticated_user_email, templates
 logger = setup_logger(__name__)
 
 router = APIRouter(tags=["dashboard"])
-MAX_FORMS = 10
 MIN_TOTAL_CAD_AMOUNT = 100.0
 SESSIONS_ROOT = Path("sessions").resolve()
 ITEM_FIELD_PATTERN = re.compile(
@@ -252,6 +251,7 @@ def dashboard(
             "profile_warning_message": profile_warning_message,
             "profile_is_complete": profile_is_complete,
             "max_items_per_form": MAX_ITEMS_PER_FORM,
+            "max_forms": MAX_FORMS,
         },
     )
 

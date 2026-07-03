@@ -2,6 +2,8 @@ const profileCompleteField = document.getElementById("profile-is-complete");
 const profileIsComplete = profileCompleteField?.value === "true";
 const maxItemsField = document.getElementById("max-items-per-form");
 const maxItems = Number.parseInt(maxItemsField?.value ?? "50", 10) || 50;
+const maxFormsField = document.getElementById("max-forms");
+const maxForms = Number.parseInt(maxFormsField?.value ?? "25", 10) || 25;
 
 let isSubmitting = false;
 const preciseDecimalPlaces = 8;
@@ -417,7 +419,7 @@ function resetFileInput(input, spanId) {
 function validateSubmission() {
     let hasValidForm = false;
 
-    for (let formNumber = 1; formNumber <= 10; formNumber++) {
+    for (let formNumber = 1; formNumber <= maxForms; formNumber++) {
         const vendorName = document.getElementById(`vendor_name_${formNumber}`);
         const invoiceFile = document.getElementById(`invoice_file_${formNumber}`);
         const currencySelect = document.getElementById(`currency_${formNumber}`);
@@ -515,7 +517,7 @@ function validateSubmission() {
     }
 
     let totalCanadianCents = 0n;
-    for (let formNumber = 1; formNumber <= 10; formNumber++) {
+    for (let formNumber = 1; formNumber <= maxForms; formNumber++) {
         const vendorName = document.getElementById(`vendor_name_${formNumber}`);
         if (!vendorName || !vendorName.value.trim()) {
             continue;
@@ -684,7 +686,7 @@ function initializeStaticHandlers() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= maxForms; i++) {
         const content = document.getElementById(`form-${i}`);
         content.style.display = 'none';
 
