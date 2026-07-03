@@ -6,6 +6,13 @@ from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 from src.core.logging_utils import setup_logger
+from src.core.settings import (
+    EXCEL_ITEM_END_ROW,
+    EXCEL_ITEM_ROW_COUNT,
+    EXCEL_ITEM_START_ROW,
+    MAX_ITEMS_PER_FORM,
+    MIN_EXCEL_ITEM_ROWS,
+)
 from src.image_processing import insert_signature_at_cell
 from src.models.submissions import Invoice
 from src.models.user_info import SubmissionUserInfo
@@ -93,21 +100,45 @@ def populate_expense_rows_from_submitted_forms(
             ws[f"H{row}"] = 0
 
 
+def _visible_excel_item_rows(item_count: int) -> int:
+    if item_count > MAX_ITEMS_PER_FORM:
+        raise ValueError(
+            f"Purchase request has {item_count} items, "
+            f"but the template supports at most {MAX_ITEMS_PER_FORM}"
+        )
+    return max(MIN_EXCEL_ITEM_ROWS, item_count)
+
+
+def _hide_unused_item_rows(ws: Worksheet, item_count: int) -> None:
+    visible_rows = _visible_excel_item_rows(item_count)
+    first_hidden_row = EXCEL_ITEM_START_ROW + visible_rows
+
+    for row in range(EXCEL_ITEM_START_ROW, EXCEL_ITEM_END_ROW + 1):
+        ws.row_dimensions[row].hidden = row >= first_hidden_row
+
+
 def create_purchase_request(
     user_info: SubmissionUserInfo,
     submitted_forms: list[Invoice],
     session_folder: str,
-) -> None:
+) -> str:
     """Create Purchase Request using a template with one tab per submitted form."""
     template_path = "src/excel_templates/purchase_request_template.xlsx"
     if not Path(template_path).exists():
         raise FileNotFoundError(f"Template file not found: {template_path}")
 
-    output_path = f"{session_folder}/purchase_request.xlsx"
+    now = datetime.now()
+    day = now.strftime("%d").lstrip("0")
+    pascal_name = "".join(word.capitalize() for word in user_info.name.split())
+    output_filename = f"{now.strftime('%B')}{day}-{now.strftime('%Y')}-PurchaseRequest-{pascal_name}.xlsx"
+    output_path = f"{session_folder}/{output_filename}"
     shutil.copy2(template_path, output_path)
     wb = load_workbook(output_path)
 
     try:
+        for ws in wb.worksheets:
+            _hide_unused_item_rows(ws, 0)
+
         for form in submitted_forms:
             tab_name = f"Receipt{form.form_number}"
 
@@ -118,34 +149,41 @@ def create_purchase_request(
                 continue
 
             ws = wb[tab_name]
+            if len(form.items) > EXCEL_ITEM_ROW_COUNT:
+                raise ValueError(
+                    f"Form {form.form_number} has {len(form.items)} items, "
+                    f"but the template supports at most {EXCEL_ITEM_ROW_COUNT}"
+                )
+            _hide_unused_item_rows(ws, len(form.items))
 
-            ws["B1"] = datetime.now().strftime("%Y-%m-%d")
+            ws["B1"] = now.strftime("%Y-%m-%d")
             ws["D1"] = "USD" if form.is_usd else "CAD"
             ws["B3"] = user_info.name
             ws["D3"] = user_info.e_transfer_email
             ws["B4"] = user_info.team
             ws["B7"] = form.vendor_name
-            ws["B32"] = user_info.address
+            ws["B67"] = user_info.address
 
-            for i, item in enumerate(form.items[:15]):
-                row = 9 + i
+            for i, item in enumerate(form.items):
+                row = EXCEL_ITEM_START_ROW + i
                 ws[f"B{row}"] = item.name
                 ws[f"C{row}"] = item.usage
                 ws[f"D{row}"] = item.quantity
                 ws[f"E{row}"] = item.unit_price
                 ws[f"F{row}"] = item.total
 
-            ws["F24"] = form.us_subtotal if form.is_usd else form.subtotal_amount
-            ws["F25"] = form.us_additional_fees if form.is_usd else form.hst_gst_amount
-            ws["F26"] = form.us_total if form.is_usd else form.shipping_amount
-            ws["F27"] = form.total_cad_amount
+            ws["F59"] = form.us_subtotal if form.is_usd else form.subtotal_amount
+            ws["F60"] = form.us_additional_fees if form.is_usd else form.hst_gst_amount
+            ws["F61"] = form.us_total if form.is_usd else form.shipping_amount
+            ws["F62"] = form.total_cad_amount
 
             if form.is_usd:
                 ws["D7"] = round(form.exchange_rate, 4)
 
-            insert_signature_at_cell(ws, session_folder, "B33", 280, 70)
+            insert_signature_at_cell(ws, session_folder, "B68", 280, 70)
 
         wb.save(output_path)
+        return output_filename
     except Exception:
         _discard_partial_output(output_path)
         raise

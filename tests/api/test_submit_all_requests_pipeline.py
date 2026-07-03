@@ -76,6 +76,20 @@ def _valid_cad_data(**overrides: str) -> dict[str, str]:
     return data
 
 
+def _valid_cad_data_with_items(item_count: int) -> dict[str, str]:
+    data = _valid_cad_data(
+        subtotal_amount_1=f"{item_count * 10:.2f}",
+        total_cad_amount_1=f"{item_count * 10:.2f}",
+    )
+    for item_num in range(1, item_count + 1):
+        data[f"item_name_1_{item_num}"] = f"Item {item_num}"
+        data[f"item_usage_1_{item_num}"] = f"Usage {item_num}"
+        data[f"item_quantity_1_{item_num}"] = "1"
+        data[f"item_price_1_{item_num}"] = "10.00"
+        data[f"item_total_1_{item_num}"] = "10.00"
+    return data
+
+
 def _invoice_file() -> dict[str, tuple[str, bytes, str]]:
     return {"invoice_file_1": ("invoice.pdf", b"fake-invoice-bytes", "application/pdf")}
 
@@ -120,7 +134,7 @@ def _patch_external_clients(monkeypatch, dashboard_module) -> dict[str, Any]:
 
     def fake_create_purchase_request(user_info, submitted_forms, session_folder):
         calls["purchase_request"] = (user_info, submitted_forms, session_folder)
-        return {"filename": "purchase_request.xlsx"}
+        return "July3-2026-PurchaseRequest-TestUser.xlsx"
 
     def fake_create_expense_report(session_folder, user_info, submitted_forms):
         calls["expense_report"] = (session_folder, user_info, submitted_forms)
@@ -206,6 +220,29 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
     assert "upload" in calls
     assert calls.get("drive_closed") is True
     assert not session_folder.exists()
+
+
+def test_submit_all_requests_accepts_thirty_items(monkeypatch, tmp_path) -> None:
+    import src.routers.dashboard as dashboard_module
+
+    _patch_session_folder(monkeypatch, dashboard_module, tmp_path, "session-30-items")
+    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, dashboard_module)
+
+    client = _make_test_client()
+    response = client.post(
+        "/submit-all-requests",
+        data=_valid_cad_data_with_items(30),
+        files=_invoice_file(),
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/success"
+
+    submitted_forms = calls["purchase_request"][1]
+    assert len(submitted_forms) == 1
+    assert len(submitted_forms[0].items) == 30
+    assert submitted_forms[0].items[29].name == "Item 30"
 
 
 def test_submit_all_requests_uses_session_email_not_spoofed_form_email(
@@ -315,7 +352,7 @@ def test_submit_all_requests_rejects_partial_item_rows(monkeypatch, tmp_path) ->
     assert not session_folder.exists()
 
 
-def test_submit_all_requests_rejects_more_than_fifteen_items(
+def test_submit_all_requests_rejects_more_than_fifty_items(
     monkeypatch, tmp_path
 ) -> None:
     import src.routers.dashboard as dashboard_module
@@ -329,10 +366,10 @@ def test_submit_all_requests_rejects_more_than_fifteen_items(
     response = client.post(
         "/submit-all-requests",
         data=_valid_cad_data(
-            item_name_1_16="Extra",
-            item_usage_1_16="Overflow",
-            item_quantity_1_16="1",
-            item_price_1_16="1",
+            item_name_1_51="Extra",
+            item_usage_1_51="Overflow",
+            item_quantity_1_51="1",
+            item_price_1_51="1",
         ),
         files=_invoice_file(),
     )

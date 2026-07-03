@@ -23,6 +23,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import FormData, UploadFile
 
 from src.core.logging_utils import setup_logger
+from src.core.settings import MAX_ITEMS_PER_FORM
 from src.data_processing import create_expense_report, create_purchase_request
 from src.db.schema import SessionLocal, User, get_db
 from src.google_drive import GoogleDriveClient
@@ -44,7 +45,6 @@ logger = setup_logger(__name__)
 
 router = APIRouter(tags=["dashboard"])
 MAX_FORMS = 10
-MAX_ITEMS_PER_FORM = 15
 MIN_TOTAL_CAD_AMOUNT = 100.0
 SESSIONS_ROOT = Path("sessions").resolve()
 ITEM_FIELD_PATTERN = re.compile(
@@ -64,6 +64,7 @@ class SubmissionValidationError(Exception):
 class SubmissionOutputResult:
     drive_folder_id: str = ""
     drive_upload_success: bool = False
+    purchase_request_filename: str = ""
 
 
 def _form_str(value: object, default: str = "") -> str:
@@ -250,6 +251,7 @@ def dashboard(
             "success_message": success_message,
             "profile_warning_message": profile_warning_message,
             "profile_is_complete": profile_is_complete,
+            "max_items_per_form": MAX_ITEMS_PER_FORM,
         },
     )
 
@@ -375,8 +377,9 @@ async def _run_submission_outputs(
     submitted_forms: list[Invoice],
     session_folder: str,
 ) -> SubmissionOutputResult:
+    purchase_request_filename = ""
     try:
-        await run_in_threadpool(
+        purchase_request_filename = await run_in_threadpool(
             create_purchase_request, user_info, submitted_forms, session_folder
         )
     except Exception:
@@ -447,6 +450,7 @@ async def _run_submission_outputs(
     return SubmissionOutputResult(
         drive_folder_id=drive_folder_id,
         drive_upload_success=drive_upload_success,
+        purchase_request_filename=purchase_request_filename,
     )
 
 
@@ -540,10 +544,10 @@ async def _submit_all_requests(
     )
 
     if output_result.drive_upload_success:
-        if output_result.drive_folder_id:
+        if output_result.drive_folder_id and output_result.purchase_request_filename:
             request.session["download_info"] = {
                 "drive_folder_id": output_result.drive_folder_id,
-                "excel_file": "purchase_request.xlsx",
+                "excel_file": output_result.purchase_request_filename,
             }
         await _cleanup_session_folder(session_folder)
 
