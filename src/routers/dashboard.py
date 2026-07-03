@@ -180,6 +180,11 @@ async def _cleanup_session_folder(session_folder: str) -> None:
         logger.exception(f"Failed to delete session folder {session_folder}")
 
 
+async def _reject_submission(session_folder: str, error: str) -> RedirectResponse:
+    await _cleanup_session_folder(session_folder)
+    return RedirectResponse(url=_dashboard_url(error=error), status_code=303)
+
+
 def _build_submission_user_info(user: User) -> SubmissionUserInfo:
     return SubmissionUserInfo(
         name=user.name,
@@ -515,28 +520,16 @@ async def _submit_all_requests(
                 submitted_forms.append(form_submission)
     except SubmissionValidationError as e:
         logger.warning(str(e))
-        await _cleanup_session_folder(session_folder)
-        return RedirectResponse(
-            url=_dashboard_url(error=e.error_code),
-            status_code=303,
-        )
+        return await _reject_submission(session_folder, e.error_code)
 
     if not submitted_forms:
         logger.warning("No forms were submitted (all forms were empty)")
-        await _cleanup_session_folder(session_folder)
-        return RedirectResponse(
-            url=_dashboard_url(error="no_forms"),
-            status_code=303,
-        )
+        return await _reject_submission(session_folder, "no_forms")
 
     total_cad_amount = sum(form.total_cad_amount for form in submitted_forms)
     if total_cad_amount < MIN_TOTAL_CAD_AMOUNT:
         logger.warning(f"Submission below minimum CAD amount: ${total_cad_amount:.2f}")
-        await _cleanup_session_folder(session_folder)
-        return RedirectResponse(
-            url=_dashboard_url(error="below_minimum"),
-            status_code=303,
-        )
+        return await _reject_submission(session_folder, "below_minimum")
 
     user_info = _build_submission_user_info(user)
     output_result = await _run_submission_outputs(
