@@ -57,23 +57,27 @@ def _make_test_client(session_email: str = "test@example.com") -> TestClient:
     return TestClient(app, follow_redirects=False)
 
 
-def _valid_cad_data(**overrides: str) -> dict[str, str]:
+def _valid_cad_data_for_form(form_num: int, **overrides: str) -> dict[str, str]:
     data = {
-        "vendor_name_1": "Amazon",
-        "currency_1": "CAD",
-        "subtotal_amount_1": "100.00",
-        "discount_amount_1": "0",
-        "hst_gst_amount_1": "0",
-        "shipping_amount_1": "0",
-        "total_cad_amount_1": "100.00",
-        "item_name_1_1": "Cable",
-        "item_usage_1_1": "Power",
-        "item_quantity_1_1": "1",
-        "item_price_1_1": "100.00",
-        "item_total_1_1": "100.00",
+        f"vendor_name_{form_num}": "Amazon",
+        f"currency_{form_num}": "CAD",
+        f"subtotal_amount_{form_num}": "100.00",
+        f"discount_amount_{form_num}": "0",
+        f"hst_gst_amount_{form_num}": "0",
+        f"shipping_amount_{form_num}": "0",
+        f"total_cad_amount_{form_num}": "100.00",
+        f"item_name_{form_num}_1": "Cable",
+        f"item_usage_{form_num}_1": "Power",
+        f"item_quantity_{form_num}_1": "1",
+        f"item_price_{form_num}_1": "100.00",
+        f"item_total_{form_num}_1": "100.00",
     }
     data.update(overrides)
     return data
+
+
+def _valid_cad_data(**overrides: str) -> dict[str, str]:
+    return _valid_cad_data_for_form(1, **overrides)
 
 
 def _valid_cad_data_with_items(item_count: int) -> dict[str, str]:
@@ -90,8 +94,14 @@ def _valid_cad_data_with_items(item_count: int) -> dict[str, str]:
     return data
 
 
-def _invoice_file() -> dict[str, tuple[str, bytes, str]]:
-    return {"invoice_file_1": ("invoice.pdf", b"fake-invoice-bytes", "application/pdf")}
+def _invoice_file(form_num: int = 1) -> dict[str, tuple[str, bytes, str]]:
+    return {
+        f"invoice_file_{form_num}": (
+            "invoice.pdf",
+            b"fake-invoice-bytes",
+            "application/pdf",
+        )
+    }
 
 
 def _patch_session_folder(monkeypatch, dashboard_module, tmp_path, name: str) -> Path:
@@ -243,6 +253,29 @@ def test_submit_all_requests_accepts_thirty_items(monkeypatch, tmp_path) -> None
     assert len(submitted_forms) == 1
     assert len(submitted_forms[0].items) == 30
     assert submitted_forms[0].items[29].name == "Item 30"
+
+
+def test_submit_all_requests_accepts_form_25(monkeypatch, tmp_path) -> None:
+    import src.routers.dashboard as dashboard_module
+
+    _patch_session_folder(monkeypatch, dashboard_module, tmp_path, "session-form-25")
+    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, dashboard_module)
+
+    client = _make_test_client()
+    response = client.post(
+        "/submit-all-requests",
+        data=_valid_cad_data_for_form(25),
+        files=_invoice_file(25),
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/success"
+
+    submitted_forms = calls["purchase_request"][1]
+    assert len(submitted_forms) == 1
+    assert submitted_forms[0].form_number == 25
+    assert submitted_forms[0].vendor_name == "Amazon"
 
 
 def test_submit_all_requests_uses_session_email_not_spoofed_form_email(

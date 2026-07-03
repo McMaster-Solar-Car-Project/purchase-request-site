@@ -1,10 +1,18 @@
 import re
+from pathlib import Path
 
 import pytest
 from openpyxl import Workbook, load_workbook
 
 import src.data_processing as data_processing
-from src.core.settings import EXCEL_ITEM_END_ROW, EXCEL_ITEM_START_ROW
+from src.core.settings import (
+    EXCEL_ITEM_END_ROW,
+    EXCEL_ITEM_START_ROW,
+    EXPENSE_REPORT_END_ROW,
+    EXPENSE_REPORT_MIN_ROWS,
+    EXPENSE_REPORT_START_ROW,
+    MAX_FORMS,
+)
 from src.models.submissions import Invoice, SubmissionLineItem
 from src.models.user_info import SubmissionUserInfo
 
@@ -57,6 +65,12 @@ def _make_items(count: int) -> list[SubmissionLineItem]:
     ]
 
 
+def _expense_report_path(tmp_path: Path) -> Path:
+    files = list(tmp_path.glob("*-ExpenseReport-TestUser.xlsx"))
+    assert len(files) == 1
+    return files[0]
+
+
 def test_populate_expense_rows_supports_cad_and_usd() -> None:
     wb = Workbook()
     ws = wb.active
@@ -98,6 +112,15 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
     assert ws["F7"].value == 135.0  # Total amount in CAD
     assert ws["G7"].value == 135.0  # Total amount in CAD
     assert ws["H7"].value == 0  # No HST for US
+
+
+def test_purchase_request_template_has_twenty_five_receipt_sheets() -> None:
+    wb = load_workbook("src/excel_templates/purchase_request_template.xlsx")
+    try:
+        assert wb.sheetnames == [f"Receipt{i}" for i in range(1, MAX_FORMS + 1)]
+        assert wb["Receipt25"]["A58"].value == 50
+    finally:
+        wb.close()
 
 
 @pytest.mark.parametrize(
@@ -147,6 +170,7 @@ def test_create_purchase_request_supports_fifty_item_template_rows(
 
     wb = load_workbook(tmp_path / output_filename)
     try:
+        assert wb.sheetnames == ["Receipt1"]
         ws = wb["Receipt1"]
         assert ws["B67"].value == "123 Main St"
         assert ws["F59"].value == 125.0
@@ -166,12 +190,154 @@ def test_create_purchase_request_supports_fifty_item_template_rows(
                 expected_hidden_start is not None and row >= expected_hidden_start
             )
             assert ws.row_dimensions[row].hidden is expected_hidden
-
-        unsubmitted_ws = wb["Receipt2"]
-        assert unsubmitted_ws.row_dimensions[23].hidden is False
-        assert unsubmitted_ws.row_dimensions[24].hidden is True
-        assert unsubmitted_ws.row_dimensions[EXCEL_ITEM_END_ROW].hidden is True
     finally:
         wb.close()
 
     assert signature_calls == [("Receipt1", "B68", 280, 70)]
+
+
+def test_create_purchase_request_deletes_unsubmitted_receipt_sheets(
+    monkeypatch, tmp_path
+) -> None:
+    monkeypatch.setattr(
+        data_processing,
+        "insert_signature_at_cell",
+        lambda *_args, **_kwargs: True,
+    )
+
+    output_filename = data_processing.create_purchase_request(
+        _make_user_info(),
+        [
+            _make_form(
+                form_number=1,
+                vendor_name="First Vendor",
+                items=_make_items(1),
+            ),
+            _make_form(
+                form_number=3,
+                vendor_name="Third Vendor",
+                items=_make_items(2),
+            ),
+        ],
+        str(tmp_path),
+    )
+
+    wb = load_workbook(tmp_path / output_filename)
+    try:
+        assert wb.sheetnames == ["Receipt1", "Receipt3"]
+        assert wb["Receipt1"]["B7"].value == "First Vendor"
+        assert wb["Receipt3"]["B7"].value == "Third Vendor"
+    finally:
+        wb.close()
+
+
+def test_create_purchase_request_populates_receipt25_and_removes_unused_sheets(
+    monkeypatch, tmp_path
+) -> None:
+    signature_calls: list[tuple[str, str, int, int]] = []
+
+    def fake_insert_signature_at_cell(
+        ws, _session_folder: str, cell_location: str, width: int, height: int
+    ) -> bool:
+        signature_calls.append((ws.title, cell_location, width, height))
+        return True
+
+    monkeypatch.setattr(
+        data_processing, "insert_signature_at_cell", fake_insert_signature_at_cell
+    )
+
+    output_filename = data_processing.create_purchase_request(
+        _make_user_info(),
+        [
+            _make_form(
+                form_number=25,
+                vendor_name="Vendor 25",
+                subtotal_amount=200.0,
+                hst_gst_amount=26.0,
+                shipping_amount=5.0,
+                total_cad_amount=231.0,
+            )
+        ],
+        str(tmp_path),
+    )
+
+    wb = load_workbook(tmp_path / output_filename)
+    try:
+        assert wb.sheetnames == ["Receipt25"]
+        ws = wb["Receipt25"]
+        assert ws["B7"].value == "Vendor 25"
+        assert ws["B9"].value == "Item"
+        assert ws["C9"].value == "Test"
+        assert ws["B67"].value == "123 Main St"
+        assert ws["F59"].value == 200.0
+        assert ws["F60"].value == 26.0
+        assert ws["F61"].value == 5.0
+        assert ws["F62"].value == 231.0
+    finally:
+        wb.close()
+
+    assert signature_calls == [("Receipt25", "B68", 280, 70)]
+
+
+@pytest.mark.parametrize(
+    ("form_count", "expected_hidden_start"),
+    [
+        (1, EXPENSE_REPORT_START_ROW + EXPENSE_REPORT_MIN_ROWS),
+        (10, EXPENSE_REPORT_START_ROW + EXPENSE_REPORT_MIN_ROWS),
+        (12, EXPENSE_REPORT_START_ROW + 12),
+        (25, None),
+    ],
+)
+def test_create_expense_report_supports_twenty_five_rows_and_hides_unused(
+    monkeypatch, tmp_path, form_count: int, expected_hidden_start: int | None
+) -> None:
+    signature_calls: list[tuple[str, int, int]] = []
+
+    def fake_insert_signature_at_cell(
+        _ws, _session_folder: str, cell_location: str, width: int, height: int
+    ) -> bool:
+        signature_calls.append((cell_location, width, height))
+        return True
+
+    monkeypatch.setattr(
+        data_processing, "insert_signature_at_cell", fake_insert_signature_at_cell
+    )
+
+    submitted_forms = [
+        _make_form(
+            form_number=form_number,
+            vendor_name=f"Vendor {form_number}",
+            subtotal_amount=100.0 + form_number,
+            total_cad_amount=113.0 + form_number,
+            hst_gst_amount=13.0,
+        )
+        for form_number in range(1, form_count + 1)
+    ]
+
+    assert data_processing.create_expense_report(
+        str(tmp_path), _make_user_info(), submitted_forms
+    )
+
+    wb = load_workbook(_expense_report_path(tmp_path), data_only=False)
+    try:
+        ws = wb.active
+        assert ws["C6"].value == "Vendor 1"
+        assert ws[f"C{EXPENSE_REPORT_START_ROW + form_count - 1}"].value == (
+            f"Vendor {form_count}"
+        )
+        assert ws["D31"].value == "=SUM(D6:D30)"
+        assert ws["E31"].value == "=SUM(E6:E30)"
+        assert ws["F31"].value == "=SUM(F6:F30)"
+        assert ws["G31"].value == "=SUM(G6:G30)"
+        assert ws["H31"].value == "=SUM(H6:H30)"
+        assert ws["G32"].value == "=G31"
+
+        for row in range(EXPENSE_REPORT_START_ROW, EXPENSE_REPORT_END_ROW + 1):
+            expected_hidden = (
+                expected_hidden_start is not None and row >= expected_hidden_start
+            )
+            assert ws.row_dimensions[row].hidden is expected_hidden
+    finally:
+        wb.close()
+
+    assert signature_calls == [("A34", 200, 60)]

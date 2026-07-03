@@ -10,6 +10,9 @@ from src.core.settings import (
     EXCEL_ITEM_END_ROW,
     EXCEL_ITEM_ROW_COUNT,
     EXCEL_ITEM_START_ROW,
+    EXPENSE_REPORT_END_ROW,
+    EXPENSE_REPORT_MIN_ROWS,
+    EXPENSE_REPORT_START_ROW,
     MAX_ITEMS_PER_FORM,
     MIN_EXCEL_ITEM_ROWS,
 )
@@ -61,9 +64,10 @@ def create_expense_report(
         ws["F3"] = user_info.address
 
         populate_expense_rows_from_submitted_forms(ws, submitted_forms)
+        _hide_unused_expense_rows(ws, len(submitted_forms))
 
         try:
-            insert_signature_at_cell(ws, session_folder, "A19", 200, 60)
+            insert_signature_at_cell(ws, session_folder, "A34", 200, 60)
         except Exception as e:
             logger.warning(f"Failed to insert signature into expense report: {e}")
 
@@ -84,7 +88,7 @@ def populate_expense_rows_from_submitted_forms(
     current_date = datetime.now().strftime("%Y-%m-%d")
 
     for i, form in enumerate(submitted_forms):
-        row = 6 + i  # starts at row 6 in excel
+        row = EXPENSE_REPORT_START_ROW + i
         ws[f"B{row}"] = current_date
         ws[f"C{row}"] = form.vendor_name
 
@@ -98,6 +102,23 @@ def populate_expense_rows_from_submitted_forms(
             ws[f"F{row}"] = form.total_cad_amount
             ws[f"G{row}"] = form.total_cad_amount
             ws[f"H{row}"] = 0
+
+
+def _visible_expense_rows(form_count: int) -> int:
+    if form_count > EXPENSE_REPORT_END_ROW - EXPENSE_REPORT_START_ROW + 1:
+        raise ValueError(
+            f"Expense report has {form_count} invoices, "
+            "but the template does not have enough rows"
+        )
+    return max(EXPENSE_REPORT_MIN_ROWS, form_count)
+
+
+def _hide_unused_expense_rows(ws: Worksheet, form_count: int) -> None:
+    visible_rows = _visible_expense_rows(form_count)
+    first_hidden_row = EXPENSE_REPORT_START_ROW + visible_rows
+
+    for row in range(EXPENSE_REPORT_START_ROW, EXPENSE_REPORT_END_ROW + 1):
+        ws.row_dimensions[row].hidden = row >= first_hidden_row
 
 
 def _visible_excel_item_rows(item_count: int) -> int:
@@ -115,6 +136,14 @@ def _hide_unused_item_rows(ws: Worksheet, item_count: int) -> None:
 
     for row in range(EXCEL_ITEM_START_ROW, EXCEL_ITEM_END_ROW + 1):
         ws.row_dimensions[row].hidden = row >= first_hidden_row
+
+
+def _delete_unused_receipt_sheets(wb, submitted_forms: list[Invoice]) -> None:
+    submitted_sheet_names = {f"Receipt{form.form_number}" for form in submitted_forms}
+
+    for ws in list(wb.worksheets):
+        if ws.title not in submitted_sheet_names:
+            wb.remove(ws)
 
 
 def create_purchase_request(
@@ -136,6 +165,8 @@ def create_purchase_request(
     wb = load_workbook(output_path)
 
     try:
+        _delete_unused_receipt_sheets(wb, submitted_forms)
+
         for ws in wb.worksheets:
             _hide_unused_item_rows(ws, 0)
 

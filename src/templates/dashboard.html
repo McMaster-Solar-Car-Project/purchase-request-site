@@ -18,7 +18,7 @@
         <header class="dashboard-header">
             <div class="header-copy">
                 <h1>Purchase Request Dashboard</h1>
-                <p class="subtitle">Fill out up to 10 purchase requests and submit them together.</p>
+                <p class="subtitle">Fill out up to {{ max_forms }} purchase requests and submit them together.</p>
             </div>
 
             <div class="dashboard-user-info action-bar">
@@ -81,6 +81,7 @@
                 <form method="POST" action="/submit-all-requests" enctype="multipart/form-data">
                     <input type="hidden" id="profile-is-complete" value="{{ 'true' if profile_is_complete else 'false' }}">
                     <input type="hidden" id="max-items-per-form" value="{{ max_items_per_form }}">
+                    <input type="hidden" id="max-forms" value="{{ max_forms }}">
 
                     <div class="section-heading">
                         <div>
@@ -91,7 +92,7 @@
                     </div>
 
                     <div class="forms-container forms-stack">
-                        {% for form_num in range(1, 11) %}
+                        {% for form_num in range(1, max_forms + 1) %}
                         {{ invoice_form(form_num, max_items_per_form) }}
                         {% endfor %}
                     </div>
