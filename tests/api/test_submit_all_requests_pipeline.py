@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -60,6 +61,7 @@ def _make_test_client(session_email: str = "test@example.com") -> TestClient:
 def _valid_cad_data_for_form(form_num: int, **overrides: str) -> dict[str, str]:
     data = {
         f"vendor_name_{form_num}": "Amazon",
+        f"purchase_date_{form_num}": "2024-01-15",
         f"currency_{form_num}": "CAD",
         f"subtotal_amount_{form_num}": "100.00",
         f"discount_amount_{form_num}": "0",
@@ -220,9 +222,11 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
 
     assert "purchase_request" in calls
     user_info = calls["purchase_request"][0]
+    submitted_forms = calls["purchase_request"][1]
     assert user_info.name == "Test User"
     assert user_info.email == "test@example.com"
     assert user_info.e_transfer_email == "transfer@example.com"
+    assert submitted_forms[0].purchase_date == date(2024, 1, 15)
     assert "expense_report" in calls
     assert "drive_folder" in calls
     assert "sheets" in calls
@@ -365,6 +369,27 @@ def test_submit_all_requests_no_forms_redirects_with_error(
     assert not session_folder.exists()
 
 
+def test_submit_all_requests_ignores_date_only_empty_form(
+    monkeypatch, tmp_path
+) -> None:
+    import src.routers.dashboard as dashboard_module
+
+    session_folder = _patch_session_folder(
+        monkeypatch, dashboard_module, tmp_path, "session-date-only"
+    )
+    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+
+    client = _make_test_client()
+    response = client.post(
+        "/submit-all-requests",
+        data={"purchase_date_1": "2024-01-15"},
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/dashboard?error=no_forms"
+    assert not session_folder.exists()
+
+
 def test_submit_all_requests_rejects_partial_item_rows(monkeypatch, tmp_path) -> None:
     import src.routers.dashboard as dashboard_module
 
@@ -382,6 +407,52 @@ def test_submit_all_requests_rejects_partial_item_rows(monkeypatch, tmp_path) ->
 
     assert response.status_code == 303
     assert response.headers["location"] == "/dashboard?error=invalid_items"
+    assert not session_folder.exists()
+
+
+def test_submit_all_requests_rejects_missing_purchase_date(
+    monkeypatch, tmp_path
+) -> None:
+    import src.routers.dashboard as dashboard_module
+
+    session_folder = _patch_session_folder(
+        monkeypatch, dashboard_module, tmp_path, "session-missing-purchase-date"
+    )
+    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+
+    client = _make_test_client()
+    response = client.post(
+        "/submit-all-requests",
+        data=_valid_cad_data(purchase_date_1=""),
+        files=_invoice_file(),
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/dashboard?error=invalid_submission"
+    assert not session_folder.exists()
+
+
+def test_submit_all_requests_rejects_future_purchase_date(
+    monkeypatch, tmp_path
+) -> None:
+    import src.routers.dashboard as dashboard_module
+
+    session_folder = _patch_session_folder(
+        monkeypatch, dashboard_module, tmp_path, "session-future-purchase-date"
+    )
+    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+
+    client = _make_test_client()
+    response = client.post(
+        "/submit-all-requests",
+        data=_valid_cad_data(
+            purchase_date_1=(date.today() + timedelta(days=1)).isoformat()
+        ),
+        files=_invoice_file(),
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/dashboard?error=invalid_submission"
     assert not session_folder.exists()
 
 

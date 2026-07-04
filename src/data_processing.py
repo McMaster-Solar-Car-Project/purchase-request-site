@@ -117,11 +117,10 @@ def populate_expense_rows_from_submitted_forms(
     ws: Worksheet, submitted_forms: list[Invoice]
 ) -> None:
     """Populate expense report rows from submitted form data."""
-    current_date = datetime.now().strftime("%Y-%m-%d")
-
     for i, form in enumerate(submitted_forms):
         row = EXPENSE_REPORT_START_ROW + i
-        ws[f"B{row}"] = current_date
+        ws[f"B{row}"] = form.purchase_date
+        ws[f"B{row}"].number_format = "yyyy-mm-dd"
         ws[f"C{row}"] = form.vendor_name
 
         if not form.is_usd:
@@ -195,7 +194,8 @@ def create_purchase_request(
                 ),
             )
 
-            ws["B1"] = now.strftime("%Y-%m-%d")
+            ws["B1"] = form.purchase_date
+            ws["B1"].number_format = "yyyy-mm-dd"
             ws["D1"] = "USD" if form.is_usd else "CAD"
             ws["B3"] = user_info.name
             ws["D3"] = user_info.e_transfer_email

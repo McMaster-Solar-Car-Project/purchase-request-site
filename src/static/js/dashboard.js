@@ -98,6 +98,14 @@ function formatMoneyInput(input) {
     input.value = formatMoneyCents(parseMoneyCents(input.value));
 }
 
+function todayIsoDate() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function formatMoneyFields() {
     const formsToRecalculate = new Set();
 
@@ -418,15 +426,27 @@ function resetFileInput(input, spanId) {
 
 function validateSubmission() {
     let hasValidForm = false;
+    const today = todayIsoDate();
 
     for (let formNumber = 1; formNumber <= maxForms; formNumber++) {
         const vendorName = document.getElementById(`vendor_name_${formNumber}`);
+        const purchaseDate = document.getElementById(`purchase_date_${formNumber}`);
         const invoiceFile = document.getElementById(`invoice_file_${formNumber}`);
         const currencySelect = document.getElementById(`currency_${formNumber}`);
         const proofOfPaymentFile = document.getElementById(`proof_of_payment_${formNumber}`);
 
         if (!vendorName || !vendorName.value.trim()) {
             continue;
+        }
+
+        if (!purchaseDate || !purchaseDate.value) {
+            alert('Please enter a purchase date for Invoice #' + formNumber + ' before submitting.');
+            return false;
+        }
+
+        if (purchaseDate.value > today) {
+            alert('Purchase date for Invoice #' + formNumber + ' cannot be in the future.');
+            return false;
         }
 
         if (!invoiceFile || !invoiceFile.files || invoiceFile.files.length === 0) {
@@ -512,7 +532,7 @@ function validateSubmission() {
     }
 
     if (!hasValidForm) {
-        alert('Please complete at least one invoice form before submitting.\n\nTo complete a form, you need:\n• Vendor/Store Name\n• Invoice file uploaded\n• At least one item with name, usage, quantity, and price\n• Proof of payment (for USD purchases only)');
+        alert('Please complete at least one invoice form before submitting.\n\nTo complete a form, you need:\n• Vendor/Store Name\n• Purchase Date\n• Invoice file uploaded\n• At least one item with name, usage, quantity, and price\n• Proof of payment (for USD purchases only)');
         return false;
     }
 
@@ -542,6 +562,9 @@ function clearForm(formNumber) {
 
     const vendorNameInput = document.getElementById(`vendor_name_${formNumber}`);
     if (vendorNameInput) vendorNameInput.value = '';
+
+    const purchaseDateInput = document.getElementById(`purchase_date_${formNumber}`);
+    if (purchaseDateInput) purchaseDateInput.value = '';
 
     const currencySelect = document.getElementById(`currency_${formNumber}`);
     if (currencySelect) {
@@ -623,6 +646,10 @@ function handleFileDrop(event, inputId, spanId) {
 }
 
 function initializeStaticHandlers() {
+    document.querySelectorAll('input[type="date"][name^="purchase_date_"]').forEach(input => {
+        input.max = todayIsoDate();
+    });
+
     document.querySelectorAll('[data-action="toggle-form"]').forEach(header => {
         header.addEventListener('click', () => toggleForm(Number(header.dataset.form)));
     });

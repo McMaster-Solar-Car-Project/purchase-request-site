@@ -64,6 +64,12 @@
                 </div>
 
                 <div class="form-group field">
+                    <label for="purchase_date_{{ form_num }}" class="field-label">Purchase Date</label>
+                    <input type="date" id="purchase_date_{{ form_num }}" name="purchase_date_{{ form_num }}" class="field-control">
+                    <small class="field-help file-help">Date the invoice items were purchased</small>
+                </div>
+
+                <div class="form-group field">
                     <label for="currency_{{ form_num }}" class="field-label">Currency</label>
                     <select id="currency_{{ form_num }}" name="currency_{{ form_num }}" data-action="currency-select" data-form="{{ form_num }}" class="field-control">
                         <option value="CAD">CAD - Canadian Dollar</option>

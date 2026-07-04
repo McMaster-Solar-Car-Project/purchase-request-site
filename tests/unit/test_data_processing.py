@@ -1,4 +1,5 @@
 import re
+from datetime import date, datetime
 from pathlib import Path
 
 import pytest
@@ -22,6 +23,7 @@ def _make_form(**overrides) -> Invoice:
     defaults = {
         "form_number": 1,
         "vendor_name": "Vendor",
+        "purchase_date": date(2024, 1, 15),
         "is_usd": False,
         "invoice_filename": "invoice.pdf",
         "invoice_file_location": "/tmp/invoice.pdf",
@@ -71,6 +73,13 @@ def _expense_report_path(tmp_path: Path) -> Path:
     return files[0]
 
 
+def _as_date(value) -> date:
+    if isinstance(value, datetime):
+        return value.date()
+    assert isinstance(value, date)
+    return value
+
+
 def test_populate_expense_rows_supports_cad_and_usd() -> None:
     wb = Workbook()
     ws = wb.active
@@ -79,6 +88,7 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
         _make_form(
             form_number=1,
             vendor_name="CAD Vendor",
+            purchase_date=date(2024, 1, 15),
             is_usd=False,
             subtotal_amount=120.0,
             discount_amount=20.0,
@@ -88,6 +98,7 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
         _make_form(
             form_number=2,
             vendor_name="USD Vendor",
+            purchase_date=date(2024, 2, 20),
             is_usd=True,
             proof_of_payment_filename="proof.pdf",
             proof_of_payment_location="/tmp/proof.pdf",
@@ -100,12 +111,16 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
     data_processing.populate_expense_rows_from_submitted_forms(ws, submitted_forms)
 
     # First row (CAD) starts at row 6.
+    assert _as_date(ws["B6"].value) == date(2024, 1, 15)
+    assert ws["B6"].number_format == "yyyy-mm-dd"
     assert ws["C6"].value == "CAD Vendor"
     assert ws["F6"].value == 100.0  # subtotal - discount
     assert ws["G6"].value == 113.0
     assert ws["H6"].value == 13.0
 
     # Second row (USD) is row 7.
+    assert _as_date(ws["B7"].value) == date(2024, 2, 20)
+    assert ws["B7"].number_format == "yyyy-mm-dd"
     assert ws["C7"].value == "USD Vendor"
     assert ws["D7"].value == 100.0  # US total
     assert ws["E7"].value == 1.35  # Exchange rate
@@ -172,6 +187,8 @@ def test_create_purchase_request_supports_fifty_item_template_rows(
     try:
         assert wb.sheetnames == ["Receipt1"]
         ws = wb["Receipt1"]
+        assert _as_date(ws["B1"].value) == date(2024, 1, 15)
+        assert ws["B1"].number_format == "yyyy-mm-dd"
         assert ws["B67"].value == "123 Main St"
         assert ws["F59"].value == 125.0
         assert ws["F60"].value == 16.25
@@ -265,6 +282,7 @@ def test_create_purchase_request_populates_receipt25_and_removes_unused_sheets(
     try:
         assert wb.sheetnames == ["Receipt25"]
         ws = wb["Receipt25"]
+        assert _as_date(ws["B1"].value) == date(2024, 1, 15)
         assert ws["B7"].value == "Vendor 25"
         assert ws["B9"].value == "Item"
         assert ws["C9"].value == "Test"
@@ -321,6 +339,8 @@ def test_create_expense_report_supports_twenty_five_rows_and_hides_unused(
     wb = load_workbook(_expense_report_path(tmp_path), data_only=False)
     try:
         ws = wb.active
+        assert _as_date(ws["B6"].value) == date(2024, 1, 15)
+        assert ws["B6"].number_format == "yyyy-mm-dd"
         assert ws["C6"].value == "Vendor 1"
         assert ws[f"C{EXPENSE_REPORT_START_ROW + form_count - 1}"].value == (
             f"Vendor {form_count}"

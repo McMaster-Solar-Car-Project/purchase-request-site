@@ -100,6 +100,7 @@ def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
         "/submit-all-requests",
         data={
             "vendor_name_1": "Live Integration Vendor",
+            "purchase_date_1": "2024-01-15",
             "currency_1": "CAD",
             "subtotal_amount_1": "100.00",
             "discount_amount_1": "0",
