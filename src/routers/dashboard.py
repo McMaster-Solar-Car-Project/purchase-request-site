@@ -212,7 +212,7 @@ def dashboard(
     profile_warning_message = None
 
     if error == "no_forms":
-        error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, upload an invoice file, and add at least one item."
+        error_message = "Please complete at least one invoice form before submitting. Make sure to fill in the vendor name, purchase date, upload an invoice file, and add at least one item."
     elif error == "invalid_items":
         error_message = "Please fully complete each item row before submitting."
     elif error == "too_many_items":
@@ -285,6 +285,8 @@ async def _parse_invoice_form(
     if not vendor_name:
         return None
 
+    purchase_date = _form_str(form_data.get(f"purchase_date_{form_num}"))
+
     sentry_sdk.add_breadcrumb(
         category="purchase_flow",
         message=f"Processing form {form_num}: {vendor_name}",
@@ -345,6 +347,7 @@ async def _parse_invoice_form(
             {
                 "form_number": form_num,
                 "vendor_name": vendor_name,
+                "purchase_date": purchase_date,
                 "is_usd": currency == "USD",
                 "invoice_filename": invoice_filename,
                 "invoice_file_location": str(invoice_file_path),

@@ -5,9 +5,10 @@ dashboard router, data processing (Excel generation), Google Drive/Sheets
 clients, and tests.
 """
 
+from datetime import date
 from typing import Annotated
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator
 
 
 def _blank_to_zero(value: object) -> object:
@@ -40,6 +41,7 @@ class Invoice(BaseModel):
 
     form_number: int = Field(ge=1)
     vendor_name: str = Field(min_length=1)
+    purchase_date: date
     is_usd: bool
     invoice_filename: str = Field(min_length=1)
     invoice_file_location: str = Field(min_length=1)
@@ -53,6 +55,13 @@ class Invoice(BaseModel):
     us_subtotal: NonNegFloat
     us_additional_fees: NonNegFloat
     items: list[SubmissionLineItem] = Field(min_length=1)
+
+    @field_validator("purchase_date")
+    @classmethod
+    def purchase_date_cannot_be_in_future(cls, value: date) -> date:
+        if value > date.today():
+            raise ValueError("Purchase date cannot be in the future")
+        return value
 
     @property
     def us_total(self) -> float:
