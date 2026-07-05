@@ -62,6 +62,7 @@ def test_home_page_renders_main_menu(monkeypatch) -> None:
     assert "Open Dashboard" not in response.text
     assert 'href="/dashboard"' in response.text
     assert 'href="/edit-profile"' in response.text
+    assert 'href="/submissions"' in response.text
     assert 'href="/logout"' in response.text
     assert "Your profile is incomplete" not in response.text
 
