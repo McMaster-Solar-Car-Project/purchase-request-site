@@ -14,10 +14,18 @@
 
 <body class="app-page status-page">
   <main class="app-shell status-shell">
-    <section class="app-card status-card">
-      <p class="eyebrow">Submitted</p>
-      <h1>Purchase Request Submitted</h1>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Submitted</p>
+        <h1>Purchase Request Submitted</h1>
+      </div>
+      <div class="action-bar">
+        <a href="/home" class="button button--secondary">Home</a>
+        <a href="/logout" class="button button--danger">Logout</a>
+      </div>
+    </header>
 
+    <section class="app-card status-card">
       {% if download_info %}
       <div class="request-panel highlight-panel">
         <p><strong>Your purchase request has been compiled into an Excel report.</strong></p>
@@ -30,10 +38,6 @@
         </a>
       </div>
       {% endif %}
-
-      <div class="status-actions">
-        <a href="/logout" class="button button--danger">Logout</a>
-      </div>
 
       <footer class="card-footer">
         <p><strong>Need help?</strong> If you have any questions about your purchase request, please contact Raj.</p>
