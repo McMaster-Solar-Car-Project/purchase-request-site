@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from src.core.logging_utils import setup_logger
 from src.db.schema import get_db
-from src.models.user_service import get_user_by_email, is_user_profile_complete
+from src.models.user_service import get_user_by_email
 from src.routers.utils import limiter, templates
 
 # Set up logger
@@ -55,10 +55,7 @@ def login(
         request.session["user_email"] = email
         logger.info(f"🔐 User login: {user.name} ({email})")
 
-        redirect_url = "/dashboard"
-        if not is_user_profile_complete(user):
-            redirect_url = "/dashboard?profile_incomplete=true"
-        return RedirectResponse(url=redirect_url, status_code=303)
+        return RedirectResponse(url="/home", status_code=303)
     else:
         logger.warning(f"🚫 Failed login attempt: {email}")
         return templates.TemplateResponse(

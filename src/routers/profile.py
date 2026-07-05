@@ -124,8 +124,8 @@ def edit_profile_post(
         db.commit()
         request.session["user_email"] = str(profile_input.email)
 
-        # Redirect back to dashboard with success message
-        redirect_url = "/dashboard?updated=true"
+        # Redirect back to the main menu with a success message.
+        redirect_url = "/home?updated=true"
         return RedirectResponse(url=redirect_url, status_code=303)
 
     except Exception:

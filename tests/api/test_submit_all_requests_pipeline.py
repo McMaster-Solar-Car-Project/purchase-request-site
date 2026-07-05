@@ -321,6 +321,9 @@ def test_dashboard_uses_session_email_not_query_email(monkeypatch) -> None:
     assert response.status_code == 200
     assert queried_emails == ["session@example.com"]
     assert "session@example.com" in response.text
+    assert 'href="/home"' in response.text
+    assert 'href="/edit-profile"' not in response.text
+    assert 'href="/submissions"' not in response.text
 
 
 def test_edit_profile_uses_session_email_not_query_email(monkeypatch) -> None:
@@ -349,6 +352,8 @@ def test_edit_profile_uses_session_email_not_query_email(monkeypatch) -> None:
     assert response.status_code == 200
     assert queried_emails == ["session@example.com"]
     assert "session@example.com" in response.text
+    assert 'href="/home"' in response.text
+    assert 'href="/dashboard"' not in response.text
 
 
 def test_submit_all_requests_no_forms_redirects_with_error(

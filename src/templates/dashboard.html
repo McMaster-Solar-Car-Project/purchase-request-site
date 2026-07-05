@@ -22,7 +22,7 @@
             </div>
 
             <div class="dashboard-user-info action-bar">
-                <a href="/edit-profile" class="button button--secondary edit-profile-btn">Edit Information</a>
+                <a href="/home" class="button button--secondary">Home</a>
                 <a href="/logout" class="button button--danger logout-btn">Logout</a>
             </div>
         </header>
@@ -42,7 +42,7 @@
         {% if profile_warning_message %}
         <div class="notice profile-warning-message notice--warning">
             {{ profile_warning_message }}
-            <a href="/edit-profile">Update profile</a>
+            <a href="/home">Go to home</a>
         </div>
         {% endif %}
 
