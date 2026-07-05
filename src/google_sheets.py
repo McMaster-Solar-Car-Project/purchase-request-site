@@ -227,7 +227,7 @@ def _parse_past_submissions_from_grid(
             continue
 
         row_color = _dominant_row_color(cells[: len(headers)])
-        legend_label = color_legend.get(row_color)
+        legend_label = color_legend.get(row_color) if row_color else None
         status = _submission_status_from_legend_label(legend_label)
         status_color = (
             row_color
