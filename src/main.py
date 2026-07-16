@@ -28,7 +28,6 @@ from src.routers.dashboard import router as dashboard_router
 from src.routers.download import router as download_router
 from src.routers.home import router as home_router
 from src.routers.profile import router as profile_router
-from src.routers.submissions import router as submissions_router
 from src.routers.success import router as success_router
 from src.routers.utils import AuthRedirect, limiter, templates
 
@@ -226,7 +225,6 @@ def create_app() -> FastAPI:
     application.include_router(dashboard_router)
     application.include_router(profile_router)
     application.include_router(success_router)
-    application.include_router(submissions_router)
     application.include_router(download_router)
 
     application.state.limiter = limiter

@@ -382,10 +382,6 @@ h4,
   border-color: color-mix(in srgb, var(--accent-cool), transparent 50%);
 }
 
-.main-menu-action--history {
-  border-color: color-mix(in srgb, var(--success), transparent 56%);
-}
-
 .main-menu-action__label {
   color: var(--accent);
   font-family: var(--font-mono);
@@ -396,10 +392,6 @@ h4,
 
 .main-menu-action--profile .main-menu-action__label {
   color: var(--accent-cool);
-}
-
-.main-menu-action--history .main-menu-action__label {
-  color: var(--success);
 }
 
 .main-menu-action__title {
@@ -918,96 +910,6 @@ h4,
   margin-top: 0.45rem;
 }
 
-.submissions-panel {
-  overflow: hidden;
-}
-
-.submissions-table-wrap {
-  overflow-x: auto;
-}
-
-.submissions-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.submissions-table th,
-.submissions-table td {
-  border-bottom: 1px solid var(--line);
-  padding: 0.9rem 0.75rem;
-  text-align: left;
-  vertical-align: middle;
-}
-
-.submissions-table th {
-  color: var(--subtle);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.submissions-table td {
-  color: var(--ink);
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-
-.submissions-table th:nth-child(1),
-.submissions-table td:nth-child(1) {
-  width: 26%;
-}
-
-.submissions-table th:nth-child(2),
-.submissions-table td:nth-child(2) {
-  width: 30%;
-}
-
-.submissions-table th:nth-child(3),
-.submissions-table td:nth-child(3) {
-  width: 20%;
-}
-
-.submissions-table th:nth-child(4),
-.submissions-table td:nth-child(4) {
-  width: 24%;
-}
-
-.submission-status {
-  --status-color: var(--accent-cool);
-  display: inline-flex;
-  min-height: 32px;
-  align-items: center;
-  border: 1px solid color-mix(in srgb, var(--status-color), transparent 35%);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--status-color), transparent 82%);
-  color: var(--ink);
-  font-size: 0.85rem;
-  font-weight: 800;
-  line-height: 1.1;
-  padding: 0.42rem 0.58rem;
-}
-
-.drive-button {
-  min-height: 36px;
-  width: fit-content;
-  padding: 0.58rem 0.72rem;
-}
-
-.empty-state {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-quiet);
-  padding: 1rem;
-}
-
-.empty-state p {
-  margin: 0;
-  color: var(--muted);
-  font-weight: 800;
-}
-
 @media (prefers-reduced-motion: no-preference) {
   .dashboard-header,
   .page-header,
@@ -1130,63 +1032,4 @@ h4,
     min-width: 0;
   }
 
-  .submissions-table-wrap {
-    overflow: visible;
-  }
-
-  .submissions-table,
-  .submissions-table tbody,
-  .submissions-table tr,
-  .submissions-table td {
-    display: block;
-  }
-
-  .submissions-table thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-
-  .submissions-table tr {
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--surface-quiet);
-    padding: 0.25rem 0;
-  }
-
-  .submissions-table tr + tr {
-    margin-top: 0.8rem;
-  }
-
-  .submissions-table td {
-    display: grid;
-    grid-template-columns: minmax(7.5rem, 34%) minmax(0, 1fr);
-    gap: 0.75rem;
-    width: 100%;
-    border-bottom: 0;
-    padding: 0.65rem 0.75rem;
-  }
-
-  .submissions-table th:nth-child(1),
-  .submissions-table th:nth-child(2),
-  .submissions-table th:nth-child(3),
-  .submissions-table th:nth-child(4),
-  .submissions-table td:nth-child(1),
-  .submissions-table td:nth-child(2),
-  .submissions-table td:nth-child(3),
-  .submissions-table td:nth-child(4) {
-    width: 100%;
-  }
-
-  .submissions-table td::before {
-    content: attr(data-label);
-    color: var(--subtle);
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    font-weight: 800;
-    text-transform: uppercase;
-  }
 }
