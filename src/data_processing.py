@@ -211,7 +211,11 @@ def create_purchase_request(
                 ws[f"E{row}"] = item.unit_price
                 ws[f"F{row}"] = item.total
 
-            ws["F59"] = form.us_subtotal if form.is_usd else form.subtotal_amount
+            ws["F59"] = (
+                form.us_subtotal
+                if form.is_usd
+                else form.subtotal_amount - form.discount_amount
+            )
             ws["F60"] = form.us_additional_fees if form.is_usd else form.hst_gst_amount
             ws["F61"] = form.us_total if form.is_usd else form.shipping_amount
             ws["F62"] = form.total_cad_amount

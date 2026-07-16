@@ -169,6 +169,7 @@ def test_create_purchase_request_supports_fifty_item_template_rows(
             _make_form(
                 items=items,
                 subtotal_amount=125.0,
+                discount_amount=20.0,
                 hst_gst_amount=16.25,
                 shipping_amount=10.0,
                 total_cad_amount=151.25,
@@ -190,7 +191,7 @@ def test_create_purchase_request_supports_fifty_item_template_rows(
         assert _as_date(ws["B1"].value) == date(2024, 1, 15)
         assert ws["B1"].number_format == "yyyy-mm-dd"
         assert ws["B67"].value == "123 Main St"
-        assert ws["F59"].value == 125.0
+        assert ws["F59"].value == 105.0
         assert ws["F60"].value == 16.25
         assert ws["F61"].value == 10.0
         assert ws["F62"].value == 151.25
@@ -229,11 +230,15 @@ def test_create_purchase_request_deletes_unsubmitted_receipt_sheets(
                 form_number=1,
                 vendor_name="First Vendor",
                 items=_make_items(1),
+                subtotal_amount=125.0,
+                discount_amount=20.0,
             ),
             _make_form(
                 form_number=3,
                 vendor_name="Third Vendor",
                 items=_make_items(2),
+                is_usd=True,
+                us_subtotal=80.0,
             ),
         ],
         str(tmp_path),
@@ -243,7 +248,9 @@ def test_create_purchase_request_deletes_unsubmitted_receipt_sheets(
     try:
         assert wb.sheetnames == ["Receipt1", "Receipt3"]
         assert wb["Receipt1"]["B7"].value == "First Vendor"
+        assert wb["Receipt1"]["F59"].value == 105.0
         assert wb["Receipt3"]["B7"].value == "Third Vendor"
+        assert wb["Receipt3"]["F59"].value == 80.0
     finally:
         wb.close()
 

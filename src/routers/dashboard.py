@@ -6,6 +6,7 @@ import re
 import shutil
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -44,7 +45,8 @@ from src.routers.utils import get_authenticated_user_email, templates
 logger = setup_logger(__name__)
 
 router = APIRouter(tags=["dashboard"])
-MIN_TOTAL_CAD_AMOUNT = 100.0
+CAD_CENT = Decimal("0.01")
+MIN_TOTAL_CAD_AMOUNT = Decimal("100.00")
 SESSIONS_ROOT = Path("sessions").resolve()
 ITEM_FIELD_PATTERN = re.compile(
     r"^item_(?:name|usage|quantity|price)_(?P<form>\d+)_(?P<item>\d+)$"
@@ -92,6 +94,11 @@ def _safe_filename_component(value: str) -> str:
 
 def _dashboard_url(**params: str) -> str:
     return "/dashboard" if not params else f"/dashboard?{urlencode(params)}"
+
+
+def _round_cad_amount(value: float) -> Decimal:
+    """Round a CAD amount to cents using the same half-up rule as the frontend."""
+    return Decimal(str(value)).quantize(CAD_CENT, rounding=ROUND_HALF_UP)
 
 
 def _posted_item_numbers(form_data: FormData, form_num: int) -> set[int]:
@@ -532,7 +539,10 @@ async def _submit_all_requests(
             status_code=303,
         )
 
-    total_cad_amount = sum(form.total_cad_amount for form in submitted_forms)
+    total_cad_amount = sum(
+        (_round_cad_amount(form.total_cad_amount) for form in submitted_forms),
+        start=Decimal("0.00"),
+    )
     if total_cad_amount < MIN_TOTAL_CAD_AMOUNT:
         logger.warning(f"Submission below minimum CAD amount: ${total_cad_amount:.2f}")
         await _cleanup_session_folder(session_folder)

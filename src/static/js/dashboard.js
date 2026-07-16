@@ -82,7 +82,7 @@ function formatMoneyFromPreciseAmount(scaledValue) {
         preciseDecimalPlaces,
         moneyDecimalPlaces
     );
-    return formatScaledAmount(cents, moneyDecimalPlaces);
+    return formatMoneyCents(cents);
 }
 
 function parseMoneyCents(value) {
@@ -90,7 +90,16 @@ function parseMoneyCents(value) {
 }
 
 function formatMoneyCents(cents) {
-    return formatScaledAmount(cents, moneyDecimalPlaces);
+    const scale = decimalScale(moneyDecimalPlaces);
+    const isNegative = cents < 0n;
+    const absoluteValue = isNegative ? -cents : cents;
+    const wholePart = absoluteValue / scale;
+    const fractionPart = String(absoluteValue % scale).padStart(
+        moneyDecimalPlaces,
+        '0'
+    );
+    const sign = isNegative ? '-' : '';
+    return `${sign}${wholePart}.${fractionPart}`;
 }
 
 function formatMoneyInput(input) {
