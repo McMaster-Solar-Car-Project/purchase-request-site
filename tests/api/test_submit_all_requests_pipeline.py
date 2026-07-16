@@ -501,10 +501,10 @@ def test_submit_all_requests_rejects_total_below_minimum(monkeypatch, tmp_path) 
     response = client.post(
         "/submit-all-requests",
         data=_valid_cad_data(
-            subtotal_amount_1="99.99",
-            total_cad_amount_1="99.99",
-            item_price_1_1="99.99",
-            item_total_1_1="99.99",
+            subtotal_amount_1="99.994",
+            total_cad_amount_1="99.994",
+            item_price_1_1="99.994",
+            item_total_1_1="99.994",
         ),
         files=_invoice_file(),
     )
@@ -513,3 +513,67 @@ def test_submit_all_requests_rejects_total_below_minimum(monkeypatch, tmp_path) 
     assert response.headers["location"] == "/dashboard?error=below_minimum"
     assert "purchase_request" not in calls
     assert not session_folder.exists()
+
+
+def test_submit_all_requests_accepts_total_that_rounds_to_minimum(
+    monkeypatch, tmp_path
+) -> None:
+    import src.routers.dashboard as dashboard_module
+
+    _patch_session_folder(monkeypatch, dashboard_module, tmp_path, "session-rounded")
+    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, dashboard_module)
+
+    client = _make_test_client()
+    response = client.post(
+        "/submit-all-requests",
+        data=_valid_cad_data(
+            subtotal_amount_1="99.995",
+            total_cad_amount_1="99.995",
+            item_price_1_1="99.995",
+            item_total_1_1="99.995",
+        ),
+        files=_invoice_file(),
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/success"
+    assert "purchase_request" in calls
+
+
+def test_submit_all_requests_sums_individually_rounded_invoice_totals(
+    monkeypatch, tmp_path
+) -> None:
+    import src.routers.dashboard as dashboard_module
+
+    _patch_session_folder(
+        monkeypatch, dashboard_module, tmp_path, "session-rounded-invoices"
+    )
+    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, dashboard_module)
+
+    data = _valid_cad_data_for_form(
+        1,
+        subtotal_amount_1="49.995",
+        total_cad_amount_1="49.995",
+        item_price_1_1="49.995",
+        item_total_1_1="49.995",
+    )
+    data.update(
+        _valid_cad_data_for_form(
+            2,
+            subtotal_amount_2="49.995",
+            total_cad_amount_2="49.995",
+            item_price_2_1="49.995",
+            item_total_2_1="49.995",
+        )
+    )
+    files = _invoice_file(1)
+    files.update(_invoice_file(2))
+
+    client = _make_test_client()
+    response = client.post("/submit-all-requests", data=data, files=files)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/success"
+    assert len(calls["purchase_request"][1]) == 2

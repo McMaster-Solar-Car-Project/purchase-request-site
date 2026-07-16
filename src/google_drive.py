@@ -22,6 +22,11 @@ DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"]
 FOLDER_MIME = "application/vnd.google-apps.folder"
 
 
+def _escape_drive_query_literal(value: str) -> str:
+    """Escape a value embedded in a Google Drive query string literal."""
+    return value.replace("\\", "\\\\").replace("'", "\\'")
+
+
 class GoogleDriveClient:
     """Client for interacting with Google Drive API."""
 
@@ -83,9 +88,11 @@ class GoogleDriveClient:
         """Find or create a "Month YYYY" folder inside ``parent_id``."""
         service = self._service()
         name = datetime.now().strftime("%B %Y")
+        escaped_name = _escape_drive_query_literal(name)
+        escaped_parent_id = _escape_drive_query_literal(parent_id)
         query = (
-            f"name='{name}' and mimeType='{FOLDER_MIME}' "
-            f"and '{parent_id}' in parents and trashed=false"
+            f"name='{escaped_name}' and mimeType='{FOLDER_MIME}' "
+            f"and '{escaped_parent_id}' in parents and trashed=false"
         )
         try:
             results = service.files().list(q=query, fields="files(id, name)").execute()
@@ -249,7 +256,12 @@ class GoogleDriveClient:
         except RuntimeError:
             return ""
 
-        query = f"name='{file_name}' and '{folder_id}' in parents and trashed=false"
+        escaped_file_name = _escape_drive_query_literal(file_name)
+        escaped_folder_id = _escape_drive_query_literal(folder_id)
+        query = (
+            f"name='{escaped_file_name}' and '{escaped_folder_id}' in parents "
+            "and trashed=false"
+        )
         try:
             files = (
                 service.files()
