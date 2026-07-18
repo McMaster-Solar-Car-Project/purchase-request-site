@@ -19,7 +19,7 @@ router = APIRouter(tags=["authentication"])
 
 
 @router.get("/login")
-async def login_page(request: Request, error: str | None = None):
+def login_page(request: Request, error: str | None = None):
     """Display login page"""
 
     error_messages = {
@@ -70,7 +70,7 @@ def login(
 
 
 @router.get("/logout")
-async def logout(request: Request):
+def logout(request: Request):
     """Handle user logout"""
     request.session.clear()
     logger.info("🔓 User logged out")
