@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     sentry_release: str | None = Field(default=None, alias="SENTRY_RELEASE")
     host: str = Field(default="0.0.0.0", alias="HOST")
     port: int = Field(default=8000, alias="PORT")
-    debug: bool = Field(default=True, alias="DEBUG")
+    debug: bool = Field(default=False, alias="DEBUG")
     database_url: str = Field(
         default="",
         alias="DATABASE_URL",
