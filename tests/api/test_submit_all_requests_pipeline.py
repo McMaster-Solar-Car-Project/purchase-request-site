@@ -141,7 +141,13 @@ def _patch_user_and_profile_files(
     )
 
 
-def _patch_external_clients(monkeypatch, dashboard_module) -> dict[str, Any]:
+def _patch_external_clients(
+    monkeypatch,
+    dashboard_module,
+    *,
+    drive_upload_success: bool = True,
+    sheets_log_success: bool = True,
+) -> dict[str, Any]:
     calls: dict[str, Any] = {}
 
     def fake_create_purchase_request(user_info, submitted_forms, session_folder):
@@ -163,7 +169,7 @@ def _patch_external_clients(monkeypatch, dashboard_module) -> dict[str, Any]:
 
         def upload_session_folder(self, session_folder, user_info, session_folder_id):
             calls["upload"] = (session_folder, user_info, session_folder_id)
-            return True
+            return drive_upload_success
 
         def close(self):
             calls["drive_closed"] = True
@@ -178,7 +184,7 @@ def _patch_external_clients(monkeypatch, dashboard_module) -> dict[str, Any]:
                 session_folder,
                 drive_folder_url,
             )
-            return True
+            return sheets_log_success
 
         def close(self):
             calls["sheets_closed"] = True
@@ -234,6 +240,30 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
     assert "upload" in calls
     assert calls.get("drive_closed") is True
     assert not session_folder.exists()
+
+
+def test_submit_all_requests_retains_files_when_sheets_log_fails(
+    monkeypatch, tmp_path
+) -> None:
+    import src.routers.dashboard as dashboard_module
+
+    session_folder = _patch_session_folder(
+        monkeypatch, dashboard_module, tmp_path, "session-sheets-failure"
+    )
+    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+    _patch_external_clients(monkeypatch, dashboard_module, sheets_log_success=False)
+
+    client = _make_test_client()
+    response = client.post(
+        "/submit-all-requests",
+        data=_valid_cad_data(),
+        files=_invoice_file(),
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/success"
+    assert session_folder.exists()
+    assert (session_folder / "1_Amazon.pdf").exists()
 
 
 def test_submit_all_requests_accepts_thirty_items(monkeypatch, tmp_path) -> None:
