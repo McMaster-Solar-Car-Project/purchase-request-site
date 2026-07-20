@@ -16,6 +16,7 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.types import Event, Hint
 from slowapi.errors import RateLimitExceeded
+from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -143,35 +144,35 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     os.makedirs("sessions", exist_ok=True)
     configure_sentry()
     configure_uvicorn_access_log_filter()
-    init_database()
+    await run_in_threadpool(init_database)
     yield
 
 
-async def handle_exceed_limit(request: Request, exc: Exception):
+def handle_exceed_limit(request: Request, exc: Exception):
     """Handle rate limit exceeded errors by redirecting to login with error message"""
     if not isinstance(exc, RateLimitExceeded):
         raise exc
     return RedirectResponse(url="/login?error=ratelimit", status_code=303)
 
 
-async def home():
+def home():
     """Redirect home page to login"""
     return RedirectResponse(url="/login", status_code=303)
 
 
-async def health_check():
+def health_check():
     """Health check endpoint for Docker health monitoring"""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 
-async def auth_redirect_handler(request: Request, exc: Exception):
+def auth_redirect_handler(request: Request, exc: Exception):
     """Redirect unauthenticated requests to the login page (or other target)."""
     if not isinstance(exc, AuthRedirect):
         raise exc
     return RedirectResponse(url=exc.location, status_code=303)
 
 
-async def http_exception_handler(request: Request, exc: Exception):
+def http_exception_handler(request: Request, exc: Exception):
     if not isinstance(exc, StarletteHTTPException):
         raise exc
     if exc.status_code == 404:
@@ -189,7 +190,7 @@ async def http_exception_handler(request: Request, exc: Exception):
     )
 
 
-async def generic_exception_handler(request: Request, exc: Exception):
+def generic_exception_handler(request: Request, exc: Exception):
     if request.url.path.startswith(HEALTH_PATH_PREFIX):
         return JSONResponse(status_code=500, content={"status": "unhealthy"})
     logger.error(f"Unhandled exception: {exc}", exc_info=True)

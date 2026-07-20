@@ -15,7 +15,7 @@ router = APIRouter(tags=["success"])
 
 
 @router.get("/success")
-async def success_page(
+def success_page(
     request: Request,
     _: str = Depends(get_authenticated_user_email),
 ):
