@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from src.core.settings import MAX_FORMS
 from src.google_drive import (
     DRIVE_UPLOAD_MAX_WORKERS,
     DRIVE_UPLOAD_RETRIES,
@@ -31,6 +32,28 @@ def _write_files(folder: Path, count: int) -> list[Path]:
     return paths
 
 
+def _write_max_submission_files(folder: Path) -> tuple[list[Path], Path]:
+    upload_paths: list[Path] = []
+    for form_number in range(1, MAX_FORMS + 1):
+        for suffix in ("invoice.pdf", "proof_of_payment.pdf"):
+            path = folder / f"{form_number}_{suffix}"
+            path.write_bytes(b"invoice")
+            upload_paths.append(path)
+
+    for filename in (
+        "void_cheque.pdf",
+        "purchase_request.xlsx",
+        "expense_report.xlsx",
+    ):
+        path = folder / filename
+        path.write_bytes(b"generated output")
+        upload_paths.append(path)
+
+    signature_path = folder / "signature.png"
+    signature_path.write_bytes(b"signature")
+    return upload_paths, signature_path
+
+
 def test_upload_file_uses_google_rate_limit_retries(tmp_path) -> None:
     file_path = tmp_path / "invoice.pdf"
     file_path.write_bytes(b"invoice")
@@ -56,8 +79,10 @@ def test_upload_file_uses_google_rate_limit_retries(tmp_path) -> None:
     assert execute_calls == [DRIVE_UPLOAD_RETRIES]
 
 
-def test_upload_session_folder_uses_bounded_concurrency(monkeypatch, tmp_path) -> None:
-    files = _write_files(tmp_path, DRIVE_UPLOAD_MAX_WORKERS * 2)
+def test_upload_session_folder_handles_maximum_53_file_batch(
+    monkeypatch, tmp_path
+) -> None:
+    files, signature_path = _write_max_submission_files(tmp_path)
     lock = threading.Lock()
     active_uploads = 0
     max_active_uploads = 0
@@ -81,7 +106,9 @@ def test_upload_session_folder_uses_bounded_concurrency(monkeypatch, tmp_path) -
     client.service = object()
 
     assert client.upload_session_folder(str(tmp_path), _user_info(), "folder-id")
+    assert len(files) == 53
     assert uploaded_files == {path.name for path in files}
+    assert signature_path.name not in uploaded_files
     assert 1 < max_active_uploads <= DRIVE_UPLOAD_MAX_WORKERS
 
 
