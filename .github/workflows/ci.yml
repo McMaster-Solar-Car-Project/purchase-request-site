@@ -21,6 +21,7 @@ jobs:
       RUN_LIVE_PIPELINE_TEST: ${{ vars.RUN_LIVE_PIPELINE_TEST || '1' }}
       # App reads GOOGLE_DRIVE_FOLDER_ID (src/google_drive.py); GitHub variable is PARENT_FOLDER_ID.
       GOOGLE_DRIVE_FOLDER_ID: ${{ vars.PARENT_FOLDER_ID }}
+      GOOGLE_TEST_DRIVE_FOLDER_ID: ${{ vars.GOOGLE_TEST_DRIVE_FOLDER_ID }}
       # Service account JSON fields — add these under Actions → Secrets (same names as below).
       GOOGLE_SETTINGS__PROJECT_ID: ${{ secrets.GOOGLE_SETTINGS__PROJECT_ID }}
       GOOGLE_SETTINGS__PRIVATE_KEY: ${{ secrets.GOOGLE_SETTINGS__PRIVATE_KEY }}

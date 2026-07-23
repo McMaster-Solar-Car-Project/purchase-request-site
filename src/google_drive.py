@@ -76,7 +76,7 @@ class GoogleDriveClient:
             return self.parent_folder_id
 
         service = self._service()
-        parent_id = get_settings().google_drive_folder_id
+        parent_id = get_settings().google_drive_parent_folder_id
         try:
             service.files().get(fileId=parent_id, fields="id, name").execute()
         except HttpError:
