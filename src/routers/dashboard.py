@@ -66,6 +66,7 @@ class SubmissionOutputResult:
     drive_folder_id: str = ""
     drive_upload_success: bool = False
     purchase_request_filename: str = ""
+    sheets_log_success: bool = False
 
 
 def _form_str(value: object, default: str = "") -> str:
@@ -421,9 +422,10 @@ async def _run_submission_outputs(
             logger.exception("Failed to create Google Drive folder (continuing anyway)")
 
         sheets_client: GoogleSheetsClient | None = None
+        sheets_log_success = False
         try:
             sheets_client = GoogleSheetsClient()
-            await run_in_threadpool(
+            sheets_log_success = await run_in_threadpool(
                 sheets_client.log_purchase_request,
                 user_info,
                 submitted_forms,
@@ -461,6 +463,7 @@ async def _run_submission_outputs(
         drive_folder_id=drive_folder_id,
         drive_upload_success=drive_upload_success,
         purchase_request_filename=purchase_request_filename,
+        sheets_log_success=sheets_log_success,
     )
 
 
@@ -556,12 +559,23 @@ async def _submit_all_requests(
         user_info, submitted_forms, session_folder
     )
 
-    if output_result.drive_upload_success:
-        if output_result.drive_folder_id and output_result.purchase_request_filename:
-            request.session["download_info"] = {
-                "drive_folder_id": output_result.drive_folder_id,
-                "excel_file": output_result.purchase_request_filename,
-            }
+    if (
+        output_result.drive_upload_success
+        and output_result.drive_folder_id
+        and output_result.purchase_request_filename
+    ):
+        request.session["download_info"] = {
+            "drive_folder_id": output_result.drive_folder_id,
+            "excel_file": output_result.purchase_request_filename,
+        }
+
+    if output_result.drive_upload_success and output_result.sheets_log_success:
         await _cleanup_session_folder(session_folder)
+    else:
+        logger.error(
+            "Submission outputs are incomplete; retaining local session folder "
+            f"{session_folder} (drive={output_result.drive_upload_success}, "
+            f"sheets={output_result.sheets_log_success})"
+        )
 
     return RedirectResponse(url="/success", status_code=303)

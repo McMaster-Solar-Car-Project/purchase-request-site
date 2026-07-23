@@ -41,6 +41,10 @@ class Settings(BaseSettings):
         default="",
         validation_alias=AliasChoices("GOOGLE_DRIVE_FOLDER_ID", "PARENT_FOLDER_ID"),
     )  # gitleaks: allowlist
+    google_test_drive_folder_id: str = Field(
+        default="",
+        alias="GOOGLE_TEST_DRIVE_FOLDER_ID",
+    )
 
     google_settings_project_id: str = Field(
         default="", alias="GOOGLE_SETTINGS__PROJECT_ID"
@@ -66,7 +70,6 @@ class Settings(BaseSettings):
         always_required_str_fields = (
             "host",
             "google_sheet_id",
-            "google_drive_folder_id",
             "google_settings_project_id",
             "google_settings_private_key",
             "google_settings_client_email",
@@ -74,7 +77,12 @@ class Settings(BaseSettings):
             "google_settings_client_id",
             "google_settings_client_x509_cert_url",
         )
-        required_str_fields = always_required_str_fields
+        drive_folder_field = (
+            "google_test_drive_folder_id"
+            if self.is_testing
+            else "google_drive_folder_id"
+        )
+        required_str_fields = (*always_required_str_fields, drive_folder_field)
         missing = [
             field_name
             for field_name in required_str_fields
@@ -99,6 +107,14 @@ class Settings(BaseSettings):
     @property
     def sheet_tab_name(self) -> str:
         return "Test Responses" if self.is_testing else "Website Responses"
+
+    @property
+    def google_drive_parent_folder_id(self) -> str:
+        return (
+            self.google_test_drive_folder_id
+            if self.is_testing
+            else self.google_drive_folder_id
+        )
 
     @property
     def google_service_account_info(self) -> dict[str, Any]:

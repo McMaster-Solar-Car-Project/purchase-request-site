@@ -1,7 +1,7 @@
 """Google Drive integration: uploads session data (Excel, invoices, signatures)."""
 
 import mimetypes
-import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -20,6 +20,8 @@ logger = setup_logger(__name__)
 
 DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"]
 FOLDER_MIME = "application/vnd.google-apps.folder"
+DRIVE_UPLOAD_MAX_WORKERS = 4
+DRIVE_UPLOAD_RETRIES = 5
 
 
 def _escape_drive_query_literal(value: str) -> str:
@@ -74,7 +76,7 @@ class GoogleDriveClient:
             return self.parent_folder_id
 
         service = self._service()
-        parent_id = get_settings().google_drive_folder_id
+        parent_id = get_settings().google_drive_parent_folder_id
         try:
             service.files().get(fileId=parent_id, fields="id, name").execute()
         except HttpError:
@@ -137,34 +139,42 @@ class GoogleDriveClient:
         mime_type = mimetypes.guess_type(file_path)[0] or "application/octet-stream"
         file_name = path.name
 
-        max_retries = 3
-        retry_delay = 1
-        for attempt in range(max_retries):
-            try:
-                file_obj = (
-                    service.files()
-                    .create(
-                        body={"name": file_name, "parents": [folder_id]},
-                        media_body=MediaFileUpload(
-                            file_path, mimetype=mime_type, resumable=True
-                        ),
-                        fields="id",
-                    )
-                    .execute()
+        try:
+            file_obj = (
+                service.files()
+                .create(
+                    body={"name": file_name, "parents": [folder_id]},
+                    media_body=MediaFileUpload(
+                        file_path, mimetype=mime_type, resumable=True
+                    ),
+                    fields="id",
                 )
-                logger.info(f"✅ Uploaded {file_name} to Google Drive")
-                return file_obj["id"]
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    logger.warning(
-                        f"Upload attempt {attempt + 1} failed for {file_name}, "
-                        f"retrying in {retry_delay}s: {e}"
-                    )
-                    time.sleep(retry_delay)
-                    retry_delay *= 2
-                else:
-                    logger.exception(f"All upload attempts failed for {file_path}")
-        return None
+                .execute(num_retries=DRIVE_UPLOAD_RETRIES)
+            )
+            logger.info(f"✅ Uploaded {file_name} to Google Drive")
+            return file_obj["id"]
+        except Exception:
+            logger.exception(
+                f"Upload failed for {file_path} after rate-limit-aware retries"
+            )
+            return None
+
+    @staticmethod
+    def _upload_files_in_worker(file_paths: list[Path], folder_id: str) -> list[str]:
+        """Upload a batch with a client isolated to this worker thread."""
+        client = GoogleDriveClient()
+        failed_files: list[str] = []
+        try:
+            for file_path in file_paths:
+                try:
+                    if client._upload_file(str(file_path), folder_id) is None:
+                        failed_files.append(file_path.name)
+                except Exception:
+                    failed_files.append(file_path.name)
+                    logger.exception(f"Error uploading {file_path.name}")
+            return failed_files
+        finally:
+            client.close()
 
     def create_session_folder_structure(
         self, session_folder_path: str, user_info: SubmissionUserInfo
@@ -222,12 +232,41 @@ class GoogleDriveClient:
                 )
                 return True
 
-            for file_path in files_to_upload:
-                try:
-                    if not self._upload_file(str(file_path), session_folder_id):
-                        logger.warning(f"Failed to upload {file_path.name}")
-                except Exception:
-                    logger.exception(f"Error uploading {file_path.name}")
+            max_workers = min(DRIVE_UPLOAD_MAX_WORKERS, len(files_to_upload))
+            failed_files: list[str] = []
+            file_batches = [
+                files_to_upload[worker_index::max_workers]
+                for worker_index in range(max_workers)
+            ]
+            with ThreadPoolExecutor(
+                max_workers=max_workers, thread_name_prefix="drive-upload"
+            ) as executor:
+                upload_futures = {
+                    executor.submit(
+                        self._upload_files_in_worker, file_batch, session_folder_id
+                    ): file_batch
+                    for file_batch in file_batches
+                }
+                for future in as_completed(upload_futures):
+                    file_batch = upload_futures[future]
+                    try:
+                        failed_files.extend(future.result())
+                    except Exception:
+                        failed_files.extend(file_path.name for file_path in file_batch)
+                        logger.exception(
+                            "Upload worker failed; retaining every file in its batch"
+                        )
+
+            if failed_files:
+                logger.error(
+                    "Drive upload incomplete; retaining local session files. "
+                    f"Failed files: {', '.join(sorted(failed_files))}"
+                )
+                return False
+
+            logger.info(
+                f"Uploaded {len(files_to_upload)} files with {max_workers} workers"
+            )
             return True
         except Exception:
             logger.exception("Error uploading session folder")

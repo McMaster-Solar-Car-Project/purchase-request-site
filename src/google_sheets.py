@@ -4,9 +4,6 @@ Google Sheets integration module for the Purchase Request Site.
 This module handles writing purchase request data to Google Sheets for logging and tracking.
 """
 
-import random
-import ssl
-import time
 from datetime import datetime
 from typing import Any
 
@@ -25,6 +22,7 @@ logger = setup_logger(__name__)
 
 # Google Sheets configuration
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+SHEETS_WRITE_RETRIES = 5
 
 
 class GoogleSheetsClient:
@@ -61,36 +59,22 @@ class GoogleSheetsClient:
             logger.exception("Failed to authenticate with Google Sheets API")
             return False
 
-    def _is_retriable(self, exc: Exception) -> bool:
-        if isinstance(exc, HttpError):
-            status = getattr(exc.resp, "status", None)
-            return status is not None and 500 <= int(status) < 600
-        if isinstance(exc, (OSError, ssl.SSLError)):
-            return "EOF occurred in violation of protocol" in str(exc)
-        return False
-
-    def _append_row_with_retries(self, range_name, body, max_attempts=5):
+    def _append_row_with_retries(self, range_name, body):
         service = self.service
         if service is None:
             raise RuntimeError("Google Sheets client is not authenticated")
 
-        for attempt in range(1, max_attempts + 1):
-            try:
-                return (
-                    service.spreadsheets()
-                    .values()
-                    .append(
-                        spreadsheetId=self.sheet_id,
-                        range=range_name,
-                        valueInputOption="RAW",
-                        body=body,
-                    )
-                    .execute()
-                )
-            except (HttpError, OSError, ssl.SSLError) as e:
-                if attempt >= max_attempts or not self._is_retriable(e):
-                    raise
-                time.sleep((2 ** (attempt - 1)) + random.random())
+        return (
+            service.spreadsheets()
+            .values()
+            .append(
+                spreadsheetId=self.sheet_id,
+                range=range_name,
+                valueInputOption="RAW",
+                body=body,
+            )
+            .execute(num_retries=SHEETS_WRITE_RETRIES)
+        )
 
     def log_purchase_request(
         self,

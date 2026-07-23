@@ -2,6 +2,7 @@ import os
 
 import pytest
 
+from src.core.settings import get_settings
 from src.google_drive import GoogleDriveClient
 from src.google_sheets import GoogleSheetsClient
 
@@ -36,7 +37,7 @@ def test_google_sheets_connection_reads_metadata() -> None:
 
 
 @pytest.mark.skipif(
-    not _has_google_service_account_env() or not os.getenv("GOOGLE_DRIVE_FOLDER_ID"),
+    not _has_google_service_account_env(),
     reason="Google Drive integration env vars are not configured",
 )
 def test_google_drive_connection_reads_folder() -> None:
@@ -45,6 +46,8 @@ def test_google_drive_connection_reads_folder() -> None:
         assert client._authenticate()
         folder_id = client._ensure_parent_folder()
         assert folder_id
+        assert get_settings().is_testing
+        assert folder_id == get_settings().google_test_drive_folder_id
 
         service = client.service
         assert service is not None
