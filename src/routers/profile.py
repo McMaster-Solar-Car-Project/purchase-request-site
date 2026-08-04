@@ -128,12 +128,13 @@ def edit_profile_post(
         redirect_url = "/home?updated=true"
         return RedirectResponse(url=redirect_url, status_code=303)
 
+    except ValueError as exc:
+        logger.warning(f"Profile update rejected for {authenticated_email}: {exc}")
     except Exception:
         logger.exception(f"Error updating profile for {authenticated_email}")
-        db.rollback()
 
-        # Redirect back to edit form with error
-        return RedirectResponse(
-            url="/edit-profile?error=update_failed",
-            status_code=303,
-        )
+    db.rollback()
+    return RedirectResponse(
+        url="/edit-profile?error=update_failed",
+        status_code=303,
+    )
