@@ -57,3 +57,4 @@ scripts/
 
 # Node / frontend stuff
 node_modules/
+src/static/css/output.css
