@@ -6,6 +6,7 @@ clients, and tests.
 """
 
 from datetime import date
+from decimal import Decimal
 from typing import Annotated
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator
@@ -19,7 +20,11 @@ def _blank_to_zero(value: object) -> object:
     return value
 
 
-NonNegFloat = Annotated[float, BeforeValidator(_blank_to_zero), Field(ge=0)]
+NonNegDecimal = Annotated[
+    Decimal,
+    BeforeValidator(_blank_to_zero),
+    Field(ge=0, max_digits=16, decimal_places=8),
+]
 PositiveInt = Annotated[int, BeforeValidator(_blank_to_zero), Field(gt=0)]
 
 
@@ -29,10 +34,10 @@ class SubmissionLineItem(BaseModel):
     name: str = Field(min_length=1)
     usage: str = Field(min_length=1)
     quantity: PositiveInt
-    unit_price: NonNegFloat
+    unit_price: NonNegDecimal
 
     @property
-    def total(self) -> float:
+    def total(self) -> Decimal:
         return self.unit_price * self.quantity
 
 
@@ -47,13 +52,13 @@ class Invoice(BaseModel):
     invoice_file_location: str = Field(min_length=1)
     proof_of_payment_filename: str | None = None
     proof_of_payment_location: str | None = None
-    subtotal_amount: NonNegFloat
-    discount_amount: NonNegFloat
-    hst_gst_amount: NonNegFloat
-    shipping_amount: NonNegFloat
-    total_cad_amount: NonNegFloat
-    us_subtotal: NonNegFloat
-    us_additional_fees: NonNegFloat
+    subtotal_amount: NonNegDecimal
+    discount_amount: NonNegDecimal
+    hst_gst_amount: NonNegDecimal
+    shipping_amount: NonNegDecimal
+    total_cad_amount: NonNegDecimal
+    us_subtotal: NonNegDecimal
+    us_additional_fees: NonNegDecimal
     items: list[SubmissionLineItem] = Field(min_length=1)
 
     @field_validator("purchase_date")
@@ -64,12 +69,12 @@ class Invoice(BaseModel):
         return value
 
     @property
-    def us_total(self) -> float:
+    def us_total(self) -> Decimal:
         """Total USD paid (subtotal plus any additional fees/taxes/tariffs)."""
         return self.us_subtotal + self.us_additional_fees
 
     @property
-    def exchange_rate(self) -> float:
+    def exchange_rate(self) -> Decimal:
         if self.us_total <= 0 or self.total_cad_amount <= 0:
-            return 0
+            return Decimal(0)
         return self.total_cad_amount / self.us_total

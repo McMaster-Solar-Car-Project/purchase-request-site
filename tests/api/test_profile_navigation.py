@@ -69,3 +69,21 @@ def test_edit_profile_save_redirects_to_home(monkeypatch) -> None:
 
     assert response.status_code == 303
     assert response.headers["location"] == "/home?updated=true"
+
+
+def test_edit_profile_does_not_embed_void_cheque(monkeypatch) -> None:
+    import src.routers.profile as profile_module
+
+    monkeypatch.setattr(
+        profile_module,
+        "get_user_by_email",
+        lambda _db, _email: FakeUser(),
+    )
+
+    response = _make_client().get("/edit-profile")
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert "A void cheque is on file" in response.text
+    assert "fake-void-cheque" not in response.text
+    assert "data:application/pdf" not in response.text

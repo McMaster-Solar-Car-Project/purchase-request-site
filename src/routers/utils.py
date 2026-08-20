@@ -17,11 +17,6 @@ class AuthRedirect(Exception):  # noqa: N818  # flow-control, not an error
         self.location = location
 
 
-def require_auth(request: Request) -> None:
-    """Need to be authenticated to access this endpoint."""
-    get_authenticated_user_email(request)
-
-
 def get_authenticated_user_email(request: Request) -> str:
     """Return the authenticated session email or redirect to login."""
     if not request.session.get("authenticated", False):

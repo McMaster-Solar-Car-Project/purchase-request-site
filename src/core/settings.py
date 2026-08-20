@@ -1,4 +1,6 @@
+from decimal import Decimal
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 from pydantic import AliasChoices, Field, model_validator
@@ -28,9 +30,36 @@ class Settings(BaseSettings):
     environment: str = Field(default="testing", alias="ENVIRONMENT")
     sentry_dsn: str | None = Field(default=None, alias="SENTRY_DSN")
     sentry_release: str | None = Field(default=None, alias="SENTRY_RELEASE")
+    session_secret: str | None = Field(default=None, alias="SESSION_SECRET")
     host: str = Field(default="0.0.0.0", alias="HOST")
     port: int = Field(default=8000, alias="PORT")
     debug: bool = Field(default=False, alias="DEBUG")
+    sessions_root: Path = Field(default=Path("sessions"), alias="SESSIONS_ROOT")
+    minimum_total_cad_amount: Decimal = Field(
+        default=Decimal("100.00"),
+        alias="MINIMUM_TOTAL_CAD_AMOUNT",
+        ge=0,
+    )
+    max_upload_file_bytes: int = Field(
+        default=10 * 1024 * 1024,
+        alias="MAX_UPLOAD_FILE_BYTES",
+        gt=0,
+    )
+    max_submission_upload_bytes: int = Field(
+        default=100 * 1024 * 1024,
+        alias="MAX_SUBMISSION_UPLOAD_BYTES",
+        gt=0,
+    )
+    max_signature_upload_bytes: int = Field(
+        default=5 * 1024 * 1024,
+        alias="MAX_SIGNATURE_UPLOAD_BYTES",
+        gt=0,
+    )
+    max_void_cheque_upload_bytes: int = Field(
+        default=10 * 1024 * 1024,
+        alias="MAX_VOID_CHEQUE_UPLOAD_BYTES",
+        gt=0,
+    )
     database_url: str = Field(
         default="",
         alias="DATABASE_URL",
@@ -94,6 +123,12 @@ class Settings(BaseSettings):
             )
         if self.is_production and not self.database_url:
             raise ValueError("Missing required settings values: DATABASE_URL")
+        if self.is_production and not self.session_secret:
+            raise ValueError("Missing required settings values: SESSION_SECRET")
+        if self.max_submission_upload_bytes < self.max_upload_file_bytes:
+            raise ValueError(
+                "MAX_SUBMISSION_UPLOAD_BYTES must be at least MAX_UPLOAD_FILE_BYTES"
+            )
         return self
 
     @property

@@ -65,16 +65,21 @@ def test_submit_all_requests_live_pipeline(monkeypatch, tmp_path) -> None:
             "RUN_LIVE_PIPELINE_TEST not enabled; expected one of [1,true,yes], "
             f"got {raw_live_flag!r}"
         )
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
     session_folder = tmp_path / "live-pipeline-session"
     session_folder.mkdir(parents=True, exist_ok=True)
-    monkeypatch.setattr(dashboard_module, "SESSIONS_ROOT", tmp_path.resolve())
+    settings = service_module.get_settings().model_copy(
+        update={"sessions_root": tmp_path.resolve()}
+    )
+    monkeypatch.setattr(service_module, "get_settings", lambda: settings)
     monkeypatch.setattr(
-        dashboard_module, "create_session_folder", lambda _name: str(session_folder)
+        service_module,
+        "create_session_folder",
+        lambda _name, _sessions_root: str(session_folder),
     )
     monkeypatch.setattr(
-        dashboard_module,
+        service_module,
         "get_user_by_email",
         lambda _db, _email: FakeUser(
             name="Integration Test User",

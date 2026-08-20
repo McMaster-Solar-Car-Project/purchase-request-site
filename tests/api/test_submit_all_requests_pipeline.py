@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import date, timedelta
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -100,27 +101,30 @@ def _invoice_file(form_num: int = 1) -> dict[str, tuple[str, bytes, str]]:
     return {
         f"invoice_file_{form_num}": (
             "invoice.pdf",
-            b"fake-invoice-bytes",
+            b"%PDF-1.4 fake-invoice-bytes",
             "application/pdf",
         )
     }
 
 
-def _patch_session_folder(monkeypatch, dashboard_module, tmp_path, name: str) -> Path:
+def _patch_session_folder(monkeypatch, service_module, tmp_path, name: str) -> Path:
     session_folder = tmp_path / name
     session_folder.mkdir(parents=True, exist_ok=True)
-    monkeypatch.setattr(dashboard_module, "SESSIONS_ROOT", tmp_path.resolve())
+    settings = service_module.get_settings().model_copy(
+        update={"sessions_root": tmp_path.resolve()}
+    )
+    monkeypatch.setattr(service_module, "get_settings", lambda: settings)
     monkeypatch.setattr(
-        dashboard_module, "create_session_folder", lambda _name: str(session_folder)
+        service_module,
+        "create_session_folder",
+        lambda _name, _sessions_root: str(session_folder),
     )
     return session_folder
 
 
-def _patch_user_and_profile_files(
-    monkeypatch, dashboard_module, user: FakeUser
-) -> None:
+def _patch_user_and_profile_files(monkeypatch, service_module, user: FakeUser) -> None:
     monkeypatch.setattr(
-        dashboard_module,
+        service_module,
         "get_user_by_email",
         lambda _db, email: user if email == user.email else None,
     )
@@ -134,16 +138,16 @@ def _patch_user_and_profile_files(
         return True
 
     monkeypatch.setattr(
-        dashboard_module, "save_signature_to_file", fake_save_signature_to_file
+        service_module, "save_signature_to_file", fake_save_signature_to_file
     )
     monkeypatch.setattr(
-        dashboard_module, "save_void_cheque_to_file", fake_save_void_cheque_to_file
+        service_module, "save_void_cheque_to_file", fake_save_void_cheque_to_file
     )
 
 
 def _patch_external_clients(
     monkeypatch,
-    dashboard_module,
+    service_module,
     *,
     drive_upload_success: bool = True,
     sheets_log_success: bool = True,
@@ -175,13 +179,10 @@ def _patch_external_clients(
             calls["drive_closed"] = True
 
     class FakeSheetsClient:
-        def log_purchase_request(
-            self, user_info, submitted_forms, session_folder, drive_folder_url
-        ):
+        def log_purchase_request(self, user_info, submitted_forms, drive_folder_url):
             calls["sheets"] = (
                 user_info,
                 submitted_forms,
-                session_folder,
                 drive_folder_url,
             )
             return sheets_log_success
@@ -190,25 +191,25 @@ def _patch_external_clients(
             calls["sheets_closed"] = True
 
     monkeypatch.setattr(
-        dashboard_module, "create_purchase_request", fake_create_purchase_request
+        service_module, "create_purchase_request", fake_create_purchase_request
     )
     monkeypatch.setattr(
-        dashboard_module, "create_expense_report", fake_create_expense_report
+        service_module, "create_expense_report", fake_create_expense_report
     )
-    monkeypatch.setattr(dashboard_module, "GoogleDriveClient", FakeDriveClient)
-    monkeypatch.setattr(dashboard_module, "GoogleSheetsClient", FakeSheetsClient)
+    monkeypatch.setattr(service_module, "GoogleDriveClient", FakeDriveClient)
+    monkeypatch.setattr(service_module, "GoogleSheetsClient", FakeSheetsClient)
     return calls
 
 
 def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
     session_folder = _patch_session_folder(
-        monkeypatch, dashboard_module, tmp_path, "session-success"
+        monkeypatch, service_module, tmp_path, "session-success"
     )
     user = _make_user()
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, user)
-    calls = _patch_external_clients(monkeypatch, dashboard_module)
+    _patch_user_and_profile_files(monkeypatch, service_module, user)
+    calls = _patch_external_clients(monkeypatch, service_module)
 
     client = _make_test_client()
     response = client.post(
@@ -233,6 +234,8 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
     assert user_info.email == "test@example.com"
     assert user_info.e_transfer_email == "transfer@example.com"
     assert submitted_forms[0].purchase_date == date(2024, 1, 15)
+    assert submitted_forms[0].subtotal_amount == Decimal("100.00")
+    assert submitted_forms[0].total_cad_amount == Decimal("100.00")
     assert "expense_report" in calls
     assert "drive_folder" in calls
     assert "sheets" in calls
@@ -245,13 +248,13 @@ def test_submit_all_requests_full_pipeline_success(monkeypatch, tmp_path) -> Non
 def test_submit_all_requests_retains_files_when_sheets_log_fails(
     monkeypatch, tmp_path
 ) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
     session_folder = _patch_session_folder(
-        monkeypatch, dashboard_module, tmp_path, "session-sheets-failure"
+        monkeypatch, service_module, tmp_path, "session-sheets-failure"
     )
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
-    _patch_external_clients(monkeypatch, dashboard_module, sheets_log_success=False)
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    _patch_external_clients(monkeypatch, service_module, sheets_log_success=False)
 
     client = _make_test_client()
     response = client.post(
@@ -266,12 +269,145 @@ def test_submit_all_requests_retains_files_when_sheets_log_fails(
     assert (session_folder / "1_Amazon.pdf").exists()
 
 
-def test_submit_all_requests_accepts_thirty_items(monkeypatch, tmp_path) -> None:
-    import src.routers.dashboard as dashboard_module
+def test_submit_all_requests_recalculates_cad_totals(monkeypatch, tmp_path) -> None:
+    import src.services.submission_workflow as service_module
 
-    _patch_session_folder(monkeypatch, dashboard_module, tmp_path, "session-30-items")
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
-    calls = _patch_external_clients(monkeypatch, dashboard_module)
+    _patch_session_folder(monkeypatch, service_module, tmp_path, "session-totals")
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, service_module)
+
+    response = _make_test_client().post(
+        "/submit-all-requests",
+        data=_valid_cad_data(
+            subtotal_amount_1="1.00",
+            total_cad_amount_1="9999.00",
+            discount_amount_1="5.00",
+            hst_gst_amount_1="13.00",
+            shipping_amount_1="2.00",
+        ),
+        files=_invoice_file(),
+    )
+
+    assert response.headers["location"] == "/success"
+    invoice = calls["purchase_request"][1][0]
+    assert invoice.subtotal_amount == Decimal("100.00")
+    assert invoice.total_cad_amount == Decimal("110.00")
+
+
+def test_posted_cad_total_cannot_bypass_minimum(monkeypatch, tmp_path) -> None:
+    import src.services.submission_workflow as service_module
+
+    session_folder = _patch_session_folder(
+        monkeypatch, service_module, tmp_path, "session-tampered-total"
+    )
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, service_module)
+
+    response = _make_test_client().post(
+        "/submit-all-requests",
+        data=_valid_cad_data(
+            subtotal_amount_1="1000.00",
+            total_cad_amount_1="1000.00",
+            item_price_1_1="1.00",
+        ),
+        files=_invoice_file(),
+    )
+
+    assert response.headers["location"] == "/dashboard?error=below_minimum"
+    assert "purchase_request" not in calls
+    assert not session_folder.exists()
+
+
+def test_submit_all_requests_derives_usd_subtotal_from_items(
+    monkeypatch, tmp_path
+) -> None:
+    import src.services.submission_workflow as service_module
+
+    _patch_session_folder(monkeypatch, service_module, tmp_path, "session-usd")
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, service_module)
+    files = {
+        **_invoice_file(),
+        "proof_of_payment_1": (
+            "payment.pdf",
+            b"%PDF-1.4 payment",
+            "application/pdf",
+        ),
+    }
+
+    response = _make_test_client().post(
+        "/submit-all-requests",
+        data=_valid_cad_data(
+            currency_1="USD",
+            item_price_1_1="80.123",
+            us_subtotal_1="9999.00",
+            us_additional_fees_1="20.00",
+            total_cad_amount_1="135.00",
+        ),
+        files=files,
+    )
+
+    assert response.headers["location"] == "/success"
+    invoice = calls["purchase_request"][1][0]
+    assert invoice.us_subtotal == Decimal("80.12")
+    assert invoice.us_total == Decimal("100.12")
+    assert invoice.total_cad_amount == Decimal("135.00")
+
+
+def test_submit_all_requests_rejects_invalid_file_contents(
+    monkeypatch, tmp_path
+) -> None:
+    import src.services.submission_workflow as service_module
+
+    session_folder = _patch_session_folder(
+        monkeypatch, service_module, tmp_path, "session-invalid-file"
+    )
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+
+    response = _make_test_client().post(
+        "/submit-all-requests",
+        data=_valid_cad_data(),
+        files={
+            "invoice_file_1": (
+                "invoice.pdf",
+                b"not a pdf",
+                "application/pdf",
+            )
+        },
+    )
+
+    assert response.headers["location"] == "/dashboard?error=invalid_file"
+    assert not session_folder.exists()
+
+
+def test_submit_all_requests_rejects_oversized_file(monkeypatch, tmp_path) -> None:
+    import src.services.submission_workflow as service_module
+
+    session_folder = _patch_session_folder(
+        monkeypatch, service_module, tmp_path, "session-large-file"
+    )
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    settings = service_module.get_settings().model_copy(
+        update={"max_upload_file_bytes": 8}
+    )
+    monkeypatch.setattr(service_module, "get_settings", lambda: settings)
+
+    response = _make_test_client().post(
+        "/submit-all-requests",
+        data=_valid_cad_data(),
+        files=_invoice_file(),
+    )
+
+    assert response.headers["location"] == "/dashboard?error=file_too_large"
+    assert not session_folder.exists()
+
+
+def test_submit_all_requests_accepts_thirty_items(monkeypatch, tmp_path) -> None:
+    import src.services.submission_workflow as service_module
+
+    _patch_session_folder(monkeypatch, service_module, tmp_path, "session-30-items")
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, service_module)
 
     client = _make_test_client()
     response = client.post(
@@ -290,11 +426,11 @@ def test_submit_all_requests_accepts_thirty_items(monkeypatch, tmp_path) -> None
 
 
 def test_submit_all_requests_accepts_form_25(monkeypatch, tmp_path) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
-    _patch_session_folder(monkeypatch, dashboard_module, tmp_path, "session-form-25")
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
-    calls = _patch_external_clients(monkeypatch, dashboard_module)
+    _patch_session_folder(monkeypatch, service_module, tmp_path, "session-form-25")
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, service_module)
 
     client = _make_test_client()
     response = client.post(
@@ -315,12 +451,12 @@ def test_submit_all_requests_accepts_form_25(monkeypatch, tmp_path) -> None:
 def test_submit_all_requests_uses_session_email_not_spoofed_form_email(
     monkeypatch, tmp_path
 ) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
-    _patch_session_folder(monkeypatch, dashboard_module, tmp_path, "session-spoof")
+    _patch_session_folder(monkeypatch, service_module, tmp_path, "session-spoof")
     user = _make_user(email="session@example.com")
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, user)
-    calls = _patch_external_clients(monkeypatch, dashboard_module)
+    _patch_user_and_profile_files(monkeypatch, service_module, user)
+    calls = _patch_external_clients(monkeypatch, service_module)
 
     client = _make_test_client(session_email="session@example.com")
     response = client.post(
@@ -389,12 +525,12 @@ def test_edit_profile_uses_session_email_not_query_email(monkeypatch) -> None:
 def test_submit_all_requests_no_forms_redirects_with_error(
     monkeypatch, tmp_path
 ) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
     session_folder = _patch_session_folder(
-        monkeypatch, dashboard_module, tmp_path, "session-no-forms"
+        monkeypatch, service_module, tmp_path, "session-no-forms"
     )
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
 
     client = _make_test_client()
     response = client.post("/submit-all-requests", data={})
@@ -407,12 +543,12 @@ def test_submit_all_requests_no_forms_redirects_with_error(
 def test_submit_all_requests_ignores_date_only_empty_form(
     monkeypatch, tmp_path
 ) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
     session_folder = _patch_session_folder(
-        monkeypatch, dashboard_module, tmp_path, "session-date-only"
+        monkeypatch, service_module, tmp_path, "session-date-only"
     )
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
 
     client = _make_test_client()
     response = client.post(
@@ -426,12 +562,12 @@ def test_submit_all_requests_ignores_date_only_empty_form(
 
 
 def test_submit_all_requests_rejects_partial_item_rows(monkeypatch, tmp_path) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
     session_folder = _patch_session_folder(
-        monkeypatch, dashboard_module, tmp_path, "session-partial-row"
+        monkeypatch, service_module, tmp_path, "session-partial-row"
     )
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
 
     client = _make_test_client()
     response = client.post(
@@ -448,12 +584,12 @@ def test_submit_all_requests_rejects_partial_item_rows(monkeypatch, tmp_path) ->
 def test_submit_all_requests_rejects_missing_purchase_date(
     monkeypatch, tmp_path
 ) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
     session_folder = _patch_session_folder(
-        monkeypatch, dashboard_module, tmp_path, "session-missing-purchase-date"
+        monkeypatch, service_module, tmp_path, "session-missing-purchase-date"
     )
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
 
     client = _make_test_client()
     response = client.post(
@@ -470,12 +606,12 @@ def test_submit_all_requests_rejects_missing_purchase_date(
 def test_submit_all_requests_rejects_future_purchase_date(
     monkeypatch, tmp_path
 ) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
     session_folder = _patch_session_folder(
-        monkeypatch, dashboard_module, tmp_path, "session-future-purchase-date"
+        monkeypatch, service_module, tmp_path, "session-future-purchase-date"
     )
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
 
     client = _make_test_client()
     response = client.post(
@@ -494,12 +630,12 @@ def test_submit_all_requests_rejects_future_purchase_date(
 def test_submit_all_requests_rejects_more_than_fifty_items(
     monkeypatch, tmp_path
 ) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
     session_folder = _patch_session_folder(
-        monkeypatch, dashboard_module, tmp_path, "session-too-many-items"
+        monkeypatch, service_module, tmp_path, "session-too-many-items"
     )
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
 
     client = _make_test_client()
     response = client.post(
@@ -519,13 +655,13 @@ def test_submit_all_requests_rejects_more_than_fifty_items(
 
 
 def test_submit_all_requests_rejects_total_below_minimum(monkeypatch, tmp_path) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
     session_folder = _patch_session_folder(
-        monkeypatch, dashboard_module, tmp_path, "session-below-minimum"
+        monkeypatch, service_module, tmp_path, "session-below-minimum"
     )
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
-    calls = _patch_external_clients(monkeypatch, dashboard_module)
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, service_module)
 
     client = _make_test_client()
     response = client.post(
@@ -548,11 +684,11 @@ def test_submit_all_requests_rejects_total_below_minimum(monkeypatch, tmp_path) 
 def test_submit_all_requests_accepts_total_that_rounds_to_minimum(
     monkeypatch, tmp_path
 ) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
-    _patch_session_folder(monkeypatch, dashboard_module, tmp_path, "session-rounded")
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
-    calls = _patch_external_clients(monkeypatch, dashboard_module)
+    _patch_session_folder(monkeypatch, service_module, tmp_path, "session-rounded")
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, service_module)
 
     client = _make_test_client()
     response = client.post(
@@ -574,13 +710,13 @@ def test_submit_all_requests_accepts_total_that_rounds_to_minimum(
 def test_submit_all_requests_sums_individually_rounded_invoice_totals(
     monkeypatch, tmp_path
 ) -> None:
-    import src.routers.dashboard as dashboard_module
+    import src.services.submission_workflow as service_module
 
     _patch_session_folder(
-        monkeypatch, dashboard_module, tmp_path, "session-rounded-invoices"
+        monkeypatch, service_module, tmp_path, "session-rounded-invoices"
     )
-    _patch_user_and_profile_files(monkeypatch, dashboard_module, _make_user())
-    calls = _patch_external_clients(monkeypatch, dashboard_module)
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, service_module)
 
     data = _valid_cad_data_for_form(
         1,

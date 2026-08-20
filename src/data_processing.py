@@ -1,7 +1,9 @@
+import re
 import shutil
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 
 from openpyxl import load_workbook
@@ -22,6 +24,15 @@ from src.models.submissions import Invoice
 from src.models.user_info import SubmissionUserInfo
 
 logger = setup_logger(__name__)
+
+
+def _report_name_component(name: str) -> str:
+    words = re.findall(r"[A-Za-z0-9]+", name)
+    return "".join(word.capitalize() for word in words) or "User"
+
+
+def _excel_number(value: Decimal) -> float:
+    return float(value)
 
 
 @contextmanager
@@ -77,7 +88,7 @@ def create_expense_report(
 
     now = datetime.now()
     day = now.strftime("%d").lstrip("0")
-    pascal_name = "".join(word.capitalize() for word in user_info.name.split())
+    pascal_name = _report_name_component(user_info.name)
     output_filename = f"{now.strftime('%B')}{day}-{now.strftime('%Y')}-ExpenseReport-{pascal_name}.xlsx"
     output_path = f"{session_folder}/{output_filename}"
 
@@ -124,14 +135,14 @@ def populate_expense_rows_from_submitted_forms(
         ws[f"C{row}"] = form.vendor_name
 
         if not form.is_usd:
-            ws[f"F{row}"] = form.subtotal_amount - form.discount_amount
-            ws[f"G{row}"] = form.total_cad_amount
-            ws[f"H{row}"] = form.hst_gst_amount
+            ws[f"F{row}"] = _excel_number(form.subtotal_amount - form.discount_amount)
+            ws[f"G{row}"] = _excel_number(form.total_cad_amount)
+            ws[f"H{row}"] = _excel_number(form.hst_gst_amount)
         else:
-            ws[f"D{row}"] = form.us_total
-            ws[f"E{row}"] = form.exchange_rate
-            ws[f"F{row}"] = form.total_cad_amount
-            ws[f"G{row}"] = form.total_cad_amount
+            ws[f"D{row}"] = _excel_number(form.us_total)
+            ws[f"E{row}"] = _excel_number(form.exchange_rate)
+            ws[f"F{row}"] = _excel_number(form.total_cad_amount)
+            ws[f"G{row}"] = _excel_number(form.total_cad_amount)
             ws[f"H{row}"] = 0
 
 
@@ -155,7 +166,7 @@ def create_purchase_request(
 
     now = datetime.now()
     day = now.strftime("%d").lstrip("0")
-    pascal_name = "".join(word.capitalize() for word in user_info.name.split())
+    pascal_name = _report_name_component(user_info.name)
     output_filename = f"{now.strftime('%B')}{day}-{now.strftime('%Y')}-PurchaseRequest-{pascal_name}.xlsx"
     output_path = f"{session_folder}/{output_filename}"
     with _copied_template_workbook(template_path, output_path) as wb:
@@ -208,20 +219,24 @@ def create_purchase_request(
                 ws[f"B{row}"] = item.name
                 ws[f"C{row}"] = item.usage
                 ws[f"D{row}"] = item.quantity
-                ws[f"E{row}"] = item.unit_price
-                ws[f"F{row}"] = item.total
+                ws[f"E{row}"] = _excel_number(item.unit_price)
+                ws[f"F{row}"] = _excel_number(item.total)
 
-            ws["F59"] = (
+            ws["F59"] = _excel_number(
                 form.us_subtotal
                 if form.is_usd
                 else form.subtotal_amount - form.discount_amount
             )
-            ws["F60"] = form.us_additional_fees if form.is_usd else form.hst_gst_amount
-            ws["F61"] = form.us_total if form.is_usd else form.shipping_amount
-            ws["F62"] = form.total_cad_amount
+            ws["F60"] = _excel_number(
+                form.us_additional_fees if form.is_usd else form.hst_gst_amount
+            )
+            ws["F61"] = _excel_number(
+                form.us_total if form.is_usd else form.shipping_amount
+            )
+            ws["F62"] = _excel_number(form.total_cad_amount)
 
             if form.is_usd:
-                ws["D7"] = round(form.exchange_rate, 4)
+                ws["D7"] = _excel_number(round(form.exchange_rate, 4))
 
             insert_signature_at_cell(ws, session_folder, "B68", 280, 70)
 

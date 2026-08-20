@@ -80,7 +80,6 @@ class GoogleSheetsClient:
         self,
         user_info: SubmissionUserInfo,
         forms: list[Invoice],
-        session_folder: str,
         drive_folder_url: str = "",
     ) -> bool:
         """
@@ -89,7 +88,6 @@ class GoogleSheetsClient:
         Args:
             user_info: User information
             forms: List of submitted invoices
-            session_folder: Session folder path
             drive_folder_url: Google Drive folder URL for easy access
 
         Returns:
