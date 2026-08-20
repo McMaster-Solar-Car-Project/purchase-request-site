@@ -1,5 +1,6 @@
 import re
 from datetime import date, datetime
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -29,19 +30,21 @@ def _make_form(**overrides) -> Invoice:
         "invoice_file_location": "/tmp/invoice.pdf",
         "proof_of_payment_filename": None,
         "proof_of_payment_location": None,
-        "subtotal_amount": 0.0,
-        "discount_amount": 0.0,
-        "hst_gst_amount": 0.0,
-        "shipping_amount": 0.0,
-        "total_cad_amount": 0.0,
-        "us_subtotal": 0.0,
-        "us_additional_fees": 0.0,
+        "subtotal_amount": Decimal("0"),
+        "discount_amount": Decimal("0"),
+        "hst_gst_amount": Decimal("0"),
+        "shipping_amount": Decimal("0"),
+        "total_cad_amount": Decimal("0"),
+        "us_subtotal": Decimal("0"),
+        "us_additional_fees": Decimal("0"),
         "items": [
-            SubmissionLineItem(name="Item", usage="Test", quantity=1, unit_price=1.0)
+            SubmissionLineItem(
+                name="Item", usage="Test", quantity=1, unit_price=Decimal("1")
+            )
         ],
     }
     defaults.update(overrides)
-    return Invoice(**defaults)
+    return Invoice.model_validate(defaults)
 
 
 def _make_user_info() -> SubmissionUserInfo:
@@ -51,7 +54,6 @@ def _make_user_info() -> SubmissionUserInfo:
         e_transfer_email="transfer@example.com",
         address="123 Main St",
         team="Software",
-        signature="signature.png",
     )
 
 
@@ -61,7 +63,7 @@ def _make_items(count: int) -> list[SubmissionLineItem]:
             name=f"Item {item_number}",
             usage=f"Usage {item_number}",
             quantity=item_number,
-            unit_price=1.25,
+            unit_price=Decimal("1.25"),
         )
         for item_number in range(1, count + 1)
     ]
@@ -78,6 +80,12 @@ def _as_date(value) -> date:
         return value.date()
     assert isinstance(value, date)
     return value
+
+
+def test_report_name_component_removes_path_characters() -> None:
+    assert data_processing._report_name_component("O'Connor / Finance") == (
+        "OConnorFinance"
+    )
 
 
 def test_populate_expense_rows_supports_cad_and_usd() -> None:

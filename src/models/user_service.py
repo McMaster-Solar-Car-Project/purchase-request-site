@@ -27,14 +27,6 @@ def get_user_signature_as_data_url(user: User) -> str | None:
     return f"data:image/png;base64,{base64_data}"
 
 
-def get_user_void_cheque_as_data_url(user: User) -> str | None:
-    """Get user's void cheque as a data URL for HTML display."""
-    if not user.has_valid_void_cheque:
-        return None
-    base64_data = base64.b64encode(user.void_cheque).decode("utf-8")
-    return f"data:application/pdf;base64,{base64_data}"
-
-
 def save_signature_to_file(user: User, file_path: str) -> bool:
     """Save user's signature from database to a file"""
     if not user or not user.signature_data:
@@ -64,32 +56,6 @@ def save_void_cheque_to_file(user: User, file_path: str) -> bool:
     except Exception:
         logger.exception(f"Error saving void cheque to file {file_path}")
         return False
-
-
-def create_user_with_defaults(
-    db: Session,
-    email: EmailStr,
-    password: str,
-) -> User:
-    """Create a new user using default placeholder profile values."""
-    existing_user = get_user_by_email(db, email)
-    if existing_user:
-        return existing_user
-
-    new_user = User(
-        name=DEFAULT_NAME,
-        email=email,
-        personal_email=DEFAULT_PERSONAL_EMAIL,
-        address=DEFAULT_ADDRESS,
-        team=DEFAULT_TEAM,
-        password=password,
-        signature_data=None,
-        void_cheque=None,
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
 
 
 def is_user_profile_complete(user: User) -> bool:
