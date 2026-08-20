@@ -1,0 +1,334 @@
+:root {
+  --font-display: "Archivo", "Bricolage Grotesque", sans-serif;
+  --font-body: "Public Sans", "Bricolage Grotesque", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --page-bg: #10110f;
+  --surface: rgba(24, 25, 23, 0.94);
+  --surface-strong: #1e211d;
+  --surface-soft: #282b26;
+  --surface-quiet: rgba(0, 0, 0, 0.16);
+  --ink: #f8f2dc;
+  --muted: #c6bfa9;
+  --subtle: #8f876f;
+  --line: rgba(248, 242, 220, 0.18);
+  --line-strong: rgba(248, 242, 220, 0.34);
+  --accent: #f2b84b;
+  --accent-strong: #d99625;
+  --accent-cool: #56d6d0;
+  --danger: #ff7661;
+  --success: #73d99d;
+  --warning: #f2b84b;
+  --field-bg: rgba(255, 255, 255, 0.07);
+  --field-border: rgba(248, 242, 220, 0.2);
+  --radius: 8px;
+  --radius-sm: 6px;
+  --shadow: 0 22px 60px rgba(0, 0, 0, 0.3);
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.app-page,
+.app-page * {
+  box-sizing: border-box;
+  letter-spacing: 0;
+}
+
+.app-page {
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 70px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 70px),
+    linear-gradient(135deg, rgba(242, 184, 75, 0.08), transparent 38%, rgba(81, 211, 199, 0.08)),
+    var(--page-bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.45;
+}
+
+.app-page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-page button,
+.app-page input,
+.app-page select,
+.app-page textarea {
+  font: inherit;
+}
+
+.app-shell {
+  width: min(94vw, 1500px);
+  margin: 0 auto;
+  padding: 42px 0 64px;
+}
+
+.narrow-shell {
+  width: min(92vw, 980px);
+}
+
+.auth-page,
+.status-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 28px 0;
+}
+
+.auth-shell,
+.status-shell {
+  width: min(92vw, 500px);
+}
+
+.main-menu-page {
+  min-height: 100vh;
+}
+
+.main-menu-shell {
+  display: grid;
+  width: min(92vw, 1040px);
+  min-height: 100vh;
+  align-content: center;
+  gap: 1rem;
+  padding: 32px 0;
+}
+
+.status-shell {
+  width: min(92vw, 820px);
+}
+
+.app-card,
+.profile-panel,
+.workflow-panel,
+.invoice-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.auth-card,
+.status-card,
+.form-card {
+  padding: 1.15rem;
+}
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.brand-mark {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: rgba(242, 184, 75, 0.14);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-weight: 800;
+}
+
+.eyebrow,
+.section-kicker,
+.panel-kicker,
+.invoice-kicker {
+  margin: 0 0 0.55rem;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+h4,
+.header-copy h1,
+.section-heading h2,
+.profile-panel h2,
+.invoice-header h3,
+.panel-heading h4 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.auth-card h1,
+.status-card h1 {
+  font-size: clamp(2.4rem, 8vw, 4rem);
+}
+
+.dashboard-header h1,
+.page-header h1 {
+  max-width: 980px;
+  font-size: clamp(2.5rem, 6vw, 4.7rem);
+}
+
+.main-menu-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: end;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1.1rem;
+}
+
+.main-menu-heading {
+  min-width: 0;
+}
+
+.main-menu-header h1 {
+  max-width: 720px;
+  font-size: 3rem;
+  overflow-wrap: anywhere;
+}
+
+.main-menu-user {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.8rem;
+  align-items: center;
+  margin-top: 0.8rem;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.main-menu-user span:first-child {
+  color: var(--ink);
+}
+
+.main-menu-logout {
+  align-self: end;
+}
+
+.section-heading h2 {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+}
+
+.subtitle,
+.dashboard-help,
+.profile-panel p,
+.profile-note p,
+.field-help,
+.items-help,
+.submit-note,
+.muted-copy,
+.card-footer,
+.request-panel p {
+  color: var(--muted);
+}
+
+.subtitle {
+  max-width: 720px;
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+}
+
+.dashboard-header,
+.page-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, rgba(242, 184, 75, 0.12), rgba(81, 211, 199, 0.06));
+  padding: 1rem;
+}
+
+.action-bar,
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid var(--button-line, var(--line-strong));
+  border-radius: var(--radius-sm);
+  background: var(--button-bg, transparent);
+  color: var(--button-ink, var(--ink));
+  cursor: pointer;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.button:hover,
+.button:focus-visible {
+  transform: translateY(-1px);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 184, 75, 0.2);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+  transform: none;
+}
+
+.button--primary {
+  --button-bg: var(--accent);
+  --button-ink: #11110d;
+  --button-line: var(--accent);
+}
+
+.button--secondary {
+  --button-bg: rgba(255, 255, 255, 0.03);
+  --button-ink: var(--ink);
+}
+
+.button--danger,
+.button--remove {
+  --button-bg: transparent;
+  --button-ink: var(--danger);
+  --button-line: color-mix(in srgb, var(--danger), transparent 45%);
+}
+
+.button--clear {
+  min-height: 44px;
+  color: var(--muted);
+  padding: 0 0.95rem;
+}
+
+.button--remove {
+  min-width: 78px;
+  padding-inline: 0.7rem;
+}
+
+.button--full {
+  width: 100%;
+}

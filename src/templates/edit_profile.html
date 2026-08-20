@@ -1,121 +1,104 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="/static/css/output.css?v=amber-ui">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    {% include "_sentry.html" %}
-</head>
+{% block body_class %}app-page form-page{% endblock %}
 
-<body class="app-page form-page">
-    <main class="app-shell narrow-shell">
-        <header class="page-header">
-            <div>
-                <p class="eyebrow">Requester Profile</p>
-                <h1>Edit Your Information</h1>
-                <p class="subtitle">Keep reimbursement, address, signature, and banking details ready before submitting.</p>
-            </div>
-            <div class="action-bar">
-                <a href="/home" id="back-link" class="button button--secondary">Home</a>
-            </div>
-        </header>
+{% block body %}
+{% set has_saved_void_cheque = has_void_cheque if has_void_cheque is defined else void_cheque_data_url %}
+<main class="app-shell narrow-shell">
+    <header class="page-header">
+        <div>
+            <p class="eyebrow">Requester Profile</p>
+            <h1>Edit Your Information</h1>
+            <p class="subtitle">Keep reimbursement, address, signature, and banking details ready before submitting.</p>
+        </div>
+        <div class="action-bar">
+            <a href="/home" id="back-link" class="button button--secondary">Home</a>
+        </div>
+    </header>
 
-        <form method="post" enctype="multipart/form-data" class="app-card form-card">
-            <div class="form-grid">
-                <div class="field">
-                    <label for="name" class="field-label">Full Name <span class="required-mark">*</span></label>
-                    <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required class="field-control">
-                </div>
-
-                <div class="field">
-                    <label for="email" class="field-label">McMaster Email <span class="required-mark">*</span></label>
-                    <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required class="field-control">
-                </div>
-
-                <div class="field">
-                    <label for="personal_email" class="field-label">Personal/E-Transfer Email <span class="required-mark">*</span></label>
-                    <input type="email" id="personal_email" name="personal_email" value="{{ user.personal_email if user else '' }}" required class="field-control">
-                </div>
-
-                <div class="field">
-                    <label for="team" class="field-label">Team <span class="required-mark">*</span></label>
-                    <select id="team" name="team" required class="field-control">
-                        <option value="">Select your team</option>
-                        <option value="Aeroshell" {% if user and user.team=='Aeroshell' %}selected{% endif %}>Aeroshell</option>
-                        <option value="Battery" {% if user and user.team=='Battery' %}selected{% endif %}>Battery</option>
-                        <option value="Chassis" {% if user and user.team=='Chassis' %}selected{% endif %}>Chassis</option>
-                        <option value="Data Acquisition" {% if user and user.team=='Data Acquisition' %}selected{% endif %}>Data Acquisition</option>
-                        <option value="Firmware" {% if user and user.team=='Firmware' %}selected{% endif %}>Firmware</option>
-                        <option value="Management" {% if user and user.team=='Management' %}selected{% endif %}>Management</option>
-                        <option value="Media" {% if user and user.team=='Media' %}selected{% endif %}>Media</option>
-                        <option value="Power Management Systems" {% if user and user.team=='Power Management Systems' %}selected{% endif %}>Power Management Systems</option>
-                        <option value="Solar Cells" {% if user and user.team=='Solar Cells' %}selected{% endif %}>Solar Cells</option>
-                        <option value="Strategies" {% if user and user.team=='Strategies' %}selected{% endif %}>Strategies</option>
-                        <option value="Suspension" {% if user and user.team=='Suspension' %}selected{% endif %}>Suspension</option>
-                    </select>
-                </div>
-
-                <div class="field field--full">
-                    <label for="address" class="field-label">Address <span class="required-mark">*</span></label>
-                    <textarea id="address" name="address" placeholder="123 Main St, Hamilton, ON A1A 1A1, Canada" required class="field-control text-area">{{ user.address if user else '' }}</textarea>
-                    <small class="field-help address-help">Include street #, street name, city, province, postal code, and country.</small>
-                </div>
+    <form method="post" enctype="multipart/form-data" class="app-card form-card">
+        <div class="form-grid">
+            <div class="field">
+                <label for="name" class="field-label">Full Name <span class="required-mark">*</span></label>
+                <input type="text" id="name" name="name" value="{{ user.name if user else '' }}" required class="field-control">
             </div>
 
-            <section class="document-grid" aria-label="Profile documents">
-                <div class="document-panel">
-                    <label for="signature" class="field-label">Digital Signature <span class="required-mark">*</span></label>
-                    <div class="profile-upload-zone">
-                        <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg" data-filename-id="signature-name" class="file-input-overlay">
-                        <span>Upload signature image</span>
-                        <small>PNG, JPG, or JPEG</small>
-                    </div>
-                    <div id="signature-name" class="file-name"></div>
-                    {% if signature_data_url %}
-                    <div class="document-preview document-preview--image">
-                        <img src="{{ signature_data_url }}" alt="Current signature">
-                    </div>
-                    {% else %}
-                    <p class="muted-copy">No signature uploaded yet.</p>
-                    {% endif %}
-                </div>
-
-                <div class="document-panel">
-                    <label for="void_cheque" class="field-label">Void Cheque <span class="required-mark">*</span></label>
-                    <div class="profile-upload-zone">
-                        <input type="file" id="void_cheque" name="void_cheque" accept=".pdf,application/pdf" {% if not void_cheque_data_url %}required{% endif %} data-filename-id="void-cheque-name" class="file-input-overlay">
-                        <span>Upload void cheque</span>
-                        <small>PDF only</small>
-                    </div>
-                    <div id="void-cheque-name" class="file-name"></div>
-                    {% if void_cheque_data_url %}
-                    <div class="document-preview">
-                        <small class="field-help">Leave blank to keep your current void cheque.</small>
-                        <object data="{{ void_cheque_data_url }}" type="application/pdf">
-                            <p>
-                                PDF preview is unavailable in this browser.
-                                <a href="{{ void_cheque_data_url }}" target="_blank" rel="noopener noreferrer">Open current void cheque</a>
-                            </p>
-                        </object>
-                    </div>
-                    {% else %}
-                    <p class="muted-copy">No void cheque uploaded yet.</p>
-                    {% endif %}
-                </div>
-            </section>
-
-            <div class="form-actions">
-                <button type="submit" class="button button--primary button--full">Update Information</button>
+            <div class="field">
+                <label for="email" class="field-label">McMaster Email <span class="required-mark">*</span></label>
+                <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" required class="field-control">
             </div>
-        </form>
-    </main>
 
-    <script src="/static/js/edit-profile.js"></script>
-</body>
+            <div class="field">
+                <label for="personal_email" class="field-label">Personal/E-Transfer Email <span class="required-mark">*</span></label>
+                <input type="email" id="personal_email" name="personal_email" value="{{ user.personal_email if user else '' }}" required class="field-control">
+            </div>
 
-</html>
+            <div class="field">
+                <label for="team" class="field-label">Team <span class="required-mark">*</span></label>
+                <select id="team" name="team" required class="field-control">
+                    <option value="">Select your team</option>
+                    <option value="Aeroshell" {% if user and user.team=='Aeroshell' %}selected{% endif %}>Aeroshell</option>
+                    <option value="Battery" {% if user and user.team=='Battery' %}selected{% endif %}>Battery</option>
+                    <option value="Chassis" {% if user and user.team=='Chassis' %}selected{% endif %}>Chassis</option>
+                    <option value="Data Acquisition" {% if user and user.team=='Data Acquisition' %}selected{% endif %}>Data Acquisition</option>
+                    <option value="Firmware" {% if user and user.team=='Firmware' %}selected{% endif %}>Firmware</option>
+                    <option value="Management" {% if user and user.team=='Management' %}selected{% endif %}>Management</option>
+                    <option value="Media" {% if user and user.team=='Media' %}selected{% endif %}>Media</option>
+                    <option value="Power Management Systems" {% if user and user.team=='Power Management Systems' %}selected{% endif %}>Power Management Systems</option>
+                    <option value="Solar Cells" {% if user and user.team=='Solar Cells' %}selected{% endif %}>Solar Cells</option>
+                    <option value="Strategies" {% if user and user.team=='Strategies' %}selected{% endif %}>Strategies</option>
+                    <option value="Suspension" {% if user and user.team=='Suspension' %}selected{% endif %}>Suspension</option>
+                </select>
+            </div>
+
+            <div class="field field--full">
+                <label for="address" class="field-label">Address <span class="required-mark">*</span></label>
+                <textarea id="address" name="address" placeholder="123 Main St, Hamilton, ON A1A 1A1, Canada" required class="field-control text-area">{{ user.address if user else '' }}</textarea>
+                <small class="field-help address-help">Include street #, street name, city, province, postal code, and country.</small>
+            </div>
+        </div>
+
+        <section class="document-grid" aria-label="Profile documents">
+            <div class="document-panel">
+                <label for="signature" class="field-label">Digital Signature <span class="required-mark">*</span></label>
+                <div class="profile-upload-zone">
+                    <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg" data-filename-id="signature-name" class="file-input-overlay">
+                    <span>Upload signature image</span>
+                    <small>PNG, JPG, or JPEG, up to 5 MB</small>
+                </div>
+                <div id="signature-name" class="file-name"></div>
+                {% if signature_data_url %}
+                <div class="document-preview document-preview--image">
+                    <img src="{{ signature_data_url }}" alt="Current signature">
+                </div>
+                {% else %}
+                <p class="muted-copy">No signature uploaded yet.</p>
+                {% endif %}
+            </div>
+
+            <div class="document-panel">
+                <label for="void_cheque" class="field-label">Void Cheque <span class="required-mark">*</span></label>
+                <div class="profile-upload-zone">
+                    <input type="file" id="void_cheque" name="void_cheque" accept=".pdf,application/pdf" {% if not has_saved_void_cheque %}required{% endif %} data-filename-id="void-cheque-name" class="file-input-overlay">
+                    <span>Upload void cheque</span>
+                    <small>PDF only, up to 10 MB</small>
+                </div>
+                <div id="void-cheque-name" class="file-name"></div>
+                {% if has_saved_void_cheque %}
+                <p class="muted-copy">A void cheque is on file. Leave this blank to keep it.</p>
+                {% else %}
+                <p class="muted-copy">No void cheque uploaded yet.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button type="submit" class="button button--primary button--full">Update Information</button>
+        </div>
+    </form>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/edit-profile.js"></script>
+{% endblock %}

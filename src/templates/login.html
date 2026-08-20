@@ -1,55 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% from "_components.html" import notice %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Purchase Request Site</title>
-    <link rel="stylesheet" href="/static/css/output.css?v=amber-ui">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    {% include "_sentry.html" %}
-</head>
+{% block title %}Login - Purchase Request Site{% endblock %}
+{% block body_class %}app-page auth-page{% endblock %}
 
-<body class="app-page auth-page">
-    <main class="auth-shell">
-        <section class="auth-card app-card">
-            <div class="brand-lockup">
-                <div>
-                    <p class="eyebrow">Purchase Request</p>
-                    <h1>Sign In</h1>
-                </div>
+{% block body %}
+<main class="auth-shell">
+    <section class="auth-card app-card">
+        <div class="brand-lockup">
+            <div>
+                <p class="eyebrow">Purchase Request</p>
+                <h1>Sign In</h1>
             </div>
-            <p class="subtitle">Access the reimbursement command center.</p>
+        </div>
+        <p class="subtitle">Access the reimbursement command center.</p>
 
-            {% if error_message %}
-            <div class="notice notice--error">
-                {{ error_message }}
+        {{ notice(error_message, "error") }}
+
+        <form method="POST" action="/login" class="form-stack">
+            <div class="field">
+                <label for="email" class="field-label">Email</label>
+                <input type="email" id="email" name="email" required placeholder="macid@mcmaster.ca" value="{{ email or '' }}" class="field-control">
             </div>
-            {% endif %}
 
-            <form method="POST" action="/login" class="form-stack">
-                <div class="field">
-                    <label for="email" class="field-label">Email</label>
-                    <input type="email" id="email" name="email" required placeholder="macid@mcmaster.ca" value="{{ email or '' }}" class="field-control">
-                </div>
+            <div class="field">
+                <label for="password" class="field-label">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Password" class="field-control">
+            </div>
 
-                <div class="field">
-                    <label for="password" class="field-label">Password</label>
-                    <input type="password" id="password" name="password" required placeholder="Password" class="field-control">
-                </div>
+            <button type="submit" class="button button--primary button--full">
+                Sign In
+            </button>
+        </form>
 
-                <button type="submit" class="button button--primary button--full">
-                    Sign In
-                </button>
-            </form>
-
-            <footer class="card-footer">
-                <p>Need access? Contact Raj on Teams.</p>
-            </footer>
-        </section>
-    </main>
-</body>
-
-</html>
+        <footer class="card-footer">
+            <p>Need access? Contact Raj on Teams.</p>
+        </footer>
+    </section>
+</main>
+{% endblock %}

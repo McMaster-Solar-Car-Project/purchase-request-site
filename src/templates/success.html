@@ -1,50 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Purchase Request Submitted - Success</title>
-  <link rel="stylesheet" href="/static/css/output.css?v=amber-ui">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  {% include "_sentry.html" %}
-</head>
+{% block title %}Purchase Request Submitted - Success{% endblock %}
+{% block body_class %}app-page status-page{% endblock %}
 
-<body class="app-page status-page">
-  <main class="app-shell status-shell">
+{% block body %}
+<main class="app-shell status-shell">
     <header class="page-header">
-      <div>
-        <p class="eyebrow">Submitted</p>
-        <h1>Purchase Request Submitted</h1>
-      </div>
-      <div class="action-bar">
-        <a href="/home" class="button button--secondary">Home</a>
-        <a href="/logout" class="button button--danger">Logout</a>
-      </div>
+        <div>
+            <p class="eyebrow">Submitted</p>
+            <h1>Purchase Request Submitted</h1>
+        </div>
+        <div class="action-bar">
+            <a href="/home" class="button button--secondary">Home</a>
+            <a href="/logout" class="button button--danger">Logout</a>
+        </div>
     </header>
 
     <section class="app-card status-card">
-      {% if download_info %}
-      <div class="request-panel highlight-panel">
-        <p><strong>Your purchase request has been compiled into an Excel report.</strong></p>
-        <div class="meta-row">
-          <span>Generated</span>
-          <strong>{{ current_time.strftime('%B %d, %Y') }}</strong>
+        {% if download_info %}
+        <div class="request-panel highlight-panel">
+            <p><strong>Your purchase request has been compiled into an Excel report.</strong></p>
+            <div class="meta-row">
+                <span>Generated</span>
+                <strong>{{ current_time.strftime('%B %d, %Y') }}</strong>
+            </div>
+            <a href="{{ download_info.download_url }}" class="button button--primary" download="{{ download_info.excel_file }}">
+                Download Excel Report
+            </a>
         </div>
-        <a href="{{ download_info.download_url }}" class="button button--primary" download="{{ download_info.excel_file }}">
-          Download Excel Report
-        </a>
-      </div>
-      {% endif %}
+        {% endif %}
 
-      <footer class="card-footer">
-        <p><strong>Need help?</strong> If you have any questions about your purchase request, please contact Raj.</p>
-        <p><strong>Keep your receipt:</strong> Keep the purchase request for your own records.</p>
-      </footer>
+        <footer class="card-footer">
+            <p><strong>Need help?</strong> If you have any questions about your purchase request, please contact Raj.</p>
+            <p><strong>Keep your receipt:</strong> Keep the purchase request for your own records.</p>
+        </footer>
     </section>
-  </main>
-</body>
-
-</html>
+</main>
+{% endblock %}

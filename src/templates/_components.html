@@ -1,0 +1,7 @@
+{% macro notice(message, kind, extra_class="") -%}
+{% if message %}
+<div class="notice notice--{{ kind }}{% if extra_class %} {{ extra_class }}{% endif %}">
+    {{ message }}
+</div>
+{% endif %}
+{%- endmacro %}

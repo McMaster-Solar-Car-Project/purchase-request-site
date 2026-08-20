@@ -1,0 +1,355 @@
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.profile-panel {
+  position: sticky;
+  top: 16px;
+  border-left: 5px solid var(--accent);
+  padding: 1rem;
+}
+
+.profile-panel__top {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1rem;
+}
+
+.profile-panel__top h2 {
+  font-size: 1.75rem;
+}
+
+.requester-details {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.85rem;
+}
+
+.requester-details .meta-row {
+  margin: 0;
+}
+
+.meta-row span {
+  display: block;
+  margin-bottom: 0.18rem;
+  color: var(--subtle);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.requester-email,
+.requester-address {
+  overflow-wrap: anywhere;
+}
+
+.profile-note {
+  margin-top: 1rem;
+  padding-top: 0;
+}
+
+.profile-note p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.profile-note p + p {
+  margin-top: 0.7rem;
+}
+
+.workflow-panel {
+  padding: 1rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 1rem;
+  padding: 0.25rem 0 1rem;
+}
+
+.dashboard-help {
+  max-width: 310px;
+  margin: 0;
+  text-align: right;
+}
+
+.forms-stack,
+.form-stack {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.invoice-card {
+  overflow: hidden;
+  border-left: 5px solid transparent;
+  background: var(--surface-strong);
+}
+
+.invoice-card:hover {
+  border-left-color: var(--accent-cool);
+}
+
+.invoice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 74px;
+  cursor: pointer;
+  padding: 0.95rem 1rem;
+}
+
+.invoice-header h3 {
+  font-size: 1.15rem;
+}
+
+.invoice-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.invoice-actions .button--clear,
+.invoice-actions .toggle-glyph {
+  width: 76px;
+  min-width: 76px;
+  min-height: 44px;
+}
+
+.toggle-glyph {
+  display: grid;
+  width: 76px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.invoice-header:hover .toggle-glyph,
+.toggle-glyph:hover,
+.toggle-glyph:focus-visible {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent), transparent 86%);
+  box-shadow: 0 0 0 3px rgba(242, 184, 75, 0.16);
+  transform: translateY(-1px);
+}
+
+.invoice-content {
+  border-top: 1px solid var(--line);
+  padding: 1rem;
+}
+
+.reimbursement-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-grid,
+.invoice-grid,
+.upload-grid,
+.financial-grid,
+.document-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.field,
+.item-input-group {
+  min-width: 0;
+}
+
+.field--full {
+  grid-column: 1 / -1;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.42rem;
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.required-mark {
+  color: var(--danger);
+}
+
+.field-control {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-sm);
+  background: var(--field-bg);
+  color: var(--ink);
+  outline: none;
+  padding: 0.72rem 0.8rem;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.field-control::placeholder {
+  color: var(--subtle);
+}
+
+.field-control:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent), transparent 72%);
+}
+
+.field-control[readonly],
+.total-field {
+  background: color-mix(in srgb, var(--surface-soft), black 10%);
+  color: var(--ink);
+}
+
+.text-area {
+  min-height: 118px;
+  resize: vertical;
+}
+
+.field-help,
+.file-name,
+.items-help {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.custom-file-upload {
+  min-width: 0;
+}
+
+.upload-zone {
+  position: relative;
+  display: grid;
+  min-height: 96px;
+  place-items: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--field-bg);
+  padding: 1rem;
+  text-align: center;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.upload-zone.is-dragging,
+.upload-zone:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent), transparent 88%);
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.drop-text {
+  margin: 0;
+}
+
+.file-upload {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.file-name {
+  color: var(--subtle);
+  overflow-wrap: anywhere;
+}
+
+.request-panel,
+.document-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-quiet);
+  padding: 1rem;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-heading h4,
+.request-panel h2 {
+  font-size: 1rem;
+}
+
+.items-container {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.item-row {
+  display: grid;
+  grid-template-columns: 1.25fr 1.25fr 0.52fr 0.8fr 0.8fr auto;
+  gap: 0.75rem;
+  align-items: end;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.85rem;
+}
+
+.item-actions {
+  display: flex;
+  align-items: end;
+}
+
+.total-row {
+  margin-top: 1rem;
+}
+
+.total-output {
+  min-height: 52px;
+  border-color: var(--accent);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.dashboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  border-top: 1px solid var(--line);
+  margin-top: 1.2rem;
+  padding-top: 1.2rem;
+}
+
+.submit-note {
+  margin: 0;
+  font-weight: 800;
+}

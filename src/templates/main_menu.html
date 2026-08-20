@@ -1,59 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% from "_components.html" import notice %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="/static/css/output.css?v=amber-ui">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    {% include "_sentry.html" %}
-</head>
+{% block body_class %}app-page main-menu-page{% endblock %}
 
-<body class="app-page main-menu-page">
-    <main class="app-shell main-menu-shell">
-        <header class="main-menu-header">
-            <div class="main-menu-heading">
-                <p class="eyebrow">Purchase Request</p>
-                <h1>Purchase Request Home</h1>
-                <div class="main-menu-user">
-                    <span>{{ user_name }}</span>
-                    <span class="requester-email">{{ user_email }}</span>
-                </div>
+{% block body %}
+<main class="app-shell main-menu-shell">
+    <header class="main-menu-header">
+        <div class="main-menu-heading">
+            <p class="eyebrow">Purchase Request</p>
+            <h1>Purchase Request Home</h1>
+            <div class="main-menu-user">
+                <span>{{ user_name }}</span>
+                <span class="requester-email">{{ user_email }}</span>
             </div>
-
-            <a href="/logout" class="button button--danger main-menu-logout">Logout</a>
-        </header>
-
-        {% if success_message %}
-        <div class="notice notice--success">
-            {{ success_message }}
         </div>
-        {% endif %}
 
-        {% if profile_warning_message %}
-        <div class="notice notice--warning">
-            {{ profile_warning_message }}
-            <a href="/edit-profile">Edit Information</a>
-        </div>
-        {% endif %}
+        <a href="/logout" class="button button--danger main-menu-logout">Logout</a>
+    </header>
 
-        <nav class="main-menu-actions" aria-label="Main navigation">
-            <a href="/dashboard" class="app-card main-menu-action main-menu-action--primary">
-                <span class="main-menu-action__label">Requests</span>
-                <span class="main-menu-action__title">Dashboard</span>
-                <span class="main-menu-action__copy">Create and submit purchase requests.</span>
-            </a>
+    {{ notice(success_message, "success") }}
 
-            <a href="/edit-profile" class="app-card main-menu-action main-menu-action--profile">
-                <span class="main-menu-action__label">Profile</span>
-                <span class="main-menu-action__title">Edit Information</span>
-                <span class="main-menu-action__copy">Update reimbursement, address, signature, and banking details.</span>
-            </a>
-        </nav>
-    </main>
-</body>
+    {% if profile_warning_message %}
+    <div class="notice notice--warning">
+        {{ profile_warning_message }}
+        <a href="/edit-profile">Edit Information</a>
+    </div>
+    {% endif %}
 
-</html>
+    <nav class="main-menu-actions" aria-label="Main navigation">
+        <a href="/dashboard" class="app-card main-menu-action main-menu-action--primary">
+            <span class="main-menu-action__label">Requests</span>
+            <span class="main-menu-action__title">Dashboard</span>
+            <span class="main-menu-action__copy">Create and submit purchase requests.</span>
+        </a>
+
+        <a href="/edit-profile" class="app-card main-menu-action main-menu-action--profile">
+            <span class="main-menu-action__label">Profile</span>
+            <span class="main-menu-action__title">Edit Information</span>
+            <span class="main-menu-action__copy">Update reimbursement, address, signature, and banking details.</span>
+        </a>
+
+    </nav>
+</main>
+{% endblock %}
