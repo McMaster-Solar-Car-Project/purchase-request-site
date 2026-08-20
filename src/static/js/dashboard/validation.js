@@ -4,7 +4,7 @@ import {
     todayIsoDate,
 } from "./money.js";
 
-export function validateSubmission(maxForms) {
+export function validateSubmission(maxForms, minimumTotalCents) {
     let hasValidForm = false;
     const today = todayIsoDate();
 
@@ -127,8 +127,8 @@ export function validateSubmission(maxForms) {
             totalCanadianCents += parseMoneyCents(totalField.value);
         }
     }
-    if (totalCanadianCents < 10000n) {
-        alert(`Total Canadian amount must be at least $100.00 CAD.\nCurrent total: $${formatMoneyCents(totalCanadianCents)} CAD`);
+    if (totalCanadianCents < minimumTotalCents) {
+        alert(`Total Canadian amount must be at least $${formatMoneyCents(minimumTotalCents)} CAD.\nCurrent total: $${formatMoneyCents(totalCanadianCents)} CAD`);
         return false;
     }
 

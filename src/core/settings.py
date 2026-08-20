@@ -1,7 +1,7 @@
 from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,7 +27,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    environment: str = Field(default="testing", alias="ENVIRONMENT")
+    environment: Literal["testing", "production"] = Field(
+        default="testing", alias="ENVIRONMENT"
+    )
     sentry_dsn: str | None = Field(default=None, alias="SENTRY_DSN")
     sentry_release: str | None = Field(default=None, alias="SENTRY_RELEASE")
     session_secret: str | None = Field(default=None, alias="SESSION_SECRET")
@@ -39,6 +41,7 @@ class Settings(BaseSettings):
         default=Decimal("100.00"),
         alias="MINIMUM_TOTAL_CAD_AMOUNT",
         ge=0,
+        decimal_places=2,
     )
     max_upload_file_bytes: int = Field(
         default=10 * 1024 * 1024,
@@ -123,8 +126,15 @@ class Settings(BaseSettings):
             )
         if self.is_production and not self.database_url:
             raise ValueError("Missing required settings values: DATABASE_URL")
-        if self.is_production and not self.session_secret:
-            raise ValueError("Missing required settings values: SESSION_SECRET")
+        if self.is_production and (
+            not self.session_secret
+            or len(self.session_secret) < 32
+            or self.session_secret == "replace-with-a-long-random-secret"
+        ):
+            raise ValueError(
+                "SESSION_SECRET must be at least 32 characters and must not use "
+                "the example value"
+            )
         if self.max_submission_upload_bytes < self.max_upload_file_bytes:
             raise ValueError(
                 "MAX_SUBMISSION_UPLOAD_BYTES must be at least MAX_UPLOAD_FILE_BYTES"

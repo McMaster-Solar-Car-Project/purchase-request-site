@@ -58,7 +58,7 @@
             </div>
 
             <div class="profile-note">
-                <p>Submit one complete batch when your CAD reimbursement total is at least $100.</p>
+                <p>Submit one complete batch when your CAD reimbursement total is at least ${{ minimum_total_cad_amount }}.</p>
                 <p>Make sure your information on file is up to date before submitting.</p>
             </div>
         </aside>
@@ -68,6 +68,7 @@
                 <input type="hidden" id="profile-is-complete" value="{{ 'true' if profile_is_complete else 'false' }}">
                 <input type="hidden" id="max-items-per-form" value="{{ max_items_per_form }}">
                 <input type="hidden" id="max-forms" value="{{ max_forms }}">
+                <input type="hidden" id="minimum-total-cad-cents" value="{{ minimum_total_cad_cents }}">
 
                 <div class="section-heading">
                     <div>
