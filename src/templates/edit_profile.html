@@ -64,7 +64,7 @@
                 <div class="profile-upload-zone">
                     <input type="file" id="signature" name="signature" accept=".png,.jpg,.jpeg" data-filename-id="signature-name" class="file-input-overlay">
                     <span>Upload signature image</span>
-                    <small>PNG, JPG, or JPEG, up to 5 MB</small>
+                    <small>PNG, JPG, or JPEG</small>
                 </div>
                 <div id="signature-name" class="file-name"></div>
                 {% if signature_data_url %}
@@ -81,7 +81,7 @@
                 <div class="profile-upload-zone">
                     <input type="file" id="void_cheque" name="void_cheque" accept=".pdf,application/pdf" {% if not has_saved_void_cheque %}required{% endif %} data-filename-id="void-cheque-name" class="file-input-overlay">
                     <span>Upload void cheque</span>
-                    <small>PDF only, up to 10 MB</small>
+                    <small>PDF only</small>
                 </div>
                 <div id="void-cheque-name" class="file-name"></div>
                 {% if has_saved_void_cheque %}

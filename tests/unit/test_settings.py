@@ -34,9 +34,25 @@ def test_testing_environment_uses_test_drive_parent() -> None:
 
 
 def test_production_environment_uses_production_drive_parent() -> None:
-    settings = _settings("production", SESSION_SECRET="stable-production-secret")
+    settings = _settings(
+        "production", SESSION_SECRET="stable-production-secret-123456789"
+    )
 
     assert settings.google_drive_parent_folder_id == "production-folder-id"
+
+
+def test_environment_rejects_unknown_values() -> None:
+    with pytest.raises(ValidationError):
+        _settings("prod")
+
+
+@pytest.mark.parametrize(
+    "secret",
+    ["too-short", "replace-with-a-long-random-secret"],
+)
+def test_production_rejects_weak_session_secret(secret: str) -> None:
+    with pytest.raises(ValidationError, match="SESSION_SECRET must be at least"):
+        _settings("production", SESSION_SECRET=secret)
 
 
 def test_policy_settings_have_safe_defaults() -> None:
@@ -56,6 +72,11 @@ def test_submission_upload_limit_cannot_be_smaller_than_file_limit() -> None:
             MAX_UPLOAD_FILE_BYTES=20,
             MAX_SUBMISSION_UPLOAD_BYTES=10,
         )
+
+
+def test_minimum_total_uses_cents() -> None:
+    with pytest.raises(ValidationError):
+        _settings(MINIMUM_TOTAL_CAD_AMOUNT="100.001")
 
 
 def test_policy_settings_accept_environment_style_values() -> None:

@@ -474,12 +474,16 @@ def test_dashboard_uses_session_email_not_query_email(monkeypatch) -> None:
 
     queried_emails: list[str] = []
     user = _make_user(email="session@example.com")
+    settings = dashboard_module.get_settings().model_copy(
+        update={"minimum_total_cad_amount": Decimal("125.50")}
+    )
 
     def fake_get_user_by_email(_db: Any, email: str):
         queried_emails.append(email)
         return user
 
     monkeypatch.setattr(dashboard_module, "get_user_by_email", fake_get_user_by_email)
+    monkeypatch.setattr(dashboard_module, "get_settings", lambda: settings)
 
     client = _make_test_client(session_email="session@example.com")
     response = client.get("/dashboard?user_email=attacker@example.com")
@@ -490,6 +494,8 @@ def test_dashboard_uses_session_email_not_query_email(monkeypatch) -> None:
     assert 'href="/home"' in response.text
     assert 'href="/edit-profile"' not in response.text
     assert 'href="/submissions"' not in response.text
+    assert "at least $125.50" in response.text
+    assert 'id="minimum-total-cad-cents" value="12550"' in response.text
 
 
 def test_edit_profile_uses_session_email_not_query_email(monkeypatch) -> None:

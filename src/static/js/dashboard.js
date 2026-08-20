@@ -7,6 +7,8 @@ const maxItemsField = document.getElementById("max-items-per-form");
 const maxItems = Number.parseInt(maxItemsField?.value ?? "50", 10) || 50;
 const maxFormsField = document.getElementById("max-forms");
 const maxForms = Number.parseInt(maxFormsField?.value ?? "25", 10) || 25;
+const minimumTotalField = document.getElementById("minimum-total-cad-cents");
+const minimumTotalCents = BigInt(minimumTotalField?.value || "10000");
 
 let isSubmitting = false;
 
@@ -33,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         formatMoneyFields();
 
-        if (!validateSubmission(maxForms)) {
+        if (!validateSubmission(maxForms, minimumTotalCents)) {
             event.preventDefault();
             return;
         }
