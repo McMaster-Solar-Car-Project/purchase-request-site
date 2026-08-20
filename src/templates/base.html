@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="{% block html_lang %}en{% endblock %}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ title | default("Purchase Request Site") }}{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/output.css?v=amber-ui">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    {% block fonts %}
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% endblock %}
+    {% block head_extra %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}app-page{% endblock %}">
+    {% block body %}{% endblock %}
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

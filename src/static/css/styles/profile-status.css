@@ -1,0 +1,108 @@
+.form-card {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.profile-upload-zone {
+  position: relative;
+  display: grid;
+  min-height: 112px;
+  place-items: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--field-bg);
+  padding: 1rem;
+  text-align: center;
+}
+
+.profile-upload-zone span {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.profile-upload-zone small {
+  color: var(--muted);
+}
+
+.file-input-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.document-preview {
+  margin-top: 0.85rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem;
+}
+
+.document-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 150px;
+  border-radius: var(--radius-sm);
+}
+
+.document-preview object {
+  width: 100%;
+  height: 270px;
+  border-radius: var(--radius-sm);
+}
+
+.muted-copy {
+  margin: 0.7rem 0 0;
+  font-size: 0.9rem;
+}
+
+.highlight-panel {
+  border-color: color-mix(in srgb, var(--accent), transparent 45%);
+  background: color-mix(in srgb, var(--accent), transparent 90%);
+}
+
+.highlight-panel strong {
+  color: var(--ink);
+}
+
+.status-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.status-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0.8rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+}
+
+.status-list strong {
+  color: var(--ink);
+}
+
+.meta-row {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.9rem 0;
+}
+
+.card-footer {
+  border-top: 1px solid var(--line);
+  margin-top: 1rem;
+  padding-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.card-footer p {
+  margin: 0;
+}
+
+.card-footer p + p {
+  margin-top: 0.45rem;
+}

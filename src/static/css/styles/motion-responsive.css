@@ -1,0 +1,123 @@
+@media (prefers-reduced-motion: no-preference) {
+  .dashboard-header,
+  .page-header,
+  .notice,
+  .profile-panel,
+  .workflow-panel,
+  .app-card {
+    animation: rise-in 420ms ease both;
+  }
+
+  .workflow-panel {
+    animation-delay: 80ms;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-panel {
+    position: static;
+  }
+
+  .item-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .item-actions {
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    width: min(94vw, 1500px);
+    padding: 24px 0 44px;
+  }
+
+  .dashboard-header,
+  .page-header {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header .button {
+    width: fit-content;
+  }
+
+  .action-bar,
+  .dashboard-help {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .main-menu-header {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .main-menu-header h1 {
+    font-size: 2.3rem;
+  }
+
+  .main-menu-logout {
+    width: fit-content;
+  }
+
+  .main-menu-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .main-menu-action {
+    min-height: 190px;
+  }
+
+  .section-heading,
+  .panel-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .form-grid,
+  .invoice-grid,
+  .upload-grid,
+  .financial-grid,
+  .document-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-panel,
+  .profile-panel,
+  .invoice-content,
+  .invoice-header {
+    padding: 0.85rem;
+  }
+
+  .invoice-header {
+    align-items: flex-start;
+  }
+
+  .item-row {
+    grid-template-columns: 1fr;
+  }
+
+  .button--primary,
+  .dashboard-actions .button {
+    width: 100%;
+    min-width: 0;
+  }
+
+}

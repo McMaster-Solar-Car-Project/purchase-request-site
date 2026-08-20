@@ -1,0 +1,104 @@
+.main-menu-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.main-menu-action {
+  display: flex;
+  min-height: 240px;
+  flex-direction: column;
+  align-items: flex-start;
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 1.15rem;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.main-menu-action:hover,
+.main-menu-action:focus-visible {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--surface), var(--accent) 12%);
+  box-shadow: 0 0 0 3px rgba(242, 184, 75, 0.18);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.main-menu-action--primary {
+  border-color: color-mix(in srgb, var(--accent), transparent 28%);
+  background:
+    linear-gradient(135deg, rgba(242, 184, 75, 0.15), rgba(86, 214, 208, 0.05)),
+    var(--surface);
+}
+
+.main-menu-action--profile {
+  border-color: color-mix(in srgb, var(--accent-cool), transparent 50%);
+}
+
+.main-menu-action__label {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.main-menu-action--profile .main-menu-action__label {
+  color: var(--accent-cool);
+}
+
+.main-menu-action__title {
+  margin-top: 0.7rem;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 2.05rem;
+  font-weight: 800;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.main-menu-action__copy {
+  max-width: 360px;
+  margin-top: 0.85rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.notice {
+  margin: 0 0 1rem;
+  border: 1px solid var(--notice-line, var(--line));
+  border-radius: var(--radius);
+  background: var(--notice-bg, var(--surface));
+  color: var(--notice-ink, var(--ink));
+  padding: 0.9rem 1rem;
+  font-weight: 800;
+}
+
+.notice a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.notice--success {
+  --notice-bg: color-mix(in srgb, var(--success), transparent 86%);
+  --notice-line: color-mix(in srgb, var(--success), transparent 52%);
+  --notice-ink: var(--success);
+}
+
+.notice--error {
+  --notice-bg: color-mix(in srgb, var(--danger), transparent 86%);
+  --notice-line: color-mix(in srgb, var(--danger), transparent 52%);
+  --notice-ink: var(--danger);
+}
+
+.notice--warning {
+  --notice-bg: color-mix(in srgb, var(--warning), transparent 88%);
+  --notice-line: color-mix(in srgb, var(--warning), transparent 48%);
+  --notice-ink: var(--warning);
+}

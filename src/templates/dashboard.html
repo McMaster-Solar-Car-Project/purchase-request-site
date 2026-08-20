@@ -1,120 +1,106 @@
+{% extends "base.html" %}
+{% from "_components.html" import notice %}
 {% from "_invoice_form.html" import invoice_form, item_row %}
-<!DOCTYPE html>
-<html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="/static/css/output.css?v=amber-ui">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500..800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400..700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    {% include "_sentry.html" %}
-</head>
+{% block fonts %}
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500..800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400..700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+{% endblock %}
 
-<body class="app-page dashboard-page">
-    <div class="app-shell dashboard-shell">
-        <header class="dashboard-header">
-            <div class="header-copy">
-                <h1>Purchase Request Dashboard</h1>
-                <p class="subtitle">Fill out up to {{ max_forms }} purchase requests and submit them together.</p>
-            </div>
+{% block body_class %}app-page dashboard-page{% endblock %}
 
-            <div class="dashboard-user-info action-bar">
-                <a href="/home" class="button button--secondary">Home</a>
-                <a href="/logout" class="button button--danger logout-btn">Logout</a>
-            </div>
-        </header>
-
-        {% if success_message %}
-        <div class="notice dashboard-success-message notice--success">
-            {{ success_message }}
+{% block body %}
+<div class="app-shell dashboard-shell">
+    <header class="dashboard-header">
+        <div class="header-copy">
+            <h1>Purchase Request Dashboard</h1>
+            <p class="subtitle">Fill out up to {{ max_forms }} purchase requests and submit them together.</p>
         </div>
-        {% endif %}
 
-        {% if error_message %}
-        <div class="notice error-message notice--error">
-            {{ error_message }}
+        <div class="dashboard-user-info action-bar">
+            <a href="/home" class="button button--secondary">Home</a>
+            <a href="/logout" class="button button--danger logout-btn">Logout</a>
         </div>
-        {% endif %}
+    </header>
 
-        {% if profile_warning_message %}
-        <div class="notice profile-warning-message notice--warning">
-            {{ profile_warning_message }}
-            <a href="/home">Go to home</a>
-        </div>
-        {% endif %}
+    {{ notice(success_message, "success", "dashboard-success-message") }}
+    {{ notice(error_message, "error", "error-message") }}
 
-        <div class="dashboard-grid">
-            <aside class="profile-panel user-info">
-                <div class="profile-panel__top">
-                    <p class="panel-kicker">Requester</p>
-                    <h2>{{ name }}</h2>
-                    <div class="requester-details">
-                        <p class="meta-row">
-                            <span>Team</span>
-                            {{ team }}
-                        </p>
-                        <p class="meta-row requester-email">
-                            <span>McMaster Email</span>
-                            {{ email }}
-                        </p>
-                        <p class="meta-row requester-email">
-                            <span>Personal Email</span>
-                            {{ e_transfer_email }}
-                        </p>
-                        <p class="meta-row requester-address">
-                            <span>Address</span>
-                            {{ address }}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="profile-note">
-                    <p>Submit one complete batch when your CAD reimbursement total is at least $100.</p>
-                    <p>Make sure your information on file is up to date before submitting.</p>
-                </div>
-            </aside>
-
-            <main class="workflow-panel dashboard-section">
-                <form method="POST" action="/submit-all-requests" enctype="multipart/form-data">
-                    <input type="hidden" id="profile-is-complete" value="{{ 'true' if profile_is_complete else 'false' }}">
-                    <input type="hidden" id="max-items-per-form" value="{{ max_items_per_form }}">
-                    <input type="hidden" id="max-forms" value="{{ max_forms }}">
-
-                    <div class="section-heading">
-                        <div>
-                            <p class="section-kicker">Batch Entry</p>
-                            <h2>Your Purchase Request Forms</h2>
-                        </div>
-                        <p class="dashboard-help">Empty forms are ignored at submission.</p>
-                    </div>
-
-                    <div class="forms-container forms-stack">
-                        {% for form_num in range(1, max_forms + 1) %}
-                        {{ invoice_form(form_num, max_items_per_form) }}
-                        {% endfor %}
-                    </div>
-
-                    <div class="dashboard-actions">
-                        <button type="submit" id="submit-all-btn" class="button button--primary btn btn-large" {% if not profile_is_complete %}disabled aria-disabled="true"{% endif %}>
-                            Submit All Purchase Requests
-                        </button>
-                        {% if not profile_is_complete %}
-                        <p class="submit-note">Submission is disabled until your profile is complete.</p>
-                        {% endif %}
-                    </div>
-                </form>
-            </main>
-        </div>
+    {% if profile_warning_message %}
+    <div class="notice profile-warning-message notice--warning">
+        {{ profile_warning_message }}
+        <a href="/home">Go to home</a>
     </div>
+    {% endif %}
 
-    <template id="item-row-template">
-        {{ item_row("__FORM__", "__ITEM__") }}
-    </template>
+    <div class="dashboard-grid">
+        <aside class="profile-panel user-info">
+            <div class="profile-panel__top">
+                <p class="panel-kicker">Requester</p>
+                <h2>{{ name }}</h2>
+                <div class="requester-details">
+                    <p class="meta-row">
+                        <span>Team</span>
+                        {{ team }}
+                    </p>
+                    <p class="meta-row requester-email">
+                        <span>McMaster Email</span>
+                        {{ email }}
+                    </p>
+                    <p class="meta-row requester-email">
+                        <span>Personal Email</span>
+                        {{ e_transfer_email }}
+                    </p>
+                    <p class="meta-row requester-address">
+                        <span>Address</span>
+                        {{ address }}
+                    </p>
+                </div>
+            </div>
 
-    <script src="/static/js/dashboard.js" defer></script>
-</body>
+            <div class="profile-note">
+                <p>Submit one complete batch when your CAD reimbursement total is at least $100.</p>
+                <p>Make sure your information on file is up to date before submitting.</p>
+            </div>
+        </aside>
 
-</html>
+        <main class="workflow-panel dashboard-section">
+            <form method="POST" action="/submit-all-requests" enctype="multipart/form-data">
+                <input type="hidden" id="profile-is-complete" value="{{ 'true' if profile_is_complete else 'false' }}">
+                <input type="hidden" id="max-items-per-form" value="{{ max_items_per_form }}">
+                <input type="hidden" id="max-forms" value="{{ max_forms }}">
+
+                <div class="section-heading">
+                    <div>
+                        <p class="section-kicker">Batch Entry</p>
+                        <h2>Your Purchase Request Forms</h2>
+                    </div>
+                    <p class="dashboard-help">Empty forms are ignored at submission.</p>
+                </div>
+
+                <div class="forms-container forms-stack">
+                    {% for form_num in range(1, max_forms + 1) %}
+                    {{ invoice_form(form_num, max_items_per_form) }}
+                    {% endfor %}
+                </div>
+
+                <div class="dashboard-actions">
+                    <button type="submit" id="submit-all-btn" class="button button--primary btn btn-large" {% if not profile_is_complete %}disabled aria-disabled="true"{% endif %}>
+                        Submit All Purchase Requests
+                    </button>
+                    {% if not profile_is_complete %}
+                    <p class="submit-note">Submission is disabled until your profile is complete.</p>
+                    {% endif %}
+                </div>
+            </form>
+        </main>
+    </div>
+</div>
+
+<template id="item-row-template">
+    {{ item_row("__FORM__", "__ITEM__") }}
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="/static/js/dashboard.js"></script>
+{% endblock %}
