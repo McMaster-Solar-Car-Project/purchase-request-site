@@ -269,6 +269,36 @@ def test_submit_all_requests_retains_files_when_sheets_log_fails(
     assert (session_folder / "1_Amazon.pdf").exists()
 
 
+def test_submit_all_requests_retains_files_when_report_generation_fails(
+    monkeypatch, tmp_path
+) -> None:
+    import src.services.submission_workflow as service_module
+
+    session_folder = _patch_session_folder(
+        monkeypatch, service_module, tmp_path, "session-report-failure"
+    )
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    _patch_external_clients(monkeypatch, service_module)
+
+    def fail_purchase_request(*_args, **_kwargs):
+        raise RuntimeError("purchase request generation failed")
+
+    monkeypatch.setattr(
+        service_module, "create_purchase_request", fail_purchase_request
+    )
+
+    response = _make_test_client().post(
+        "/submit-all-requests",
+        data=_valid_cad_data(),
+        files=_invoice_file(),
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/dashboard?error=processing_failed"
+    assert session_folder.exists()
+    assert (session_folder / "1_Amazon.pdf").exists()
+
+
 def test_submit_all_requests_recalculates_cad_totals(monkeypatch, tmp_path) -> None:
     import src.services.submission_workflow as service_module
 
@@ -399,6 +429,42 @@ def test_submit_all_requests_rejects_oversized_file(monkeypatch, tmp_path) -> No
     )
 
     assert response.headers["location"] == "/dashboard?error=file_too_large"
+    assert not session_folder.exists()
+
+
+def test_submit_all_requests_rejects_combined_uploads_over_limit(
+    monkeypatch, tmp_path
+) -> None:
+    import src.services.submission_workflow as service_module
+
+    session_folder = _patch_session_folder(
+        monkeypatch, service_module, tmp_path, "session-combined-upload-limit"
+    )
+    _patch_user_and_profile_files(monkeypatch, service_module, _make_user())
+    calls = _patch_external_clients(monkeypatch, service_module)
+
+    data = _valid_cad_data_for_form(1)
+    data.update(_valid_cad_data_for_form(2))
+    files = _invoice_file(1)
+    files.update(_invoice_file(2))
+    single_file_size = len(files["invoice_file_1"][1])
+    settings = service_module.get_settings().model_copy(
+        update={
+            "max_upload_file_bytes": single_file_size,
+            "max_submission_upload_bytes": single_file_size * 2 - 1,
+        }
+    )
+    monkeypatch.setattr(service_module, "get_settings", lambda: settings)
+
+    response = _make_test_client().post(
+        "/submit-all-requests",
+        data=data,
+        files=files,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/dashboard?error=file_too_large"
+    assert "purchase_request" not in calls
     assert not session_folder.exists()
 
 

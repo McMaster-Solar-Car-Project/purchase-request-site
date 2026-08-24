@@ -58,6 +58,7 @@ class SubmissionOutputResult:
     drive_folder_id: str = ""
     drive_upload_success: bool = False
     purchase_request_filename: str = ""
+    expense_report_success: bool = False
     sheets_log_success: bool = False
 
 
@@ -429,9 +430,12 @@ async def _run_submission_outputs(
     except Exception:
         logger.exception("Failed to create purchase request (continuing anyway)")
 
+    expense_report_success = False
     try:
-        await run_in_threadpool(
-            create_expense_report, session_folder, user_info, submitted_forms
+        expense_report_success = bool(
+            await run_in_threadpool(
+                create_expense_report, session_folder, user_info, submitted_forms
+            )
         )
     except Exception:
         logger.exception(
@@ -495,6 +499,7 @@ async def _run_submission_outputs(
         drive_folder_id=drive_folder_id,
         drive_upload_success=drive_upload_success,
         purchase_request_filename=purchase_request_filename,
+        expense_report_success=expense_report_success,
         sheets_log_success=sheets_log_success,
     )
 
@@ -620,13 +625,25 @@ async def _complete_submission(
             "excel_file": output_result.purchase_request_filename,
         }
 
-    if output_result.drive_upload_success and output_result.sheets_log_success:
+    generated_outputs_complete = bool(output_result.purchase_request_filename) and (
+        output_result.expense_report_success
+    )
+    if (
+        generated_outputs_complete
+        and output_result.drive_upload_success
+        and output_result.sheets_log_success
+    ):
         await _cleanup_session_folder(session_folder)
     else:
         logger.error(
             "Submission outputs are incomplete; retaining local session folder "
             f"{session_folder} (drive={output_result.drive_upload_success}, "
             f"sheets={output_result.sheets_log_success})"
+        )
+
+    if not generated_outputs_complete:
+        return SubmissionWorkflowResult(
+            redirect_url=_dashboard_url(error="processing_failed")
         )
 
     return SubmissionWorkflowResult(
