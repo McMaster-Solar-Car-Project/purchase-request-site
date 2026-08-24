@@ -81,10 +81,6 @@ export function parseMoneyCents(value) {
     return parseScaledAmount(value, moneyDecimalPlaces);
 }
 
-export function parseMoneyCentsFloor(value) {
-    return parseScaledAmount(value, moneyDecimalPlaces, false);
-}
-
 export function formatMoneyCents(cents) {
     return formatScaledAmount(cents, moneyDecimalPlaces);
 }

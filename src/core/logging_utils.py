@@ -12,8 +12,3 @@ def configure_logging() -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
         stream=sys.stdout,
     )
-
-
-def setup_logger(name: str) -> logging.Logger:
-    """Return a standard library logger for ``name``."""
-    return logging.getLogger(name)

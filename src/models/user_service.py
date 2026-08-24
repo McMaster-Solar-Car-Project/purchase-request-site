@@ -1,12 +1,12 @@
 import base64
+import logging
 
 from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
-from src.core.logging_utils import setup_logger
 from src.db.schema import User
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 DEFAULT_NAME = "default_name"
 DEFAULT_PERSONAL_EMAIL = "default_email@gmail.com"

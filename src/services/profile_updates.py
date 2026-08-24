@@ -1,18 +1,18 @@
 """Profile update validation and mutation helpers."""
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
 from starlette.datastructures import UploadFile
 
-from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
 from src.db.schema import User
 from src.image_processing import convert_signature_to_png_bytes
 from src.models.user_info import ProfileUpdateInput
 from src.models.user_service import DEFAULT_NAME, DEFAULT_PERSONAL_EMAIL
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 UPLOAD_CHUNK_BYTES = 1024 * 1024
 
 

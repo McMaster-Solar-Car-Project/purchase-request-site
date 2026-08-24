@@ -1,11 +1,12 @@
 """Profile router for the /edit-profile endpoints."""
 
+import logging
+
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from src.core.logging_utils import setup_logger
 from src.db.schema import get_db
 from src.models.user_service import (
     get_user_by_email,
@@ -14,7 +15,7 @@ from src.models.user_service import (
 from src.routers.utils import get_authenticated_user_email, templates
 from src.services.profile_updates import update_user_profile
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["profile"])
 

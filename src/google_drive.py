@@ -1,5 +1,6 @@
 """Google Drive integration: uploads session data (Excel, invoices, signatures)."""
 
+import logging
 import mimetypes
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -12,11 +13,10 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from pydantic import ValidationError
 
-from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
 from src.models.user_info import SubmissionUserInfo
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"]
 FOLDER_MIME = "application/vnd.google-apps.folder"

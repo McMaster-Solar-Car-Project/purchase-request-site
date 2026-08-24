@@ -1,5 +1,6 @@
 """Submission workflow orchestration for purchase request batches."""
 
+import logging
 import re
 import shutil
 import tempfile
@@ -14,7 +15,6 @@ from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import FormData, UploadFile
 
-from src.core.logging_utils import setup_logger
 from src.core.settings import MAX_FORMS, MAX_ITEMS_PER_FORM, get_settings
 from src.data_processing import create_expense_report, create_purchase_request
 from src.db.schema import SessionLocal, User
@@ -29,7 +29,7 @@ from src.models.user_service import (
     save_void_cheque_to_file,
 )
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 MONEY_QUANTUM = Decimal("0.01")
 UPLOAD_CHUNK_BYTES = 1024 * 1024

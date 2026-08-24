@@ -2,15 +2,16 @@
 Download router for the /download-excel.
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.responses import Response
 
-from src.core.logging_utils import setup_logger
 from src.google_drive import download_file_from_drive
 from src.routers.utils import get_authenticated_user_email
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["download"])
 

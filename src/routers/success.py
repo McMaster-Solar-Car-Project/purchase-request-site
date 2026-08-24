@@ -2,14 +2,14 @@
 Success router for the /success endpoint.
 """
 
+import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Request
 
-from src.core.logging_utils import setup_logger
 from src.routers.utils import get_authenticated_user_email, templates
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["success"])
 

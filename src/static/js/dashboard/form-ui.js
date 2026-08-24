@@ -48,10 +48,6 @@ function getItemRows(formNumber) {
     return Array.from(container.querySelectorAll(".item-row"));
 }
 
-function getItemCount(formNumber) {
-    return getItemRows(formNumber).length;
-}
-
 function renumberItemRows(formNumber) {
     getItemRows(formNumber).forEach((row, index) => {
         const itemNumber = index + 1;
@@ -112,7 +108,7 @@ function wireItemRow(row) {
 }
 
 function addItem(formNumber) {
-    const itemCount = getItemCount(formNumber);
+    const itemCount = getItemRows(formNumber).length;
     if (itemCount >= maxItems) {
         alert(`Maximum of ${maxItems} items allowed per form.`);
         return;
@@ -145,7 +141,7 @@ function updateRemoveButtons(formNumber) {
     const container = getItemsContainer(formNumber);
     if (!container) return;
 
-    const itemCount = getItemCount(formNumber);
+    const itemCount = getItemRows(formNumber).length;
     const removeButtons = container.querySelectorAll(".btn-remove");
     removeButtons.forEach(btn => {
         btn.style.display = itemCount > 1 ? "block" : "none";
