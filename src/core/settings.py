@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     )
     sentry_dsn: str | None = Field(default=None, alias="SENTRY_DSN")
     sentry_release: str | None = Field(default=None, alias="SENTRY_RELEASE")
+    sentry_traces_sample_rate: float = Field(
+        default=0.1,
+        alias="SENTRY_TRACES_SAMPLE_RATE",
+        ge=0,
+        le=1,
+    )
     session_secret: str | None = Field(default=None, alias="SESSION_SECRET")
     host: str = Field(default="0.0.0.0", alias="HOST")
     port: int = Field(default=8000, alias="PORT")

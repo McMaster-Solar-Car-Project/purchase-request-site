@@ -1,6 +1,6 @@
 import {
     formatMoneyCents,
-    parseMoneyCents,
+    parseMoneyCentsFloor,
     todayIsoDate,
 } from "./money.js";
 
@@ -124,7 +124,7 @@ export function validateSubmission(maxForms, minimumTotalCents) {
         }
         const totalField = document.getElementById(`total_cad_amount_${formNumber}`);
         if (totalField && totalField.value) {
-            totalCanadianCents += parseMoneyCents(totalField.value);
+            totalCanadianCents += parseMoneyCentsFloor(totalField.value);
         }
     }
     if (totalCanadianCents < minimumTotalCents) {

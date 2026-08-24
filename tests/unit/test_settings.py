@@ -58,6 +58,7 @@ def test_production_rejects_weak_session_secret(secret: str) -> None:
 def test_policy_settings_have_safe_defaults() -> None:
     settings = _settings()
 
+    assert settings.sentry_traces_sample_rate == 0.1
     assert settings.sessions_root == Path("sessions")
     assert settings.minimum_total_cad_amount == Decimal("100.00")
     assert settings.max_upload_file_bytes == 10 * 1024 * 1024
@@ -81,12 +82,14 @@ def test_minimum_total_uses_cents() -> None:
 
 def test_policy_settings_accept_environment_style_values() -> None:
     settings = _settings(
+        SENTRY_TRACES_SAMPLE_RATE="0.25",
         SESSIONS_ROOT="/tmp/purchase-sessions",
         MINIMUM_TOTAL_CAD_AMOUNT="125.50",
         MAX_UPLOAD_FILE_BYTES="1024",
         MAX_SUBMISSION_UPLOAD_BYTES="4096",
     )
 
+    assert settings.sentry_traces_sample_rate == 0.25
     assert settings.sessions_root == Path("/tmp/purchase-sessions")
     assert settings.minimum_total_cad_amount == Decimal("125.50")
     assert settings.max_upload_file_bytes == 1024
