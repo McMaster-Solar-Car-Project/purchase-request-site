@@ -5,7 +5,7 @@ function decimalScale(decimalPlaces) {
     return 10n ** BigInt(decimalPlaces);
 }
 
-export function parseScaledAmount(value, decimalPlaces) {
+export function parseScaledAmount(value, decimalPlaces, round = true) {
     const rawValue = String(value ?? "").trim();
     if (!rawValue) return 0n;
 
@@ -20,7 +20,7 @@ export function parseScaledAmount(value, decimalPlaces) {
     const nextDigit = Number(normalizedFraction[decimalPlaces] || "0");
 
     let scaledValue = BigInt(wholePart) * scale + BigInt(keptFraction);
-    if (nextDigit >= 5) {
+    if (round && nextDigit >= 5) {
         scaledValue += 1n;
     }
 
@@ -79,6 +79,10 @@ export function formatMoneyFromPreciseAmount(scaledValue) {
 
 export function parseMoneyCents(value) {
     return parseScaledAmount(value, moneyDecimalPlaces);
+}
+
+export function parseMoneyCentsFloor(value) {
+    return parseScaledAmount(value, moneyDecimalPlaces, false);
 }
 
 export function formatMoneyCents(cents) {

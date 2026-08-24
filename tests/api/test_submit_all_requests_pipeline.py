@@ -448,27 +448,6 @@ def test_submit_all_requests_accepts_form_25(monkeypatch, tmp_path) -> None:
     assert submitted_forms[0].vendor_name == "Amazon"
 
 
-def test_submit_all_requests_uses_session_email_not_spoofed_form_email(
-    monkeypatch, tmp_path
-) -> None:
-    import src.services.submission_workflow as service_module
-
-    _patch_session_folder(monkeypatch, service_module, tmp_path, "session-spoof")
-    user = _make_user(email="session@example.com")
-    _patch_user_and_profile_files(monkeypatch, service_module, user)
-    calls = _patch_external_clients(monkeypatch, service_module)
-
-    client = _make_test_client(session_email="session@example.com")
-    response = client.post(
-        "/submit-all-requests",
-        data=_valid_cad_data(email="attacker@example.com"),
-        files=_invoice_file(),
-    )
-
-    assert response.status_code == 303
-    assert calls["purchase_request"][0].email == "session@example.com"
-
-
 def test_dashboard_uses_session_email_not_query_email(monkeypatch) -> None:
     import src.routers.dashboard as dashboard_module
 

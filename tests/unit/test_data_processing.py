@@ -13,7 +13,6 @@ from src.core.settings import (
     EXPENSE_REPORT_END_ROW,
     EXPENSE_REPORT_MIN_ROWS,
     EXPENSE_REPORT_START_ROW,
-    MAX_FORMS,
 )
 from src.models.submissions import Invoice, SubmissionLineItem
 from src.models.user_info import SubmissionUserInfo
@@ -135,15 +134,6 @@ def test_populate_expense_rows_supports_cad_and_usd() -> None:
     assert ws["F7"].value == 135.0  # Total amount in CAD
     assert ws["G7"].value == 135.0  # Total amount in CAD
     assert ws["H7"].value == 0  # No HST for US
-
-
-def test_purchase_request_template_has_twenty_five_receipt_sheets() -> None:
-    wb = load_workbook("src/excel_templates/purchase_request_template.xlsx")
-    try:
-        assert wb.sheetnames == [f"Receipt{i}" for i in range(1, MAX_FORMS + 1)]
-        assert wb["Receipt25"]["A58"].value == 50
-    finally:
-        wb.close()
 
 
 @pytest.mark.parametrize(

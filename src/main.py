@@ -1,3 +1,4 @@
+import logging
 import secrets
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -8,6 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from slowapi.errors import RateLimitExceeded
 from starlette.concurrency import run_in_threadpool
@@ -37,11 +39,13 @@ def configure_sentry() -> None:
         dsn=settings.sentry_dsn,
         integrations=[
             FastApiIntegration(),
+            LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
             SqlalchemyIntegration(),
         ],
         environment=settings.environment,
         release=settings.sentry_release,
-        traces_sample_rate=0.0,
+        sample_rate=1.0,
+        traces_sample_rate=settings.sentry_traces_sample_rate,
     )
 
 
