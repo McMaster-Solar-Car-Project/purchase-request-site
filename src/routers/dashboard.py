@@ -65,6 +65,11 @@ def dashboard(
         error_message = "Upload a valid PDF, PNG, JPG, JPEG, or GIF document."
     elif error == "file_too_large":
         error_message = "One or more uploads exceeded the configured size limit."
+    elif error == "processing_failed":
+        error_message = (
+            "We could not generate all required submission files. Your uploads were "
+            "retained for recovery."
+        )
     elif updated:
         success_message = "Your profile has been updated successfully."
 
