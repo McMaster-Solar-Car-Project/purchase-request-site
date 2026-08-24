@@ -2,6 +2,8 @@
 Dashboard router for the /dashboard and /submit-all-requests endpoints.
 """
 
+import logging
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -11,7 +13,6 @@ from fastapi import (
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from src.core.logging_utils import setup_logger
 from src.core.settings import MAX_FORMS, MAX_ITEMS_PER_FORM, get_settings
 from src.db.schema import get_db
 from src.models.user_service import (
@@ -21,7 +22,7 @@ from src.models.user_service import (
 from src.routers.utils import get_authenticated_user_email, templates
 from src.services.submission_workflow import process_submission_workflow
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["dashboard"])
 

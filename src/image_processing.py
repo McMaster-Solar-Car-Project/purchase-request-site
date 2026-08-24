@@ -1,12 +1,11 @@
+import logging
 from io import BytesIO
 from pathlib import Path
 
 from openpyxl.drawing import image
 from PIL import Image
 
-from src.core.logging_utils import setup_logger
-
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 MAX_SIGNATURE_WIDTH = 400
 

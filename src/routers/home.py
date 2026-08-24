@@ -1,15 +1,16 @@
 """Home router for the post-login main menu."""
 
+import logging
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 
-from src.core.logging_utils import setup_logger
 from src.db.schema import get_db
 from src.models.user_service import get_user_by_email, is_user_profile_complete
 from src.routers.utils import get_authenticated_user_email, templates
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["home"])
 

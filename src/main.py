@@ -16,7 +16,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
-from src.core.logging_utils import configure_logging, setup_logger
+from src.core.logging_utils import configure_logging
 from src.core.settings import get_settings
 from src.db.schema import init_database
 from src.routers.auth import router as auth_router
@@ -28,7 +28,7 @@ from src.routers.success import router as success_router
 from src.routers.utils import AuthRedirect, limiter, templates
 
 configure_logging()
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 HEALTH_PATH_PREFIX = "/health"
 
 

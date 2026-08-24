@@ -1,3 +1,4 @@
+import logging
 import re
 import shutil
 from collections.abc import Iterator
@@ -10,7 +11,6 @@ from openpyxl import load_workbook
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from src.core.logging_utils import setup_logger
 from src.core.settings import (
     EXCEL_ITEM_END_ROW,
     EXCEL_ITEM_START_ROW,
@@ -23,7 +23,7 @@ from src.image_processing import insert_signature_at_cell
 from src.models.submissions import Invoice
 from src.models.user_info import SubmissionUserInfo
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def _report_name_component(name: str) -> str:

@@ -1,10 +1,11 @@
+import logging
+
 from sqlalchemy import Integer, LargeBinary, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
-from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def _normalize_postgres_url(url: str) -> str:

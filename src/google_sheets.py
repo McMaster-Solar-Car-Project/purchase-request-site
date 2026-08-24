@@ -4,6 +4,7 @@ Google Sheets integration module for the Purchase Request Site.
 This module handles writing purchase request data to Google Sheets for logging and tracking.
 """
 
+import logging
 from datetime import datetime
 from typing import Any
 
@@ -12,13 +13,11 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from pydantic import ValidationError
 
-from src.core.logging_utils import setup_logger
 from src.core.settings import get_settings
 from src.models.submissions import Invoice
 from src.models.user_info import SubmissionUserInfo
 
-# Set up logger
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Google Sheets configuration
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]

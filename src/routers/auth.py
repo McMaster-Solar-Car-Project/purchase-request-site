@@ -2,17 +2,17 @@
 Authentication router for the /login and /logout endpoints.
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from src.core.logging_utils import setup_logger
 from src.db.schema import get_db
 from src.models.user_service import get_user_by_email
 from src.routers.utils import limiter, templates
 
-# Set up logger
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter(tags=["authentication"])
