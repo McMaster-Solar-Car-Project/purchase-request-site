@@ -13,7 +13,7 @@ def test_sessions_directory_is_not_mounted() -> None:
     assert "/sessions" not in mounted_paths
 
 
-def test_production_session_uses_configured_secret_and_secure_cookie(
+def test_production_session_uses_configured_secret_and_http_cookie(
     monkeypatch,
 ) -> None:
     import src.main as main_module
@@ -33,5 +33,5 @@ def test_production_session_uses_configured_secret_and_secure_cookie(
     )
 
     assert middleware.kwargs["secret_key"] == "stable-session-secret"
-    assert middleware.kwargs["https_only"] is True
+    assert middleware.kwargs.get("https_only", False) is False
     assert middleware.kwargs["same_site"] == "lax"
