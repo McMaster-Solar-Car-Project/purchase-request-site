@@ -44,6 +44,7 @@ def configure_sentry() -> None:
         ],
         environment=settings.environment,
         release=settings.sentry_release,
+        enable_logs=True,
         sample_rate=1.0,
         traces_sample_rate=settings.sentry_traces_sample_rate,
     )
