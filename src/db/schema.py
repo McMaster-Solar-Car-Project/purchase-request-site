@@ -1,6 +1,16 @@
 import logging
+from datetime import datetime
 
-from sqlalchemy import Integer, LargeBinary, String, Text, create_engine
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    create_engine,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from src.core.settings import get_settings
@@ -75,6 +85,30 @@ class User(Base):
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>"
+
+
+class DraftSubmission(Base):
+    """Submission receipts, without locally saved draft contents or attachments."""
+
+    __tablename__ = "draft_submissions"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('processing', 'succeeded', 'rejected', 'needs_review')",
+            name="draft_submission_status",
+        ),
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    draft_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
 
 
 def get_db():

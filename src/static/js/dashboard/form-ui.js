@@ -12,6 +12,10 @@ import {
 
 let maxItems = 50;
 
+function draftChanged(immediate = false) {
+    document.dispatchEvent(new CustomEvent("draftchange", { detail: { immediate } }));
+}
+
 export function formatMoneyFields() {
     const formsToRecalculate = new Set();
 
@@ -125,6 +129,7 @@ function addItem(formNumber) {
     wireItemRow(newRow);
     renumberItemRows(formNumber);
     updateRemoveButtons(formNumber);
+    draftChanged();
 }
 
 function removeItem(button, formNumber) {
@@ -135,6 +140,7 @@ function removeItem(button, formNumber) {
     renumberItemRows(formNumber);
     updateRemoveButtons(formNumber);
     calculateSubtotal(formNumber);
+    draftChanged();
 }
 
 function updateRemoveButtons(formNumber) {
@@ -325,6 +331,12 @@ function clearForm(formNumber) {
         return;
     }
 
+    resetForm(formNumber);
+    draftChanged(true);
+}
+
+function resetForm(formNumber) {
+
     const vendorNameInput = document.getElementById(`vendor_name_${formNumber}`);
     if (vendorNameInput) vendorNameInput.value = "";
 
@@ -386,7 +398,6 @@ function clearForm(formNumber) {
     if (hstGstInput) hstGstInput.removeAttribute("required");
     if (requiredIndicator) requiredIndicator.textContent = "";
 
-    console.log(`Form ${formNumber} has been cleared successfully.`);
 }
 
 function handleDragOver(event) {
@@ -407,6 +418,7 @@ function handleFileDrop(event, inputId, spanId) {
     if (files.length > 0) {
         fileInput.files = files;
         updateFileName(fileInput, spanId);
+        draftChanged(true);
     }
 }
 
@@ -506,4 +518,65 @@ export function initializeDashboardUi(config) {
     }
 
     initializeStaticHandlers();
+}
+
+export function captureDashboardDraft(maxForms) {
+    const forms = [];
+    const files = new Map();
+    for (let number = 1; number <= maxForms; number++) {
+        const content = document.getElementById(`form-${number}`);
+        const fields = {};
+        content.querySelectorAll("input[name], select[name], textarea[name]").forEach(input => {
+            if (input.type === "file") {
+                if (input.files[0]) files.set(input.name, input.files[0]);
+            } else if (!input.readOnly) {
+                fields[input.name] = input.value;
+            }
+        });
+        forms.push({ number, itemCount: getItemRows(number).length, fields });
+    }
+    return { forms, files };
+}
+
+export function restoreDashboardDraft(forms, files, maxForms) {
+    const numbers = new Set();
+    for (const saved of forms) {
+        if (!saved || !Number.isInteger(saved.number) || saved.number < 1 || saved.number > maxForms || numbers.has(saved.number) ||
+            !Number.isInteger(saved.itemCount) || saved.itemCount < 1 || saved.itemCount > maxItems || !saved.fields ||
+            Object.values(saved.fields).some(value => typeof value !== "string")) {
+            throw new Error("This saved draft cannot be restored by this version of the site.");
+        }
+        numbers.add(saved.number);
+    }
+    for (let number = 1; number <= maxForms; number++) resetForm(number);
+    for (const saved of forms) {
+        const number = saved.number;
+        const currency = document.getElementById(`currency_${number}`);
+        currency.value = saved.fields[currency.name] || "CAD";
+        if (!["CAD", "USD"].includes(currency.value)) throw new Error("Invalid saved currency");
+        updateCurrencyLabels(number);
+        while (getItemRows(number).length < saved.itemCount) addItem(number);
+        const content = document.getElementById(`form-${number}`);
+        content.querySelectorAll("input[name], select[name], textarea[name]").forEach(input => {
+            if (input.type === "file") {
+                const file = files.get(input.name);
+                if (file) {
+                    const transfer = new DataTransfer();
+                    transfer.items.add(file);
+                    input.files = transfer.files;
+                    updateFileName(input, input.dataset.filenameId);
+                }
+            } else if (!input.readOnly && Object.hasOwn(saved.fields, input.name)) {
+                input.value = saved.fields[input.name];
+            }
+        });
+        getItemRows(number).forEach((_, index) => calculateItemTotal(number, index + 1));
+        // USD's manually entered CAD total is never recalculated from USD items.
+        if (currency.value === "CAD") calculateFinalTotal(number);
+        const hasContent = Object.entries(saved.fields).some(([name, value]) =>
+            value && !name.startsWith("currency_") && !(name.startsWith("item_quantity_") && value === "1")
+        ) || Array.from(files.keys()).some(name => name.endsWith(`_${number}`));
+        content.style.display = hasContent ? "block" : "none";
+        content.previousElementSibling.querySelector('[data-role="accordion-toggle"]').textContent = hasContent ? "-" : "+";
+    }
 }

@@ -22,6 +22,7 @@ class FakeUser:
     team: str
     signature_data: bytes
     void_cheque: bytes
+    id: int = 1
 
     @property
     def has_valid_signature(self) -> bool:
