@@ -411,6 +411,14 @@ function handleFileDrop(event, inputId, spanId) {
 }
 
 function initializeStaticHandlers() {
+    // Let the page scroll without changing focused numbers, including newly added items.
+    document.addEventListener("wheel", event => {
+        const input = event.target;
+        if (input instanceof HTMLInputElement && input.type === "number" && input === document.activeElement) {
+            input.blur();
+        }
+    }, { capture: true, passive: true });
+
     document.querySelectorAll('input[type="date"][name^="purchase_date_"]').forEach(input => {
         input.max = todayIsoDate();
     });
