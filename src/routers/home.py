@@ -33,8 +33,8 @@ def home(
     success_message = None
     if not profile_is_complete:
         profile_warning_message = (
-            "Your profile is incomplete. Update your information before submitting "
-            "purchase requests."
+            "Your profile is incomplete. Update your information before "
+            "starting a purchase request."
         )
     elif updated:
         success_message = "Your profile has been updated successfully."
