@@ -1,5 +1,6 @@
 import { formatMoneyFields, initializeDashboardUi } from "./dashboard/form-ui.js";
 import { validateSubmission } from "./dashboard/validation.js";
+import { DashboardAutosave } from "./dashboard/autosave.js";
 
 const profileCompleteField = document.getElementById("profile-is-complete");
 const profileIsComplete = profileCompleteField?.value === "true";
@@ -12,7 +13,7 @@ const minimumTotalCents = BigInt(minimumTotalField?.value || "10000");
 
 let isSubmitting = false;
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
     initializeDashboardUi({ maxForms, maxItems });
 
     const form = document.querySelector('form[action="/submit-all-requests"]');
@@ -22,34 +23,34 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
-    form.addEventListener("submit", event => {
+    const autosave = new DashboardAutosave(form, maxForms);
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
         if (!profileIsComplete) {
-            event.preventDefault();
             return;
         }
 
         if (isSubmitting) {
-            event.preventDefault();
             return;
         }
 
         formatMoneyFields();
 
         if (!validateSubmission(maxForms, minimumTotalCents)) {
-            event.preventDefault();
             return;
         }
 
         isSubmitting = true;
+        const draftId = await autosave.prepareSubmission();
+        if (!draftId) {
+            isSubmitting = false;
+            return;
+        }
+        document.getElementById("draft-id").value = draftId;
         submitBtn.disabled = true;
         submitBtn.textContent = "Submitting… (This may take a few minutes)";
 
-        setTimeout(() => {
-            if (isSubmitting) {
-                isSubmitting = false;
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Submit All Purchase Requests";
-            }
-        }, 45000);
+        HTMLFormElement.prototype.submit.call(form);
     });
+    await autosave.initialize();
 });

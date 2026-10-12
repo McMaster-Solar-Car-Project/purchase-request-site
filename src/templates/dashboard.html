@@ -73,12 +73,20 @@
                 <a href="/edit-profile" class="button button--primary">Edit Information</a>
             </div>
             {% else %}
-            <form method="POST" action="/submit-all-requests" enctype="multipart/form-data">
+            <form method="POST" action="/submit-all-requests" enctype="multipart/form-data" data-draft-owner="{{ draft_owner_id }}">
+                <input type="hidden" name="draft_id" id="draft-id" value="">
+                <input type="hidden" name="draft_owner_id" value="{{ draft_owner_id }}">
                 <input type="hidden" id="profile-is-complete" value="{{ 'true' if profile_is_complete else 'false' }}">
                 <input type="hidden" id="max-items-per-form" value="{{ max_items_per_form }}">
                 <input type="hidden" id="max-forms" value="{{ max_forms }}">
                 <input type="hidden" id="minimum-total-cad-cents" value="{{ minimum_total_cad_cents }}">
 
+                <div class="draft-toolbar">
+                    <p id="draft-status" class="notice" role="status" aria-live="polite">Loading saved draft…</p>
+                    <a id="draft-reload" href="/dashboard" class="button button--secondary" hidden>Reload dashboard</a>
+                    <button type="button" id="discard-draft" class="button button--secondary" disabled>Discard draft</button>
+                </div>
+                <fieldset id="draft-fields" class="draft-fields" disabled inert>
                 <div class="section-heading">
                     <div>
                         <p class="section-kicker">Batch Entry</p>
@@ -98,6 +106,7 @@
                         Submit All Purchase Requests
                     </button>
                 </div>
+                </fieldset>
             </form>
             {% endif %}
         </main>

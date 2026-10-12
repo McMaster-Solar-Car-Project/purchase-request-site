@@ -17,6 +17,9 @@
     </header>
 
     <section class="app-card status-card">
+        {% if submitted_draft_id %}
+        <p id="submitted-draft" class="notice" role="status" data-owner="{{ draft_owner_id }}" data-id="{{ submitted_draft_id }}">Your submission is confirmed. Clearing the saved draft from this device…</p>
+        {% endif %}
         {% if download_info %}
         <div class="request-panel highlight-panel">
             <p><strong>Your purchase request has been compiled into an Excel report.</strong></p>
@@ -36,4 +39,10 @@
         </footer>
     </section>
 </main>
+{% endblock %}
+
+{% block scripts %}
+{% if submitted_draft_id %}
+<script type="module" src="/static/js/draft-success.js"></script>
+{% endif %}
 {% endblock %}

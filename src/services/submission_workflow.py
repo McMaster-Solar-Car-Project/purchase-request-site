@@ -66,6 +66,7 @@ class SubmissionOutputResult:
 class SubmissionWorkflowResult:
     redirect_url: str
     download_info: dict[str, str] | None = None
+    submission_status: str = "rejected"
 
 
 @dataclass
@@ -628,11 +629,12 @@ async def _complete_submission(
     generated_outputs_complete = bool(output_result.purchase_request_filename) and (
         output_result.expense_report_success
     )
-    if (
+    submission_complete = (
         generated_outputs_complete
         and output_result.drive_upload_success
         and output_result.sheets_log_success
-    ):
+    )
+    if submission_complete:
         await _cleanup_session_folder(session_folder)
     else:
         logger.error(
@@ -643,12 +645,14 @@ async def _complete_submission(
 
     if not generated_outputs_complete:
         return SubmissionWorkflowResult(
-            redirect_url=_dashboard_url(error="processing_failed")
+            redirect_url=_dashboard_url(error="processing_failed"),
+            submission_status="needs_review",
         )
 
     return SubmissionWorkflowResult(
         redirect_url="/success",
         download_info=download_info,
+        submission_status="succeeded" if submission_complete else "needs_review",
     )
 
 
