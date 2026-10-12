@@ -31,7 +31,6 @@ router = APIRouter(tags=["dashboard"])
 def dashboard(
     request: Request,
     updated: bool = False,
-    profile_incomplete: bool = False,
     error: str | None = None,
     db: Session = Depends(get_db),
     authenticated_email: str = Depends(get_authenticated_user_email),
@@ -74,10 +73,10 @@ def dashboard(
         success_message = "Your profile has been updated successfully."
 
     profile_is_complete = is_user_profile_complete(user)
-    if profile_incomplete or not profile_is_complete:
+    if not profile_is_complete:
         profile_warning_message = (
-            "Your profile is incomplete. Please update your information before "
-            "submitting purchase requests."
+            "Your profile is incomplete. Update your information before "
+            "starting a purchase request."
         )
 
     return templates.TemplateResponse(

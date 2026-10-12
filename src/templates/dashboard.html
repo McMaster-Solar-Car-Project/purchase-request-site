@@ -28,7 +28,7 @@
     {% if profile_warning_message %}
     <div class="notice profile-warning-message notice--warning">
         {{ profile_warning_message }}
-        <a href="/home">Go to home</a>
+        <a href="/edit-profile">Edit Information</a>
     </div>
     {% endif %}
 
@@ -64,6 +64,15 @@
         </aside>
 
         <main class="workflow-panel dashboard-section">
+            {% if not profile_is_complete %}
+            <div class="section-heading">
+                <h2>Complete your profile first</h2>
+            </div>
+            <p>Purchase request forms are locked until your information is complete.</p>
+            <div class="dashboard-actions">
+                <a href="/edit-profile" class="button button--primary">Edit Information</a>
+            </div>
+            {% else %}
             <form method="POST" action="/submit-all-requests" enctype="multipart/form-data">
                 <input type="hidden" id="profile-is-complete" value="{{ 'true' if profile_is_complete else 'false' }}">
                 <input type="hidden" id="max-items-per-form" value="{{ max_items_per_form }}">
@@ -85,23 +94,25 @@
                 </div>
 
                 <div class="dashboard-actions">
-                    <button type="submit" id="submit-all-btn" class="button button--primary btn btn-large" {% if not profile_is_complete %}disabled aria-disabled="true"{% endif %}>
+                    <button type="submit" id="submit-all-btn" class="button button--primary btn btn-large">
                         Submit All Purchase Requests
                     </button>
-                    {% if not profile_is_complete %}
-                    <p class="submit-note">Submission is disabled until your profile is complete.</p>
-                    {% endif %}
                 </div>
             </form>
+            {% endif %}
         </main>
     </div>
 </div>
 
+{% if profile_is_complete %}
 <template id="item-row-template">
     {{ item_row("__FORM__", "__ITEM__") }}
 </template>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
+{% if profile_is_complete %}
 <script type="module" src="/static/js/dashboard.js"></script>
+{% endif %}
 {% endblock %}
