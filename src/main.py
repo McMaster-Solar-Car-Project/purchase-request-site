@@ -16,6 +16,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
+from src.core.assets import STATIC_ASSET_PREFIX, STATIC_DIRECTORY
 from src.core.logging_utils import configure_logging
 from src.core.settings import get_settings
 from src.db.schema import init_database
@@ -133,7 +134,12 @@ def create_app() -> FastAPI:
         max_age=60 * 60 * 24,
     )
 
-    application.mount("/static", StaticFiles(directory="src/static"), name="static")
+    application.mount(
+        STATIC_ASSET_PREFIX,
+        StaticFiles(directory=STATIC_DIRECTORY),
+        name="versioned_static",
+    )
+    application.mount("/static", StaticFiles(directory=STATIC_DIRECTORY), name="static")
 
     application.include_router(auth_router)
     application.include_router(home_router)

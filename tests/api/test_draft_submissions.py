@@ -9,6 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from starlette.middleware.sessions import SessionMiddleware
 
+from src.core.assets import STATIC_ASSET_PREFIX
 from src.db.schema import Base, DraftSubmission, User, get_db
 from src.routers import dashboard, success
 from src.services import submission_tracking
@@ -65,6 +66,16 @@ def draft_app(monkeypatch, tmp_path):
 
 def tracked_data(draft_id):
     return {"draft_id": draft_id, "draft_owner_id": "1"}
+
+
+def test_dashboard_uses_versioned_assets_instead_of_cached_legacy_urls(draft_app):
+    client, _ = draft_app
+    client.get("/test-login/1")
+    page = client.get("/dashboard")
+    assert page.status_code == 200
+    assert f'src="{STATIC_ASSET_PREFIX}/js/dashboard.js"' in page.text
+    assert f'href="{STATIC_ASSET_PREFIX}/css/output.css"' in page.text
+    assert 'src="/static/js/dashboard.js"' not in page.text
 
 
 def test_status_requires_login_and_does_not_expose_other_accounts(draft_app):
