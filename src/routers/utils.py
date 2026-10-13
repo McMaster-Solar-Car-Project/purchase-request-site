@@ -7,8 +7,18 @@ from fastapi.templating import Jinja2Templates
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from src.core.assets import STATIC_ASSET_PREFIX
+
 templates_dir = "src/templates"
-templates = Jinja2Templates(directory=templates_dir)
+
+
+def static_asset_context(request: Request) -> dict[str, str]:
+    return {"static_asset_prefix": STATIC_ASSET_PREFIX}
+
+
+templates = Jinja2Templates(
+    directory=templates_dir, context_processors=[static_asset_context]
+)
 
 
 class AuthRedirect(Exception):  # noqa: N818  # flow-control, not an error

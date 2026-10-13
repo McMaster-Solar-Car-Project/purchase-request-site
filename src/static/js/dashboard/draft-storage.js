@@ -1,5 +1,6 @@
 const DATABASE = "purchase-request-drafts";
 const VERSION = 1;
+const STORAGE_TIMEOUT_MS = 15000;
 let connection;
 
 export class DraftConflict extends Error {}
@@ -19,18 +20,28 @@ function openDatabase() {
     connection = new Promise((resolve, reject) => {
         const request = indexedDB.open(DATABASE, VERSION);
         let blocked = false;
+        const timeout = setTimeout(() => {
+            blocked = true;
+            reject(new Error("Draft storage did not respond"));
+        }, STORAGE_TIMEOUT_MS);
         request.onupgradeneeded = () => {
+            if (blocked) { request.transaction.abort(); return; }
             const db = request.result;
             db.createObjectStore("drafts", { keyPath: "ownerId" });
             const files = db.createObjectStore("attachments", { keyPath: ["ownerId", "draftId", "name"] });
             files.createIndex("draft", ["ownerId", "draftId"]);
         };
-        request.onerror = () => reject(request.error);
+        request.onerror = () => {
+            clearTimeout(timeout);
+            reject(request.error);
+        };
         request.onblocked = () => {
+            clearTimeout(timeout);
             blocked = true;
             reject(new Error("Close other tabs to enable autosave"));
         };
         request.onsuccess = () => {
+            clearTimeout(timeout);
             const db = request.result;
             if (blocked) { db.close(); return; }
             db.onversionchange = () => {
@@ -52,8 +63,18 @@ async function transact(mode, work) {
         const tx = db.transaction(["drafts", "attachments"], mode);
         let result;
         let failure;
-        tx.oncomplete = () => resolve(result);
-        tx.onabort = () => reject(failure || tx.error || new Error("Draft save interrupted"));
+        const timeout = setTimeout(() => {
+            failure = new Error("Draft storage did not respond");
+            // Abort queued writes before allowing manual entry. A late result
+            // must never restore old fields over what the user has just typed.
+            try { tx.abort(); } catch { /* The transaction already finished. */ }
+            reject(failure);
+        }, STORAGE_TIMEOUT_MS);
+        tx.oncomplete = () => { clearTimeout(timeout); resolve(result); };
+        tx.onabort = () => {
+            clearTimeout(timeout);
+            reject(failure || tx.error || new Error("Draft save interrupted"));
+        };
         const fail = error => {
             failure = error;
             tx.abort();

@@ -43,6 +43,6 @@
 
 {% block scripts %}
 {% if submitted_draft_id %}
-<script type="module" src="/static/js/draft-success.js"></script>
+<script type="module" src="{{ static_asset_prefix }}/js/draft-success.js"></script>
 {% endif %}
 {% endblock %}
